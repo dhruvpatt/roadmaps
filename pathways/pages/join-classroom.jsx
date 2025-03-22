@@ -1,10 +1,66 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 // Replace these imports with your actual Navbar & Sidebar components
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
+import backendUrl from "@/backendUrl";
 
 export default function JoinClassroomPage() {
+
+  const [user, setUser] = useState({});
+  useEffect(() => {
+    const usr = JSON.parse(localStorage.getItem("user"));
+    if (!user) {
+      router.push("/login");
+    }
+    setUser(usr);
+  }, [])
+
+  const [classroomCode, setClassroomCode] = useState("");
+
+  const handleChange = (e) => {
+    setClassroomCode(e.target.value);
+  };
+
+  const handleJoinClassroom = async () => {
+    try {
+
+      if (user.role === "student"){
+        const res = await fetch(`${backendUrl}/classroom/join/student/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            join_id: classroomCode,
+            user_id: user.id
+          }),
+        })
+  
+        const ret = await res.json();
+        console.log("Joined classroom", ret);
+      } else if (user.role === "teacher"){
+        const res = await fetch(`${backendUrl}/classroom/join/teacher/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            join_id: classroomCode,
+            user_id: user.id
+          }),
+        })
+  
+        const ret = await res.json();
+        console.log("Joined classroom", ret);
+        
+      }
+      
+    } catch (error){
+      console.error("error joining classroom", error)
+    }
+
+  }
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
       {/* Top Navbar */}
@@ -46,6 +102,8 @@ export default function JoinClassroomPage() {
               <input
                 id="classroomCode"
                 type="text"
+                value={classroomCode}
+                onChange={handleChange}
                 placeholder="Enter code, e.g. ABC123"
                 className="w-full border border-gray-300 rounded px-3 py-2 text-sm 
                            focus:outline-none focus:ring-2 focus:ring-amber-600 
@@ -57,6 +115,7 @@ export default function JoinClassroomPage() {
               type="button"
               className="w-full bg-amber-600 text-white py-2 rounded font-semibold
                          hover:bg-amber-700 transition-colors"
+              onClick={async () => await handleJoinClassroom()}
             >
               Join Classroom
             </button>

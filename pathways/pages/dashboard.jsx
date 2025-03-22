@@ -88,11 +88,14 @@ const Dashboard = () => {
 
     const createClassroom = async (data) => {
         try {
-            const res = await fetch(`${backendUrl}/classroom/create`, {
+            const res = await fetch(`${backendUrl}/classroom/create/`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data),
             })
+
+            const ret = await res.json();
+            console.log("ret", ret);
         } catch (error){
             console.error("Failed to create classroom", error);
         }
@@ -190,6 +193,7 @@ const Dashboard = () => {
                         isOpen={showClassroomModal}
                         onClose={() => setShowClassroomModal(false)}
                         onCreate={async (data) => await createClassroom(data)}
+                        user={user}
                     />
 
                     <CreateRoadmapModal
