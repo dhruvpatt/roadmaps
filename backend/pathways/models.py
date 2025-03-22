@@ -9,7 +9,8 @@ class User(AbstractUser):
         (TEACHER, 'Teacher'),
         (STUDENT, 'Student'),
     ]
-
+    email = models.EmailField(unique=True, blank=False)
+    password = models.CharField(max_length=255)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default=STUDENT)
     preferences = models.JSONField(blank=True, default=list)  # Use JSONField for compatibility with SQLite
 
@@ -37,7 +38,7 @@ class Roadmap(models.Model):
     ]
 
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='roadmaps')
-    scaffold = models.TextField(max_length=10000)
+    details = models.TextField(max_length=10000)
     mode = models.CharField(max_length=10, choices=MODE_CHOICES, default=CASUAL)
     title = models.CharField(max_length=255)
     grade = models.CharField(max_length=255, default='Unspecified')
@@ -87,13 +88,15 @@ class Quiz(models.Model):
 class Module(models.Model):
     name = models.CharField(max_length=255)
     chapter = models.ForeignKey(Chapter, on_delete=models.CASCADE, related_name='modules')
-    prerequisite = models.TextField(blank=True, null=True)
+    prerequisites = models.ManyToManyField('self', blank=True, symmetrical=False, related_name='dependent_modules')
     yt_video = models.URLField(blank=True, null=True)
     practice = models.ForeignKey(Quiz, on_delete=models.SET_NULL, null=True, blank=True, related_name='modules')
     status = models.CharField(max_length=50, default='not_started')
     next_modules = models.ManyToManyField('self', blank=True, symmetrical=False, related_name='previous_modules')
     learning_goals = models.JSONField(blank=True, default=list)  # Use JSONField for SQLite
     feedback = models.TextField(blank=True, null=True)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='Module')
+    content_list = models.ManyToManyField('Content', blank=True, related_name='modules')
 
     def __str__(self):
         return self.name

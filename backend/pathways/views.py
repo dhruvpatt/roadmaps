@@ -1,6 +1,7 @@
 # views.py
 
 from rest_framework import status
+from rest_framework.views import APIView
 from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
@@ -12,6 +13,59 @@ from .serializers import (UserSerializer, RoadmapSerializer, ChapterSerializer,
                           SubjectSerializer)
 
 
+class StudentAnalyticsAPIView(APIView):
+    def get(self, request, user_id):
+        try:
+            user = User.objects.get(pk=user_id)
+            all_roadmaps = user.roadmaps.all()
+            total = all_roadmaps.count()
+            completed = 0
+            active_roadmaps = 0
+
+            for roadmap in all_roadmaps:
+                if all(ch.status == 'completed' for ch in roadmap.chapters.all()):
+                    completed += 1
+                else:
+                    active_roadmaps += 1
+
+            return Response({
+                "user": user.username,
+                "total_roadmaps": total,
+                "completed_roadmaps": completed,
+                "active_roadmaps": active_roadmaps
+            })
+        except User.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class TeacherAnalyticsAPIView(APIView):
+    def get(self, request, user_id):
+        try:
+            user = User.objects.get(pk=user_id)
+            classrooms = user.teaching_classrooms.all()
+            classroom_count = classrooms.count()
+            student_ids = set()
+            active_pathways = 0
+
+            for classroom in classrooms:
+                for student in classroom.students.all():
+                    student_ids.add(student.id)
+                    student_roadmaps = student.roadmaps.all()
+                    for roadmap in student_roadmaps:
+                        if any(ch.status != 'completed' for ch in roadmap.chapters.all()):
+                            active_pathways += 1
+
+            return Response({
+                "user": user.username,
+                "classrooms": classroom_count,
+                "total_students": len(student_ids),
+                "active_pathways": active_pathways
+            })
+        except User.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 # User ViewSet
 class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
@@ -169,6 +223,35 @@ class SubjectViewSet(ModelViewSet):
     queryset = Subject.objects.all()
     serializer_class = SubjectSerializer
 
+
+@api_view(['POST'])
+def create_user(request):
+    serializer = UserSerializer(data=request.data)
+
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['PUT'])
+def update_user(request, pk):
+    try:
+        user = User.objects.get(pk=pk)
+    except User.DoesNotExist:
+        return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    # Remove the email field from the request data to prevent it from being updated
+    # if 'email' in request.data:
+    #     del request.data['email']
+
+    serializer = UserSerializer(user, data=request.data)
+
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Function-based views for API endpoints
 @api_view(['GET'])

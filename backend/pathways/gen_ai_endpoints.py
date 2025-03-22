@@ -58,16 +58,25 @@ class GenerationAgent:
 
         For each module, provide the following parameters:
         - name: A concise title for the module.
-        - learning_goals: A list of objectives the students should achieve by the end of the module.
+        - chapter: the corresponding chapter name it should be the exact name of the chapter 
+        - learning_goals: A list of objectives the students should achieve by the end of the module should have a high degree of exellency.
         - module_description: A brief overview of the content and approach for this module.
         - prerequisite_modules: A list of prior modules required for this one to make sense (if any).
         - next_modules: A list of modules that should logically follow this one in the learning path.
+        
+        For each Chapter, provide the following parameters:
+        - name: A consice name for the chapter that describes all the modules
+        - next: the next Chapter 
 
         The output should be a list of dictionary objects where the keys are the parameter names (name, learning_goals, module_description, prerequisite_modules, next_modules).
+        It should also have a list of Chapters that comes before the list of modules where the chapters encapsulate a set of modules try to make it so there are mutliple modules for a chapter
         Each module should be a dictionary that contains the details for that module. It should only be teh list THERE SHOULD BE NO WORDS BEFORE OR AFTER THE LISTS
         EX: 
-        [{{"name": "Module 1", "learning_goals": ["Goal 1", "Goal 2"], "module_description": "Description", "prerequisite_modules": ["Module 0"], "next_modules": ["Module 2"]}}, ...]
-    
+        [
+        [{{"name": "Chapter 1: NAME FOR CHAPTER ONE, "next": "Chapter 2"}}, {{"name: Chapter 2", "next": None}}]
+        [{{"name": "Module 1", "learning_goals": ["Goal 1", "Goal 2"], "module_description": "Description", "prerequisite_modules": ["Module 0"], "next_modules": ["Module 2"], "chapter":"Chapter 1: NAME FOR CHAPTER ONE"}}, ...]
+        ]
+        MAKE SURE THERE ARE NO TRAILING COMMAS
         """
         try:
             generation_config = types.GenerateContentConfig(temperature=0.7)
@@ -101,8 +110,9 @@ class EvaluationAgent:
         prompt = f"""
             Evaluate the roadmap '{roadmap}' based on the learning goals '{learning_goals}'. 
             Is the roadmap valid and complete?
-            Return in the output Valid or Incomplete
-            If it is incomplete or there are prequisites missing or missmatches between modules give constructive feedback
+            Return in the output Valid or Incomplete return incomplete if there are trailing commas or other syntax errors that would make a json.load() call fail
+            If it is incomplete or there are prequisites missing or missmatches between modules give constructive
+            feedback and return do not have valid anywhere in the string
             """
         try:
             generation_config = types.GenerateContentConfig(temperature=0.7)
@@ -136,15 +146,18 @@ class RoadmapGenerationAPIView(APIView):
             topic = serializer.validated_data['topic']
             learning_goals = serializer.validated_data['learning_goals']
             grade = serializer.validated_data['grade']
+            user_id = serializer.validated_data['userid']
+            details = serializer.validated_data['details']
             mode = serializer.validated_data.get('mode', 'CASUAL')  # Default mode is CASUAL
 
+            user = User.objects.get(pk=user_id)
             # Create agent instances
             perception_agent = PerceptionAgent()
             generation_agent = GenerationAgent()
             evaluation_agent = EvaluationAgent()
 
             # Time settings
-            timeout_duration = timedelta(seconds=60)  # 1-minute timeout
+            timeout_duration = timedelta(seconds=60 * 5)  # 1-minute timeout
             start_time = datetime.now()
 
             while True:
@@ -159,33 +172,57 @@ class RoadmapGenerationAPIView(APIView):
                 print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
                 module_list = generation_agent.generate_roadmap(perception_data, topic, learning_goals, grade, mode)
                 print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-                # Step 3: Evaluate roadmap
+
                 if evaluation_agent.evaluate(module_list, learning_goals):
-                    # If evaluation is valid, save the roadmap
+                    print("inside")
                     roadmap_object = Roadmap(
                         title=title,
-                        owner=User.objects.first(),  # Placeholder for now
-                        scaffold=str(module_list),  # Saving module list as scaffold
+                        owner=user,
+                        details=details,
                         mode=mode,
                         learning_goals=learning_goals,
                         grade=grade
                     )
                     roadmap_object.save()
-
-                    # Create Chapters and Modules for the roadmap
-                    for module_data in module_list:
-                        chapter = Chapter.objects.create(
-                            name=f"{module_data['name']} Chapter",
-                            roadmap=roadmap_object
+                    print("CREATED ROADMAP")
+                    chapters = dict()
+                    for chapter in module_list[0]:
+                        chapters[chapter['name']] = Chapter.objects.create(
+                            name=chapter['name'], roadmap=roadmap_object
                         )
-                        Module.objects.create(
+                    for chapter in module_list[0]:
+                        if chapter['next']:
+                            chapters[chapter['name']].next = chapters.get(chapter['next'])
+                            chapters[chapter['name']].save()
+                    print("CREATED CHAPTERS")
+                    modules = {}
+
+                    # Step 1: Create all modules without setting "next_modules" or "prerequisite_modules" yet
+                    for module_data in module_list[1]:
+                        modules[module_data['name']] = Module.objects.create(
                             name=module_data['name'],
-                            chapter=chapter,
-                            learning_goals=learning_goals,
-                            prerequisite_modules=module_data['prerequisite_modules'],
-                            next_modules=module_data['next_modules']
+                            owner=user,
+                            chapter=chapters[module_data['chapter']],  # Assign the correct chapter
+                            learning_goals=module_data['learning_goals'],  # Use module-specific goals
                         )
 
+                    # Step 2: Update "prerequisite_modules" and "next_modules"
+                    for module_data in module_list[1]:
+                        module_instance = modules[module_data['name']]
+
+                        # Link prerequisite modules
+                        module_instance.prerequisites.set(
+                            [modules[prerequisite] for prerequisite in module_data['prerequisite_modules'] if
+                             prerequisite in modules]
+                        )
+
+                        # Link next modules
+                        module_instance.next_modules.set(
+                            [modules[next_module] for next_module in module_data['next_modules'] if
+                             next_module in modules]
+                        )
+
+                    print("CREATED MODULES")
                     return Response({"roadmap": roadmap_object.id}, status=status.HTTP_201_CREATED)
 
                 # Timeout check

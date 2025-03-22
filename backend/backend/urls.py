@@ -4,6 +4,8 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from pathways import views
 from pathways.gen_ai_endpoints import RoadmapGenerationAPIView
+from pathways.module_gen import ModuleContentGenerationAPIView
+from django.contrib import admin
 
 router = DefaultRouter()
 router.register(r'users', views.UserViewSet)
@@ -19,11 +21,16 @@ router.register(r'subjects', views.SubjectViewSet)
 
 urlpatterns = [
     # ViewSet URLs
-    path('api/', include(router.urls)),
+    path('admin/', admin.site.urls),
     path('generate-roadmap/', RoadmapGenerationAPIView.as_view(), name='generate-roadmap'),
+    path('generate-module/', ModuleContentGenerationAPIView.as_view(), name='generate-module'),
 
+    path('api/student-analytics/<int:user_id>/', views.StudentAnalyticsAPIView.as_view(), name='get-student-analytics'),
+    path('api/teacher-analytics/<int:user_id>/', views.TeacherAnalyticsAPIView.as_view(), name='get-teacher-analytics'),
     # Function-based view URLs
     path('api/users/', views.user_list, name='user-list'),
+    path('api/create-user/', views.create_user, name='create-user'),
+    path('api/update-user/<int:pk>', views.update_user, name='update-user'),
     path('api/users/<int:pk>/', views.user_detail, name='user-detail'),
     path('api/users/<int:pk>/roadmaps/', views.user_roadmaps, name='user-roadmaps'),
     path('api/users/<int:pk>/classrooms/', views.user_classrooms, name='user-classrooms'),

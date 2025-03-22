@@ -7,7 +7,7 @@ from pathways.models import User, Roadmap, Chapter, Question, Quiz, Module, Cont
 class QueryRequestSerializer(serializers.Serializer):
     # Topic of the lesson
     topic = serializers.CharField(max_length=255, required=True)
-
+    title = serializers.CharField(max_length=255, required=True)
     # Learning goals for the lesson
     learning_goals = serializers.ListField(
         child=serializers.CharField(max_length=255),
@@ -33,7 +33,8 @@ class QueryRequestSerializer(serializers.Serializer):
         ], )
     # Mode (STRICT or CASUAL)
     mode = serializers.ChoiceField(choices=['STRICT', 'CASUAL'], required=True)
-
+    userid = serializers.IntegerField()
+    details = serializers.CharField(max_length=1000, allow_blank=True)
     # Optional: Add other fields if necessary
     # For example, you can include additional optional parameters here
 
@@ -47,6 +48,7 @@ class QueryRequestSerializer(serializers.Serializer):
         learning_goals = data.get("learning_goals")
         grade = data.get("grade")
         mode = data.get("mode")
+        userid = data.get("userId")
 
         return data
 
@@ -54,7 +56,7 @@ class QueryRequestSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'role', 'preferences']
+        fields = ['id', 'first_name', 'last_name', 'email', 'role', 'preferences']
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):

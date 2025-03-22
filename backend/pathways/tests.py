@@ -10,7 +10,9 @@ data = {
     "title": "Intro to Python",
     "learning_goals": ["Understand Python basics", "Write Python scripts"],
     "grade": "9",
-    "mode": "STRICT"
+    "mode": "STRICT",
+    "userid": "1",
+    "details": ""
 }
 
 # Make a POST request to the endpoint
