@@ -1,11 +1,11 @@
-import React, { useRef } from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import ClassroomCard from "./classroom-card"
+import React, { useState } from "react";
+import ClassroomCard from "./classroom-card";
 
 export default function YourClassrooms() {
-  const scrollRef = useRef(null)
+  const [currentPage, setCurrentPage] = useState(1);
+  const cardsPerPage = 5;
 
-  // Mock data: Add as many classrooms as you want
+  // Mock data with unique IDs
   const classrooms = [
     {
       id: 1,
@@ -42,56 +42,70 @@ export default function YourClassrooms() {
       nextClass: "Thursday, 11:00 AM",
       pendingAssignments: 4,
     },
-    // ...add more if needed
-  ]
+    {
+      id: 6,
+      title: "Chemistry Basics",
+      teacher: "Mr. Brown",
+      nextClass: "Tuesday, 12:00 PM",
+      pendingAssignments: 2,
+    },
+    {
+      id: 7,
+      title: "English Literature",
+      teacher: "Mrs. Davis",
+      nextClass: "Friday, 3:00 PM",
+      pendingAssignments: 1,
+    },
+    // ... add more classrooms if needed
+  ];
 
-  // Scroll left by 300px
-  const scrollLeft = () => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: -300, behavior: "smooth" })
-    }
-  }
+  const totalPages = Math.ceil(classrooms.length / cardsPerPage);
+  const startIndex = (currentPage - 1) * cardsPerPage;
+  const currentClassrooms = classrooms.slice(startIndex, startIndex + cardsPerPage);
 
-  // Scroll right by 300px
-  const scrollRight = () => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: 300, behavior: "smooth" })
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(prev => prev - 1);
     }
-  }
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(prev => prev + 1);
+    }
+  };
 
   return (
-    <div className="max-w-[1200px] mx-auto">
-      <h2 className="text-xl font-bold mb-4">Your Classrooms</h2>
-
-      <div className="relative">
-        {/* Left Chevron (hidden on small screens) */}
+    <div className="mx-auto">
+      <h2 className="text-black text-3xl font-black mt-8">Your Classrooms</h2>
+      
+      {/* Cards Container */}
+      <div className="flex flex-wrap gap-4">
+        {currentClassrooms.map((classroom) => (
+          <ClassroomCard key={classroom.id} {...classroom} />
+        ))}
+      </div>
+      
+      {/* Pagination Controls */}
+      <div className="mt-4 flex items-center justify-center space-x-4">
         <button
-          onClick={scrollLeft}
-          className="hidden md:block absolute left-[-1.5rem] top-1/2 -translate-y-1/2 z-10
-                     bg-white p-2 rounded-full shadow hover:bg-gray-100 focus:outline-none"
+          onClick={goToPreviousPage}
+          disabled={currentPage === 1}
+          className="px-4 py-2 bg-gray-200 text-gray-700 rounded disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <ChevronLeft />
+          Previous
         </button>
-
-        {/* Scrollable row */}
-        <div
-          ref={scrollRef}
-          className="overflow-x-auto flex flex-nowrap space-x-4 px-1 py-2 scroll-smooth"
-        >
-          {classrooms.map((classroom) => (
-            <ClassroomCard key={classroom.id} {...classroom} />
-          ))}
-        </div>
-
-        {/* Right Chevron (hidden on small screens) */}
+        <span className="text-sm text-gray-700">
+          Page {currentPage} of {totalPages}
+        </span>
         <button
-          onClick={scrollRight}
-          className="hidden md:block absolute right-[-1.5rem] top-1/2 -translate-y-1/2 z-10
-                     bg-white p-2 rounded-full shadow hover:bg-gray-100 focus:outline-none"
+          onClick={goToNextPage}
+          disabled={currentPage === totalPages}
+          className="px-4 py-2 bg-gray-200 text-gray-700 rounded disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <ChevronRight />
+          Next
         </button>
       </div>
     </div>
-  )
+  );
 }

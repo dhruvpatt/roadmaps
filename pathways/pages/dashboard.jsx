@@ -3,6 +3,7 @@ import Navbar from "../components/navbar";
 import StudentStats from "@/components/student-dashboard/student-stats";
 import ContinueLearning from "@/components/student-dashboard/continue-learning";
 import YourClassrooms from "@/components/student-dashboard/classrooms";
+import JoinClassroomCard from "@/components/student-dashboard/join-classroom-card";
 const Dashboard = () => {
     return (
         <div className="flex flex-col bg-gray-100">
@@ -14,9 +15,10 @@ const Dashboard = () => {
                     <p className="text-gray-600 text-2xl mb-8">Continue your learning journey</p>
                     <StudentStats />
 
-                    <h2 className="text-black text-3xl font-black mt-8">Continue Learning</h2>
+                    
                     <ContinueLearning />
                     <YourClassrooms />
+                    <JoinClassroomCard />
                 </div>
                 
             </div>
