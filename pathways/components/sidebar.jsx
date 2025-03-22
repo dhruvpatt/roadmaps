@@ -4,7 +4,7 @@ import { Home, BookOpen, Users, BarChart2, Settings } from "lucide-react";
 
 export default function Sidebar() {
   return (
-    <aside className="hidden sm:flex flex-col w-64 h-screen border-r bg-white">
+    <aside className="hidden sm:flex flex-col w-64 border-r bg-white">
       {/* Sidebar Navigation Links */}
       <nav className="flex-1 p-4 space-y-2">
         <Link
