@@ -1,0 +1,7 @@
+Django>=4.2,<5.0
+djangorestframework
+django-cors-headers
+
+# Google Gemini API
+google-genai==1.2.0
+psycopg2==2.9.10

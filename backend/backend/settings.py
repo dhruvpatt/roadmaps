@@ -26,6 +26,7 @@ SECRET_KEY = 'django-insecure-t=k7ds!5g=qul6%82%kzeh+5z27-4h@y@1b77x7%7nzz@l-6l7
 DEBUG = True
 
 ALLOWED_HOSTS = []
+AUTH_USER_MODEL = 'pathways.User'
 
 
 # Application definition
@@ -37,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'pathways'
 ]
 
 MIDDLEWARE = [
