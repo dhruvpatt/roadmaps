@@ -49,10 +49,10 @@ urlpatterns = [
     path('api/roadmaps/<int:pk>/', views.roadmap_detail, name='roadmap-detail'),
     path('api/roadmaps/<int:pk>/chapters/', views.roadmap_chapters, name='roadmap-chapters'),
 
-    path('roadmaps/', views.get_all_roadmaps),
-    path('roadmaps/<int:roadmap_id>/', views.get_roadmap_by_id),
-    path('roadmaps/<int:roadmap_id>/update/', views.update_roadmap),
-    path('roadmaps/<int:roadmap_id>/delete/', views.delete_roadmap),
+    # path('roadmaps/', views.get_all_roadmaps),
+    # path('roadmaps/<int:roadmap_id>/', views.get_roadmap_by_id),
+    # path('roadmaps/<int:roadmap_id>/update/', views.update_roadmap),
+    # path('roadmaps/<int:roadmap_id>/delete/', views.delete_roadmap),
 
     # Subject CRUD
     path('subjects/', get_all_subjects),
