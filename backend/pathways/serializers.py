@@ -35,6 +35,7 @@ class QueryRequestSerializer(serializers.Serializer):
     mode = serializers.ChoiceField(choices=['STRICT', 'CASUAL'], required=True)
     userid = serializers.IntegerField()
     details = serializers.CharField(max_length=1000, allow_blank=True)
+    chapters = serializers.CharField(max_length=1000)
     # Optional: Add other fields if necessary
     # For example, you can include additional optional parameters here
 

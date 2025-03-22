@@ -110,7 +110,7 @@ export default function Classrooms() {
         }}
       />
 
-        
+
         </div>
       </div>
     </div>

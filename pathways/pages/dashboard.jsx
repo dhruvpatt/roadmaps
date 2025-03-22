@@ -16,6 +16,7 @@ const Dashboard = () => {
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [showClassroomModal, setShowClassroomModal] = useState(false);
     const [showRoadmapModal, setShowRoadmapModal] = useState(false);
+    const [analytics, setAnalytics] = useState({})
     const router = useRouter();
     const [user, setUser] = useState({});
     const [loadingRoadmaps, setLoadingRoadmaps] = useState(false);
@@ -29,6 +30,26 @@ const Dashboard = () => {
         setUser(usr);
 
         fetchRoadmaps(usr);
+
+
+        const fetchAnalytics = async () => {
+            try {
+                const endpoint = usr.role === "student"
+                    ? `${backendUrl}/api/student-analytics/${usr.id}/`
+                    : `${backendUrl}/api/teacher-analytics/${usr.id}/`;
+
+                console.log("ENDPOINT", endpoint)
+                const res = await fetch(endpoint);
+                const data = await res.json();
+
+                console.log("Analytics data:", data);
+                setAnalytics(analytics)
+            } catch (error) {
+                console.error("Failed to fetch analytics:", error);
+            }
+        };
+
+        fetchAnalytics();
 
     },[]);
 
