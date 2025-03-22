@@ -5,7 +5,7 @@ from rest_framework.routers import DefaultRouter
 from pathways import views
 from pathways.roadmaps_views import RoadmapGenerationAPIView, get_all_roadmaps, get_roadmap_by_id, update_roadmap, \
     delete_roadmap, get_all_subjects, get_subject_by_id, create_subject, update_subject, delete_subject, \
-    get_all_chapters, get_chapter_by_id, create_chapter, update_chapter, delete_chapter
+    get_all_chapters, get_chapter_by_id, create_chapter, update_chapter, delete_chapter, get_user_roadmaps
 from pathways.module_gen import ModuleContentGenerationAPIView, ModuleAssistantAPIView
 from pathways.quiz_gen import QuizGenerationAPIView, QuizEvaluationAPIView
 from pathways.classroom_views import classroom_analytics, classroom_student_details, join_classroom_as_student, \
@@ -50,6 +50,7 @@ urlpatterns = [
     path('api/roadmaps/', views.roadmap_list, name='roadmap-list'),
     path('api/roadmaps/<int:pk>/', views.roadmap_detail, name='roadmap-detail'),
     path('api/roadmaps/<int:pk>/chapters/', views.roadmap_chapters, name='roadmap-chapters'),
+    path('get-user-roadmaps/', get_user_roadmaps),
 
     # path('roadmaps/', views.get_all_roadmaps),
     # path('roadmaps/<int:roadmap_id>/', views.get_roadmap_by_id),
