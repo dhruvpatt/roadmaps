@@ -1,5 +1,3 @@
-
-
 import React from "react";
 import Link from "next/link";
 import { ArrowRight, BookOpen, Brain, Users, Sparkles } from "lucide-react";
@@ -36,12 +34,10 @@ function Button({ variant = "default", size = "md", className = "", children, ..
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
+      {/* Header */}
       <header className="border-b bg-white">
-        {/* 
-          Replaced "container" with "max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8"
-          to allow more width on larger screens
-        */}
-        <div className="max-w-screen-2xl mx-auto flex h-16 items-center px-4 sm:px-6 lg:px-8">
+        {/* Removed max-w-screen-2xl and mx-auto, using w-full for a fluid layout */}
+        <div className="w-full flex h-16 items-center px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1 text-xl font-bold">
               <span className="text-amber-600">Path</span>
@@ -81,10 +77,12 @@ export default function Home() {
         </div>
       </header>
 
+      {/* Main Content */}
       <main className="flex-1 bg-gradient-to-b from-amber-50 to-white">
         {/* Hero Section */}
         <section className="w-full py-12 md:py-24 lg:py-32">
-          <div className="max-w-screen-2xl mx-auto px-4 md:px-6">
+          {/* Removed max-w-screen-2xl and mx-auto, using w-full for a fluid layout */}
+          <div className="w-full px-4 md:px-6">
             <div className="grid gap-6 lg:grid-cols-2 lg:gap-12">
               <div className="flex flex-col justify-center space-y-4">
                 <div className="space-y-2">
@@ -125,13 +123,13 @@ export default function Home() {
 
         {/* Features Section */}
         <section id="features" className="w-full py-12 md:py-24 bg-white">
-          <div className="max-w-screen-2xl mx-auto px-4 md:px-6">
+          <div className="w-full px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
                 <h2 className="text-3xl font-bold tracking-tighter text-gray-900 sm:text-4xl">
                   Why Choose Pathways?
                 </h2>
-                <p className="max-w-[900px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                <p className="max-w-[900px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed mx-auto">
                   Our platform adapts to each learner's unique needs and preferences
                 </p>
               </div>
@@ -173,7 +171,7 @@ export default function Home() {
 
         {/* About / Mission Section */}
         <section id="about" className="w-full py-12 md:py-24 bg-amber-50">
-          <div className="max-w-screen-2xl mx-auto px-4 md:px-6">
+          <div className="w-full px-4 md:px-6">
             <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 items-center">
               <div>
                 <h2 className="text-3xl font-bold tracking-tighter text-gray-900 sm:text-4xl mb-4">
@@ -238,8 +236,9 @@ export default function Home() {
         </section>
       </main>
 
+      {/* Footer */}
       <footer className="border-t py-6 md:py-8 bg-gray-900 text-white">
-        <div className="max-w-screen-2xl mx-auto flex flex-col items-center justify-between gap-4 md:flex-row px-4 md:px-6">
+        <div className="w-full flex flex-col items-center justify-between gap-4 md:flex-row px-4 md:px-6">
           <div className="flex items-center gap-1 text-lg font-bold">
             <span className="text-white">Path</span>
             <span>ways</span>
