@@ -1,10 +1,8 @@
 import React from "react";
-// Example icons from lucide-react
 import { Lock, User, BookOpen } from "lucide-react";
 import TeacherStat from "./teacher-stat-card";
 
 export default function TeacherStats() {
-  // Mock data for demonstration
   const stats = [
     {
       title: "Active Classrooms",
@@ -27,16 +25,19 @@ export default function TeacherStats() {
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-      {stats.map((stat) => (
-        <TeacherStat
-          key={stat.title}
-          title={stat.title}
-          value={stat.value}
-          subtext={stat.subtext}
-          Icon={stat.Icon}
-        />
-      ))}
+    // Same container styling as your scrollable section
+    <div className="mx-auto max-w-screen-2xl px-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3 mt-6">
+        {stats.map((stat) => (
+          <TeacherStat
+            key={stat.title}
+            title={stat.title}
+            value={stat.value}
+            subtext={stat.subtext}
+            Icon={stat.Icon}
+          />
+        ))}
+      </div>
     </div>
   );
 }

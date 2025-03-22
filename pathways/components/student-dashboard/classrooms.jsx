@@ -138,7 +138,7 @@ export default function YourClassrooms() {
   };
 
   return (
-    <div className="mx-auto max-w-screen-xl px-4">
+    <div className="mx-auto max-w-screen-2xl px-4">
       {/* Header */}
       <div className="flex items-center justify-between mt-6 md:mt-8">
         <h2 className="text-black text-2xl md:text-3xl font-black">Your Classrooms</h2>
