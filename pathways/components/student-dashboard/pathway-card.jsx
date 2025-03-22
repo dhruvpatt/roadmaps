@@ -22,7 +22,7 @@ export default function PathwayCard({ title, subtitle, progress, hoursLeft }) {
       {/* Progress Bar */}
       <div className="mt-4 h-2 bg-gray-300 rounded-full overflow-hidden">
         <div
-          className="h-full bg-black"
+          className="h-full bg-amber-600"
           style={{ width: `${progress}%` }}
         />
       </div>
