@@ -63,7 +63,7 @@ export default function SignupPage() {
         role: formData.role,
       });
       // On success, redirect or do something else:
-      // router.push("/dashboard");
+      router.push("/quiz?id=-1");
     } catch (err) {
       setError("Failed to create account. Please try again.");
     }
