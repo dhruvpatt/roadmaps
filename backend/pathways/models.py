@@ -1,6 +1,7 @@
 from django.db import models
-import uuid
 from django.contrib.auth.models import AbstractUser, Group, Permission
+import random
+import string
 
 class User(AbstractUser):
     TEACHER = 'teacher'
@@ -9,7 +10,8 @@ class User(AbstractUser):
         (TEACHER, 'Teacher'),
         (STUDENT, 'Student'),
     ]
-
+    email = models.EmailField(unique=True, blank=False)
+    password = models.CharField(max_length=255)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default=STUDENT)
     preferences = models.JSONField(blank=True, default=list)  # Use JSONField for compatibility with SQLite
 
@@ -37,9 +39,12 @@ class Roadmap(models.Model):
     ]
 
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='roadmaps')
-    scaffold = models.TextField()
+    details = models.TextField(max_length=10000)
     mode = models.CharField(max_length=10, choices=MODE_CHOICES, default=CASUAL)
-
+    title = models.CharField(max_length=255)
+    grade = models.CharField(max_length=255, default='Unspecified')
+    learning_goals = models.JSONField(blank=True, default='list')
+    progress = models.IntegerField()
     def __str__(self):
         return f"Roadmap by {self.owner.username}"
 
@@ -61,13 +66,12 @@ class Question(models.Model):
     TYPE_CHOICES = [
         (TEXT, 'Text'),
         (MULTIPLE_CHOICE, 'Multiple Choice'),
-        (CODE, 'Code'),
     ]
 
     question = models.TextField()
     solution = models.TextField()
     type = models.CharField(max_length=20, choices=TYPE_CHOICES)
-
+    answer = models.CharField(max_length=1000, blank=True) # student inputted answer
     def __str__(self):
         return self.question[:50]
 
@@ -85,13 +89,15 @@ class Quiz(models.Model):
 class Module(models.Model):
     name = models.CharField(max_length=255)
     chapter = models.ForeignKey(Chapter, on_delete=models.CASCADE, related_name='modules')
-    prerequisite = models.TextField(blank=True, null=True)
+    prerequisites = models.ManyToManyField('self', blank=True, symmetrical=False, related_name='dependent_modules')
     yt_video = models.URLField(blank=True, null=True)
     practice = models.ForeignKey(Quiz, on_delete=models.SET_NULL, null=True, blank=True, related_name='modules')
     status = models.CharField(max_length=50, default='not_started')
     next_modules = models.ManyToManyField('self', blank=True, symmetrical=False, related_name='previous_modules')
     learning_goals = models.JSONField(blank=True, default=list)  # Use JSONField for SQLite
     feedback = models.TextField(blank=True, null=True)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='Module')
+    content_list = models.ManyToManyField('Content', blank=True, related_name='modules')
 
     def __str__(self):
         return self.name
@@ -131,9 +137,11 @@ class Message(models.Model):
     def __str__(self):
         return f"{self.get_type_display()} message in {self.module.name}"
 
+def generate_join_id(length=6):
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
 
 class Classroom(models.Model):
-    join_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    join_id = models.CharField(max_length=6, unique=True, default=generate_join_id)
     name = models.CharField(max_length=255)
     teachers = models.ManyToManyField(User, related_name='teaching_classrooms')
     students = models.ManyToManyField(User, related_name='enrolled_classrooms')
