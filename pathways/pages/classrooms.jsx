@@ -2,10 +2,14 @@ import React from "react"
 import Navbar from "@/components/navbar"
 import Sidebar from "@/components/sidebar"
 import ClassroomCard from "@/components/classrooms/classroom-card"
+import CreateClassroomModal from "@/components/modals/CreateClassroomModal"
+import { useState } from "react"
 
 import { useRouter } from "next/navigation"
 
 export default function Classrooms() {
+
+  const [showModal, setShowModal] = useState(false)
   // Mock classroom data
   const mockClassrooms = [
     {
@@ -53,7 +57,7 @@ export default function Classrooms() {
   const router = useRouter();
 
   const handleCreateNewClassroom = () => {
-    router.push("create-classroom");
+    setShowModal(true);
   }
 
   return (
@@ -72,28 +76,41 @@ export default function Classrooms() {
 
           {/* Responsive Grid of Classroom Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {mockClassrooms.map((classroom) => (
-              <ClassroomCard
-                key={classroom.id}
-                title={classroom.title}
-                subtitle={classroom.subtitle}
-                students={classroom.students}
-                schedule={classroom.schedule}
-                lastActive={classroom.lastActive}
-              />
-            ))}
-
-            {/* (Optional) "Create a new classroom" card */}
-            <button onClick={handleCreateNewClassroom}
+          {/* Create new classroom card FIRST */}
+          <button
+            onClick={handleCreateNewClassroom}
             className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-4 text-center text-gray-500 hover:bg-gray-50 cursor-pointer"
-            >
-                <div>
-                    <p className="text-sm md:text-base">
-                    Create a new classroom for your students
-                    </p>
-                </div>
-            </button>
-          </div>
+          >
+            <div>
+              <p className="text-sm md:text-base">
+                Create a new classroom for your students
+              </p>
+            </div>
+          </button>
+
+          {/* Render existing classrooms AFTER */}
+          {mockClassrooms.map((classroom) => (
+            <ClassroomCard
+              key={classroom.id}
+              title={classroom.title}
+              subtitle={classroom.subtitle}
+              students={classroom.students}
+              schedule={classroom.schedule}
+              lastActive={classroom.lastActive}
+            />
+          ))}
+        </div>
+        <CreateClassroomModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onCreate={(newClassroom) => {
+          console.log("Created classroom:", newClassroom);
+          // Optional: add to state if you want to update list live
+          setShowModal(false);
+        }}
+      />
+
+        
         </div>
       </div>
     </div>
