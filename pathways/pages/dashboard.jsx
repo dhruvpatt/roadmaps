@@ -6,26 +6,21 @@ import YourClassrooms from "@/components/student-dashboard/classrooms";
 import JoinClassroomCard from "@/components/student-dashboard/join-classroom-card";
 const Dashboard = () => {
     return (
-        <div className="flex flex-col bg-gray-100">
+        <div className="flex flex-col bg-gray-100 w-full min-h-screen">
             <Navbar />
-            <div className="flex flex-1">
-                <Sidebar />
-                <div className="flex-1 p-16">
-                    <h1 className="text-black text-4xl font-bold">Welcome Back, Student</h1>
-                    <p className="text-gray-600 text-2xl mb-8">Continue your learning journey</p>
+            <div className="flex flex-1 flex-col md:flex-row">
+                <Sidebar className="hidden md:block w-64" />
+                <div className="flex-1 p-4 md:p-16 max-w-7xl mx-auto w-full">
+                    <h1 className="text-black text-3xl md:text-4xl font-bold text-center md:text-left">Welcome Back, Student</h1>
+                    <p className="text-gray-600 text-lg md:text-2xl text-center md:text-left mb-6">Continue your learning journey</p>
                     <StudentStats />
-
-                    <h2 className="text-black text-3xl font-black mt-8">Continue Learning</h2>
+                    <h2 className="text-black text-2xl md:text-3xl font-black mt-6 md:mt-8">Continue Learning</h2>
                     <ContinueLearning />
-
-                    <h2 className="text-black text-3xl font-black mt-8">Your Classrooms</h2>
+                    <h2 className="text-black text-2xl md:text-3xl font-black mt-6 md:mt-8">Your Classrooms</h2>
                     <YourClassrooms />
                     <JoinClassroomCard />
                 </div>
-                
             </div>
-
-            
         </div>
     )
 

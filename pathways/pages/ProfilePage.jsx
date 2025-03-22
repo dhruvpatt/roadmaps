@@ -1,62 +1,25 @@
-import React, { useEffect, useState } from "react";
-import { useRouter } from "next/router";
+import React, { useState } from "react";
 import Image from "next/image";
 
-export default function UserProfile() {
-  const router = useRouter();
-  const { userId } = router.query; // Get userId from URL
-  const [user, setUser] = useState(null);
+export default function ProfilePage() {
+  const [user, setUser] = useState({
+    name: "John Doe",
+    email: "john.doe@example.com",
+    role: "Student",
+    bio: "Passionate about learning and technology.",
+  });
+
   const [editMode, setEditMode] = useState(false);
-  const [formData, setFormData] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const API_BASE_URL = "http://127.0.0.1:8000/api/users"; // Django API endpoint
-
-  useEffect(() => {
-    if (userId) {
-      fetch(`${API_BASE_URL}/${userId}/`)
-        .then((res) => res.json())
-        .then((data) => {
-          setUser(data);
-          setFormData(data);
-          setLoading(false);
-        })
-        .catch((err) => {
-          console.error("Error fetching user:", err);
-          setError("Failed to load user data.");
-          setLoading(false);
-        });
-    }
-  }, [userId]);
+  const [formData, setFormData] = useState({ ...user });
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSave = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/${userId}/`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) throw new Error("Failed to update user");
-
-      const updatedUser = await response.json();
-      setUser(updatedUser);
-      setEditMode(false);
-    } catch (err) {
-      console.error("Error updating user:", err);
-      setError("Failed to update user data.");
-    }
+  const handleSave = () => {
+    setUser(formData);
+    setEditMode(false);
   };
-
-  if (loading) return <p className="text-center">Loading user...</p>;
-  if (error) return <p className="text-center text-red-600">{error}</p>;
 
   return (
     <div className="max-w-3xl mx-auto p-6 bg-white shadow-lg rounded-lg mt-10">

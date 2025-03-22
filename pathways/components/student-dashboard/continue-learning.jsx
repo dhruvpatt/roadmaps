@@ -5,6 +5,8 @@ export default function ContinueLearning() {
   const [currentPage, setCurrentPage] = useState(1);
   const cardsPerPage = 5;
 
+  const blocks = 4;
+
   // Mock data with unique IDs
   const courses = [
     {
