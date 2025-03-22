@@ -1,109 +1,82 @@
-import React, { useState } from "react";
+import React, { useRef } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import ClassroomCard from "./classroom-card";
 
 export default function YourClassrooms() {
-  const [currentPage, setCurrentPage] = useState(1);
-  const cardsPerPage = 5;
+  const scrollRef = useRef(null);
 
-  // Mock data with unique IDs
+  // Mock data
   const classrooms = [
-    {
-      id: 1,
-      title: "Algebra 101",
-      teacher: "Mr. Johnson",
-      nextClass: "Tomorrow, 10:00 AM",
-      pendingAssignments: 2,
-    },
-    {
-      id: 2,
-      title: "Computer Science Basics",
-      teacher: "Ms. Williams",
-      nextClass: "Wednesday, 2:00 PM",
-      pendingAssignments: 1,
-    },
-    {
-      id: 3,
-      title: "Physics Fundamentals",
-      teacher: "Dr. Smith",
-      nextClass: "Friday, 1:30 AM",
-      pendingAssignments: 0,
-    },
-    {
-      id: 4,
-      title: "History of Arts",
-      teacher: "Mrs. Carter",
-      nextClass: "Monday, 9:00 AM",
-      pendingAssignments: 3,
-    },
-    {
-      id: 5,
-      title: "Biology 101",
-      teacher: "Dr. Greene",
-      nextClass: "Thursday, 11:00 AM",
-      pendingAssignments: 4,
-    },
-    {
-      id: 6,
-      title: "Chemistry Basics",
-      teacher: "Mr. Brown",
-      nextClass: "Tuesday, 12:00 PM",
-      pendingAssignments: 2,
-    },
-    {
-      id: 7,
-      title: "English Literature",
-      teacher: "Mrs. Davis",
-      nextClass: "Friday, 3:00 PM",
-      pendingAssignments: 1,
-    },
-    // ... add more classrooms if needed
+    { id: 1, title: "Algebra 101", teacher: "Mr. Johnson", nextClass: "Tomorrow, 10:00 AM", pendingAssignments: 2 },
+    { id: 2, title: "Computer Science Basics", teacher: "Ms. Williams", nextClass: "Wednesday, 2:00 PM", pendingAssignments: 1 },
+    { id: 3, title: "Physics Fundamentals", teacher: "Dr. Smith", nextClass: "Friday, 1:30 AM", pendingAssignments: 0 },
+    { id: 4, title: "History of Arts", teacher: "Mrs. Carter", nextClass: "Monday, 9:00 AM", pendingAssignments: 3 },
+    { id: 5, title: "Biology 101", teacher: "Dr. Greene", nextClass: "Thursday, 11:00 AM", pendingAssignments: 4 },
+    { id: 6, title: "Chemistry Basics", teacher: "Mr. Brown", nextClass: "Tuesday, 12:00 PM", pendingAssignments: 2 },
+    { id: 7, title: "English Literature", teacher: "Mrs. Davis", nextClass: "Friday, 3:00 PM", pendingAssignments: 1 },
   ];
 
-  const totalPages = Math.ceil(classrooms.length / cardsPerPage);
-  const startIndex = (currentPage - 1) * cardsPerPage;
-  const currentClassrooms = classrooms.slice(startIndex, startIndex + cardsPerPage);
+  const scrollAmount = 320 * 4; // Scrolls 4 cards at a time
 
-  const goToPreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(prev => prev - 1);
+  const scrollLeft = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: -scrollAmount, behavior: "smooth" });
     }
   };
 
-  const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(prev => prev + 1);
+  const scrollRight = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
     }
   };
 
   return (
-    <div className="mx-auto">
-      <h2 className="text-black text-3xl font-black mt-8">Your Classrooms</h2>
-      
-      {/* Cards Container */}
-      <div className="flex flex-wrap gap-4">
-        {currentClassrooms.map((classroom) => (
-          <ClassroomCard key={classroom.id} {...classroom} />
-        ))}
-      </div>
-      
-      {/* Pagination Controls */}
-      <div className="mt-4 flex items-center justify-center space-x-4">
+    <div className="max-w-[1300px] mx-auto">
+      <div className="relative">
+        {/* Left Arrow */}
         <button
-          onClick={goToPreviousPage}
-          disabled={currentPage === 1}
-          className="px-4 py-2 bg-gray-200 text-gray-700 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={scrollLeft}
+          className="hidden md:block absolute left-[-2rem] top-1/2 -translate-y-1/2 z-10
+                     bg-white p-2 rounded-full shadow hover:bg-gray-100 focus:outline-none"
         >
-          Previous
+          <ChevronLeft />
         </button>
-        <span className="text-sm text-gray-700">
-          Page {currentPage} of {totalPages}
-        </span>
+
+        {/* Scrollable Row */}
+        <div className="overflow-hidden">
+          <div
+            ref={scrollRef}
+            className="flex space-x-4 px-1 py-2 scroll-smooth"
+            style={{ width: "1300px", overflowX: "scroll", scrollBehavior: "smooth" }}
+          >
+            {classrooms.map((classroom) => (
+              <div 
+                key={classroom.id} 
+                className="w-[280px] flex-shrink-0 bg-white shadow-md rounded-xl p-4 border border-gray-200"
+              >
+                <h3 className="font-bold text-lg">{classroom.title}</h3>
+                <p className="text-gray-600 text-sm">Teacher: {classroom.teacher}</p>
+                <p className="text-gray-500 text-xs">Next class: {classroom.nextClass}</p>
+                <p className="text-gray-500 text-xs">
+                  Pending assignments: <span className="font-semibold">{classroom.pendingAssignments}</span>
+                </p>
+
+                {/* View Classroom Button */}
+                <button className="mt-3 w-full bg-black text-white py-2 rounded-lg text-sm">
+                  View Classroom
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right Arrow */}
         <button
-          onClick={goToNextPage}
-          disabled={currentPage === totalPages}
-          className="px-4 py-2 bg-gray-200 text-gray-700 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={scrollRight}
+          className="hidden md:block absolute right-[-2rem] top-1/2 -translate-y-1/2 z-10
+                     bg-white p-2 rounded-full shadow hover:bg-gray-100 focus:outline-none"
         >
-          Next
+          <ChevronRight />
         </button>
       </div>
     </div>

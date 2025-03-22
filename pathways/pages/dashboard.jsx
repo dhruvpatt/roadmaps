@@ -15,8 +15,10 @@ const Dashboard = () => {
                     <p className="text-gray-600 text-2xl mb-8">Continue your learning journey</p>
                     <StudentStats />
 
-                    
+                    <h2 className="text-black text-3xl font-black mt-8">Continue Learning</h2>
                     <ContinueLearning />
+
+                    <h2 className="text-black text-3xl font-black mt-8">Your Classrooms</h2>
                     <YourClassrooms />
                     <JoinClassroomCard />
                 </div>

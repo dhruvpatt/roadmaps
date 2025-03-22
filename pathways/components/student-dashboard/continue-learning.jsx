@@ -1,108 +1,71 @@
-import React, { useState } from "react";
+import React, { useRef } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import CourseCard from "./pathway-card";
 
 export default function ContinueLearning() {
-  const [currentPage, setCurrentPage] = useState(1);
-  const cardsPerPage = 5;
+  const scrollRef = useRef(null);
 
-  // Mock data with unique IDs
+  const blocks = 5; // Number of blocks to scroll by
+
+  // Mock data
   const courses = [
-    {
-      id: 1,
-      title: "Algebra Fundamentals",
-      subtitle: "Solving Equations",
-      progress: 75,
-      hoursLeft: 2,
-    },
-    {
-      id: 2,
-      title: "Introduction to Programming",
-      subtitle: "Variables and Data Types",
-      progress: 45,
-      hoursLeft: 4,
-    },
-    {
-      id: 3,
-      title: "Physics Mechanics",
-      subtitle: "Newton's Laws of Motion",
-      progress: 20,
-      hoursLeft: 6,
-    },
-    {
-      id: 4,
-      title: "Chemistry Basics",
-      subtitle: "Atomic Structure",
-      progress: 60,
-      hoursLeft: 3,
-    },
-    {
-      id: 5,
-      title: "Biology Fundamentals",
-      subtitle: "Cell Structure",
-      progress: 50,
-      hoursLeft: 5,
-    },
-    {
-      id: 6,
-      title: "Geometry",
-      subtitle: "Shapes & Theorems",
-      progress: 30,
-      hoursLeft: 2,
-    },
-    {
-      id: 7,
-      title: "Advanced Physics",
-      subtitle: "Quantum Mechanics",
-      progress: 10,
-      hoursLeft: 8,
-    },
-    // Add more courses as needed
+    { id: 1, title: "Algebra Fundamentals", subtitle: "Solving Equations", progress: 75, hoursLeft: 2 },
+    { id: 2, title: "Introduction to Programming", subtitle: "Variables and Data Types", progress: 45, hoursLeft: 4 },
+    { id: 3, title: "Physics Mechanics", subtitle: "Newton's Laws of Motion", progress: 20, hoursLeft: 6 },
+    { id: 4, title: "Chemistry Basics", subtitle: "Atomic Structure", progress: 60, hoursLeft: 3 },
+    { id: 5, title: "Biology Fundamentals", subtitle: "Cell Structure", progress: 50, hoursLeft: 5 },
+    { id: 6, title: "Geometry", subtitle: "Shapes & Theorems", progress: 30, hoursLeft: 2 },
+    { id: 7, title: "Advanced Physics", subtitle: "Quantum Mechanics", progress: 10, hoursLeft: 8 },
   ];
 
-  const totalPages = Math.ceil(courses.length / cardsPerPage);
-  const startIndex = (currentPage - 1) * cardsPerPage;
-  const currentCourses = courses.slice(startIndex, startIndex + cardsPerPage);
+  const scrollAmount = 300 * blocks; // Each card is ~300px wide, so scroll by 4 cards
 
-  const goToPreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage((prev) => prev - 1);
+  const scrollLeft = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: -scrollAmount, behavior: "smooth" });
     }
   };
 
-  const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage((prev) => prev + 1);
+  const scrollRight = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
     }
   };
 
   return (
-    <div className="mx-auto">
-      {/* Cards Container */}
-      <h2 className="text-black text-3xl font-black mt-8">Continue Learning</h2>
-      <div className="flex flex-wrap gap-4">
-        {currentCourses.map((course) => (
-          <CourseCard key={course.id} {...course} />
-        ))}
-      </div>
-
-      {/* Pagination Controls */}
-      <div className="mt-4 flex items-center justify-center space-x-4">
+    <div className="max-w-[1200px] mx-auto">
+      <div className="relative">
+        {/* Left Arrow */}
         <button
-          onClick={goToPreviousPage}
-          disabled={currentPage === 1}
-          className="px-4 py-2 bg-gray-200 text-gray-700 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={scrollLeft}
+          className="hidden md:block absolute left-[-2rem] top-1/2 -translate-y-1/2 z-10
+                     bg-white p-2 rounded-full shadow hover:bg-gray-100 focus:outline-none"
         >
-          Previous
+          <ChevronLeft />
         </button>
-        <span className="text-sm text-gray-700">
-          Page {currentPage} of {totalPages}
-        </span>
+
+        {/* Scrollable Row */}
+        <div className="overflow-hidden">
+          <div
+            ref={scrollRef}
+            className="flex space-x-4 px-1 py-2 scroll-smooth"
+            style={{ width: "1200px", overflowX: "scroll", scrollBehavior: "smooth" }}
+          >
+            {courses.map((course) => (
+              <div key={course.id} className="w-[280px] flex-shrink-0">
+                <CourseCard {...course} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right Arrow */}
         <button
-          onClick={goToNextPage}
-          disabled={currentPage === totalPages}
-          className="px-4 py-2 bg-gray-200 text-gray-700 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={scrollRight}
+          className="hidden md:block absolute right-[-2rem] top-1/2 -translate-y-1/2 z-10
+                     bg-white p-2 rounded-full shadow hover:bg-gray-100 focus:outline-none"
         >
-          Next
+          <ChevronRight />
         </button>
       </div>
     </div>
