@@ -31,7 +31,7 @@ const ModulePage = () => {
             {/* Back link */}
             <div
                 className="flex items-center text-sm text-gray-500 cursor-pointer hover:underline mb-4"
-                onClick={() => router.push("/roadmap-preview")}
+                onClick={() => router.back()}
             >
                 <ArrowLeft size={16} className="mr-1" />
                 Back to pathway
