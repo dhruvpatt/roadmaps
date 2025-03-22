@@ -1,7 +1,15 @@
 import React from "react";
 import { Bell, Search, User } from "lucide-react";
+import { useRouter } from "next/router";
 
 export default function Navbar() {
+  const router = useRouter();
+
+  const handleClick = () => {
+    router.push("../ProfilePage");
+  };
+
+
   return (
     <nav className="flex items-center justify-between w-full border-b bg-white px-4 py-2">
       {/* Left: Brand */}
@@ -42,6 +50,7 @@ export default function Navbar() {
         {/* Profile / Avatar (placeholder) */}
         <button
           type="button"
+          onClick={handleClick}
           className="relative flex items-center justify-center w-8 h-8 
                      rounded-full bg-amber-100 text-amber-600 font-semibold 
                      hover:bg-amber-200 focus:outline-none"
