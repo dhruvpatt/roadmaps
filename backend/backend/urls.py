@@ -44,6 +44,8 @@ urlpatterns = [
     path('api/users/<int:pk>/', views.user_detail, name='user-detail'),
     path('api/users/<int:pk>/roadmaps/', views.user_roadmaps, name='user-roadmaps'),
     path('api/users/<int:pk>/classrooms/', views.user_classrooms, name='user-classrooms'),
+    path('api/login-with-email/', views.login_with_email),
+
 
     path('api/roadmaps/', views.roadmap_list, name='roadmap-list'),
     path('api/roadmaps/<int:pk>/', views.roadmap_detail, name='roadmap-detail'),
