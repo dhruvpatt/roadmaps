@@ -1,8 +1,14 @@
 import React, { useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import ClassroomCard from "./classroom-card";
+import { useRouter } from "next/navigation";
 
 export default function YourClassrooms() {
+  const router = useRouter();
+  const handleClick = () => {
+    router.push("join-classroom");
+  }
+
   const scrollRef = useRef(null);
 
   // Mock data
@@ -31,7 +37,18 @@ export default function YourClassrooms() {
   };
 
   return (
-    <div className="max-w-[1300px] mx-auto">
+    <div className="max-w-[1200px] mx-auto">
+      <div className="flex items-center justify-between mt-6 md:mt-8">
+        <h2 className="text-black text-2xl md:text-3xl font-black">Your Classrooms</h2>
+        <button
+          type="button"
+          className="border border-black text-white rounded px-4 py-2 bg-black
+                    hover:bg-amber-600 hover:border-amber-600 transition-colors"
+          onClick={handleClick}
+        >
+          Join Classroom
+        </button>
+      </div>
       <div className="relative">
         {/* Left Arrow */}
         <button

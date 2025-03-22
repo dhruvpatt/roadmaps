@@ -14,11 +14,8 @@ const Dashboard = () => {
                     <h1 className="text-black text-3xl md:text-4xl font-bold text-center md:text-left">Welcome Back, Student</h1>
                     <p className="text-gray-600 text-lg md:text-2xl text-center md:text-left mb-6">Continue your learning journey</p>
                     <StudentStats />
-                    <h2 className="text-black text-2xl md:text-3xl font-black mt-6 md:mt-8">Continue Learning</h2>
                     <ContinueLearning />
-                    <h2 className="text-black text-2xl md:text-3xl font-black mt-6 md:mt-8">Your Classrooms</h2>
                     <YourClassrooms />
-                    <JoinClassroomCard />
                 </div>
             </div>
         </div>
