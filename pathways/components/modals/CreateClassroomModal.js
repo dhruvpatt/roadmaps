@@ -92,7 +92,7 @@ export default function CreateClassroomModal({ isOpen, onClose, onCreate }) {
           </div>
 
           {/* Student Search */}
-          <div>
+          {/* <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Add Students
             </label>
@@ -102,9 +102,9 @@ export default function CreateClassroomModal({ isOpen, onClose, onCreate }) {
               onChange={(e) => setSearch(e.target.value)}
               className="w-full border border-gray-300 rounded px-3 py-2 mb-2 focus:outline-none focus:ring-2 focus:ring-amber-500"
               placeholder="Search by name..."
-            />
+            /> */}
             {/* Filtered List */}
-            {search && filteredStudents.length > 0 && (
+            {/* {search && filteredStudents.length > 0 && (
               <ul className="border border-gray-200 rounded shadow-sm max-h-40 overflow-y-auto bg-white">
                 {filteredStudents.map((student) => (
                   <li
@@ -117,10 +117,10 @@ export default function CreateClassroomModal({ isOpen, onClose, onCreate }) {
                 ))}
               </ul>
             )}
-          </div>
+          </div> */}
 
           {/* Selected Students */}
-          {selectedStudents.length > 0 && (
+          {/* {selectedStudents.length > 0 && (
             <div className="mt-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Selected Students:
@@ -139,7 +139,7 @@ export default function CreateClassroomModal({ isOpen, onClose, onCreate }) {
                 ))}
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-2 pt-4">
