@@ -13,7 +13,7 @@ export default function ClassroomHeader({ title, subtitle, code, onInviteClick }
       {/* Left: Back + Title */}
       <div>
         <button
-          onClick={() => router.back()}
+          onClick={() => router.push("/classrooms")}
           className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-black"
         >
           <ArrowLeft className="w-4 h-4" />

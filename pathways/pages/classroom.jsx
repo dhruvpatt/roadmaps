@@ -3,9 +3,11 @@ import Navbar from "@/components/navbar"
 import Sidebar from "@/components/sidebar"
 import ClassroomHeader from "@/components/classrooms/classroom-header"
 import ClassroomTabs from "@/components/classrooms/classroom-tabs"
+import ClassroomTabsStudent from "@/components/classrooms/classroom-tabs-student"
 
 const Classroom = () => {
 
+    const role = "student";
 
     return (
         <div className="flex flex-col bg-gray-100 min-h-screen">
@@ -24,7 +26,8 @@ const Classroom = () => {
 
                         {/* You can continue your page content here */}
                         {/* ... */}
-                        <ClassroomTabs />
+                        {role === "student" ? <ClassroomTabsStudent /> : <ClassroomTabs />}
+
                     </div>
             </div>
             </div>
