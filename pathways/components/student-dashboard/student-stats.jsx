@@ -1,8 +1,10 @@
 // StudentStats.jsx
 import { BookOpen } from "lucide-react"
 import StudentStatCard from "./student-stat-card"
+import {useState, useEffect} from 'react'
 
 export default function StudentStats() {
+  const [analytics, setAnalytics] = useState({})
   return (
     <div className="grid grid-cols-3 gap-8">
       <StudentStatCard

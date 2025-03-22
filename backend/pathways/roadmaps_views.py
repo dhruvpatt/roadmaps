@@ -25,9 +25,10 @@ client = genai.Client(api_key=api_key)
 # Agent Classes
 
 class PerceptionAgent:
-    def generate_insights(self, topic, learning_goals, grade):
+    def generate_insights(self, topic, learning_goals, grade, user_chpters):
         prompt = f"Based on the topic '{topic}', learning goals '{learning_goals}', and grade level '{grade}', " \
-                 f"provide insights and high-level objectives for the lesson."
+                 f"provide insights and high-level objectives for the lesson and format it using these chapters :{user_chpters}."
+
         try:
             generation_config = types.GenerateContentConfig(temperature=0.7)
 
@@ -49,10 +50,11 @@ def clean_response(response):
     # Extract the JSON part and remove trailing backticks
     return splitted[1].split('```')[0].strip()
 class GenerationAgent:
-    def generate_roadmap(self, perception_data, topic, learning_goals, grade, mode):
+    def generate_roadmap(self, perception_data, topic, learning_goals, grade, mode, user_chapters):
         prompt = f"""
         Based on the following insights '{perception_data}', generate a detailed roadmap for teaching the topic '{topic}' to students in grade '{grade}', ensuring that the learning goals {', '.join([f"'{goal}'" for goal in learning_goals])} are effectively covered.
         The roadmap should be divided into modules that are aligned with the following:
+        - THESE ARE THE CHAPTERS INPUTTED BY THE USER TO SERVE AS A GUIDLINE: {user_chapters}
         - The grade level ('{grade}') to ensure the content is age-appropriate.
         - The learning goals ({', '.join([f"'{goal}'" for goal in learning_goals])}) to ensure each module is directly tied to those goals.
         - The mode ('{mode}') will dictate the complexity of the content, where 'STRICT' means each module should have a well-defined structure, while 'CASUAL' means more flexible and exploratory content.
@@ -147,7 +149,8 @@ class RoadmapGenerationAPIView(APIView):
             grade = serializer.validated_data['grade']
             user_id = serializer.validated_data['userid']
             details = serializer.validated_data['details']
-            mode = serializer.validated_data.get('mode', 'CASUAL')  # Default mode is CASUAL
+            mode = serializer.validated_data.get('mode', 'CASUAL')
+            user_chapters = serializer.validated_data.get('chapters')
 
             user = User.objects.get(pk=user_id)
             # Create agent instances
@@ -163,27 +166,32 @@ class RoadmapGenerationAPIView(APIView):
                 # Step 1: Perception Agent generates insights
                 print("PERCEPTION")
                 print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-                perception_data = perception_agent.generate_insights(topic, learning_goals, grade)
+                perception_data = perception_agent.generate_insights(topic, learning_goals, grade, user_chapters)
                 print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
                 # Step 2: Generation Agent creates the roadmap with prerequisite and next module mapping
                 print("GENERATION")
                 print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-                module_list = generation_agent.generate_roadmap(perception_data, topic, learning_goals, grade, mode)
+                module_list = generation_agent.generate_roadmap(perception_data, topic, learning_goals, grade, mode, user_chapters)
                 print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
                 if evaluation_agent.evaluate(module_list, learning_goals):
                     print("inside")
-                    roadmap_object = Roadmap(
-                        title=title,
-                        owner=user,
-                        details=details,
-                        mode=mode,
-                        learning_goals=learning_goals,
-                        grade=grade,
-                        published=False
-                    )
-                    roadmap_object.save()
+                    print("DEBUG:", title, user, details, mode, learning_goals, grade)
+                    try:
+                        roadmap_object = Roadmap(
+                            title=title,
+                            owner=user,
+                            details=details,
+                            mode=mode,
+                            learning_goals=learning_goals,
+                            grade=grade,
+                            published=False,
+                            progress=0
+                        )
+                        roadmap_object.save()
+                    except Exception as e:
+                        print("ROADMAP CREATE FAIL", e)
                     print("CREATED ROADMAP")
                     chapters = dict()
                     for chapter in module_list[0]:

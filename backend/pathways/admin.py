@@ -1,14 +1,27 @@
 from django.contrib import admin
 from .models import User, Roadmap, Chapter, Question, Quiz, Module, Content, Message, Classroom, Subject
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 # Register User model with the custom admin interface
-class UserAdmin(admin.ModelAdmin):
-    list_display = ('first_name', 'last_name', 'role', 'email')
-    search_fields = ('first_name', 'last_name')
-    list_filter = ('role',)
+@admin.register(User)
+class UserAdmin(BaseUserAdmin):
+    model = User
+    list_display = ('email', 'role')
     ordering = ('email',)
 
-admin.site.register(User, UserAdmin)
+    fieldsets = (
+        (None, {'fields': ('email', 'password', 'role', 'preferences')}),
+        ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
+    )
+
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('email', 'password1', 'password2', 'role', 'preferences',)}
+        ),
+    )
+
+    search_fields = ('email',)
 
 
 # Register Roadmap model with custom admin interface
