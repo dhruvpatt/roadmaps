@@ -36,7 +36,7 @@ export default function PathwayCard({ title, subtitle, progress, hoursLeft }) {
       {/* Continue Button */}
       <button
         type="button"
-        className="mt-4 w-full bg-black text-white py-3 text-lg font-bold rounded-lg hover:bg-gray-900"
+        className="mt-4 w-full bg-black text-white py-3 text-lg font-bold rounded-lg hover:bg-amber-600 hover:border-amber-600 transition-colors"
       >
         Continue
       </button>

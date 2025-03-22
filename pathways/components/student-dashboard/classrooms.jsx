@@ -79,7 +79,7 @@ export default function YourClassrooms() {
                 </p>
 
                 {/* View Classroom Button */}
-                <button className="mt-3 w-full bg-black text-white py-2 rounded-lg text-sm">
+                <button className="mt-3 w-full bg-black text-white py-2 rounded-lg text-sm hover:bg-amber-600 hover:border-amber-600 transition-colors">
                   View Classroom
                 </button>
               </div>
