@@ -11,7 +11,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
-
+import os
+from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -27,7 +28,13 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 AUTH_USER_MODEL = 'pathways.User'
-
+env_path = os.path.join(os.path.dirname(__file__), '../.env')
+if os.path.exists(env_path):
+    dotenv_path = env_path
+    load_dotenv(dotenv_path)
+else:
+    print("unable to find env file")
+LLM_API_KEY = os.getenv("LLM_API_KEY")
 
 # Application definition
 
@@ -38,6 +45,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
     'pathways'
 ]
 

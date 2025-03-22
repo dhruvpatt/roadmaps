@@ -37,9 +37,11 @@ class Roadmap(models.Model):
     ]
 
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='roadmaps')
-    scaffold = models.TextField()
+    scaffold = models.TextField(max_length=10000)
     mode = models.CharField(max_length=10, choices=MODE_CHOICES, default=CASUAL)
-
+    title = models.CharField(max_length=255)
+    grade = models.CharField(max_length=255, default='Unspecified')
+    learning_goals = models.JSONField(blank=True, default='list')
     def __str__(self):
         return f"Roadmap by {self.owner.username}"
 

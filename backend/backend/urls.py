@@ -3,6 +3,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from pathways import views
+from pathways.gen_ai_endpoints import RoadmapGenerationAPIView
 
 router = DefaultRouter()
 router.register(r'users', views.UserViewSet)
@@ -19,6 +20,7 @@ router.register(r'subjects', views.SubjectViewSet)
 urlpatterns = [
     # ViewSet URLs
     path('api/', include(router.urls)),
+    path('generate-roadmap/', RoadmapGenerationAPIView.as_view(), name='generate-roadmap'),
 
     # Function-based view URLs
     path('api/users/', views.user_list, name='user-list'),
