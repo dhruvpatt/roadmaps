@@ -20,7 +20,7 @@ export default function ClassroomCard({ title, teacher, nextClass, pendingAssign
       {/* Button */}
       <button
         type="button"
-        className="mt-4 w-full bg-black text-white py-2 rounded hover:bg-gray-800"
+        className="mt-3 w-full bg-black text-white py-2 rounded-lg text-sm hover:bg-amber-600 hover:border-amber-600 transition-colors"
       >
         View Classroom
       </button>
