@@ -5,22 +5,22 @@ const QuestionCard = ({ data, onAnswer }) => {
   const [input, setInput] = useState("");
 
   const handleSubmit = () => {
-    if (input !== "") {
+    if (input.trim() !== "") {
       onAnswer({ id: data.id, answer: input });
       setInput("");
     }
   };
 
   return (
-    <div className="bg-white rounded-xl shadow p-6 space-y-4">
-      <h2 className="text-xl font-medium">{data.question}</h2>
+    <div className="bg-white p-8 rounded-lg shadow-md text-amber-900 space-y-6">
+      <h2 className="text-2xl font-semibold">{data.question}</h2>
 
       {data.type === "multiple" ? (
-        <div className="space-y-2">
+        <div className="space-y-4">
           {data.options.map((option, idx) => (
             <button
               key={idx}
-              className="w-full bg-blue-100 hover:bg-blue-200 p-3 rounded text-left"
+              className="w-full text-left bg-amber-100 hover:bg-amber-200 text-amber-900 px-4 py-3 rounded-md font-medium transition duration-200 shadow-sm"
               onClick={() => onAnswer({ id: data.id, answer: option })}
             >
               {option}
@@ -28,17 +28,17 @@ const QuestionCard = ({ data, onAnswer }) => {
           ))}
         </div>
       ) : (
-        <div className="flex flex-col space-y-2">
+        <div className="space-y-4">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            className="border border-gray-300 rounded p-2"
             placeholder="Type your answer..."
+            className="w-full border border-gray-300 rounded-md px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-600 focus:border-amber-600"
           />
           <button
             onClick={handleSubmit}
-            className="self-end bg-blue-500 text-white px-4 py-2 rounded"
+            className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-md font-medium transition duration-200"
           >
             Next
           </button>
