@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import backendUrl from "@/backendUrl";
 
 /**
  * Example auth hook placeholder.
@@ -22,11 +23,10 @@ function useAuth() {
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
+    first_name: "",
+    last_name: "",
     email: "",
     password: "",
-    confirmPassword: "",
     role: "student",
   });
   const [error, setError] = useState("");
@@ -53,19 +53,34 @@ export default function SignupPage() {
       setError("Passwords do not match");
       return;
     }
-
+    delete formData.confirmPassword;
+    console.log("Form data:", formData);
     try {
-      await signup({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        password: formData.password,
-        role: formData.role,
-      });
-      // On success, redirect or do something else:
-      router.push("/quiz?id=-1");
-    } catch (err) {
-      setError("Failed to create account. Please try again.");
+      const res = await fetch(`${backendUrl}/api/create-user/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      })
+      
+      if (!res.ok){
+        console.error("Error creating user:", res);
+        setError("Try a different email.");
+        setFormData((prev) => ({ ...prev, password: "", confirmPassword: "" }));
+        return;
+      }
+      const ret = await res.json();
+      if (res.ok){
+        console.log("User created successfully:", ret);
+        localStorage.setItem("user", JSON.stringify(ret));
+        router.push("/dashboard");
+      }
+      
+
+    } catch (error){
+      console.error("Error creating user:", error);
+      setError("An error occurred. Please try again.");
     }
   };
 
@@ -107,15 +122,15 @@ export default function SignupPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label
-                  htmlFor="firstName"
+                  htmlFor="first_name"
                   className="text-sm font-medium text-gray-700"
                 >
                   First Name
                 </label>
                 <input
-                  id="firstName"
-                  name="firstName"
-                  value={formData.firstName}
+                  id="first_name"
+                  name="first_name"
+                  value={formData.first_name}
                   onChange={handleChange}
                   required
                   className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm 
@@ -125,15 +140,15 @@ export default function SignupPage() {
               </div>
               <div className="space-y-2">
                 <label
-                  htmlFor="lastName"
+                  htmlFor="last_name"
                   className="text-sm font-medium text-gray-700"
                 >
                   Last Name
                 </label>
                 <input
-                  id="lastName"
-                  name="lastName"
-                  value={formData.lastName}
+                  id="last_name"
+                  name="last_name"
+                  value={formData.last_name}
                   onChange={handleChange}
                   required
                   className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm 
@@ -200,7 +215,7 @@ export default function SignupPage() {
                 name="confirmPassword"
                 type="password"
                 placeholder="••••••••"
-                value={formData.confirmPassword}
+                value={formData.confirm_password}
                 onChange={handleChange}
                 required
                 className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm 
@@ -259,6 +274,7 @@ export default function SignupPage() {
               className="w-full inline-flex items-center justify-center rounded-md px-4 py-3 
                          font-medium transition-colors focus:outline-none bg-amber-600 
                          hover:bg-amber-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={async (e) => await handleSubmit(e)}
             >
               {isLoading ? "Creating account..." : "Sign up"}
             </button>

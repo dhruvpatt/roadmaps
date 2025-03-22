@@ -264,13 +264,15 @@ def login_with_email(request):
 
     try:
         user = User.objects.get(email=email)
-        user = authenticate(username=user.username, password=password)
-        if user:
+        print("user", user.email, user.password)
+        print("email, pass", email, password)
+        if user and user.password == password:
             return Response({
                 "message": "Login successful",
                 "user": {
                     "id": user.id,
-                    "name": f"{user.first_name} {user.last_name}",
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
                     "email": user.email,
                     "role": user.role
                 }
