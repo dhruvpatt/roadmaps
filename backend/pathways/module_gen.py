@@ -8,7 +8,7 @@ from google.genai import types
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Module, User, Content
+from .models import Module, User, Content, Message
 from django.conf import settings
 from datetime import datetime, timedelta
 import json
@@ -149,3 +149,152 @@ class ModuleContentGenerationAPIView(APIView):
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class ModuleAssistantAPIView(APIView):
+    def post(self, request):
+        module_id = request.data.get("module_id")
+        message = request.data.get("message")
+
+        if not module_id or not message:
+            return Response({"error": "module_id and message are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            module = Module.objects.get(pk=module_id)
+            # Save user message to history
+            user_msg = Message.objects.create(module=module, content=message, type='user')
+
+            # Prepare conversation history
+            history = Message.objects.filter(module=module).order_by("timestamp")
+            chat_log = "\n".join([
+                f"User: {msg.content}" if msg.type == 'user' else f"AI: {msg.content}"
+                for msg in history
+            ])
+
+            prompt = f"""
+            You are an AI assistant helping a student with the module titled "{module.name}".
+            Here's the conversation so far:
+            {chat_log}
+
+            Respond helpfully and clearly to the last user message.
+            """
+
+            config = types.GenerateContentConfig(temperature=0.7)
+            response = client.models.generate_content(
+                model='gemini-2.0-flash-lite-preview',
+                contents=prompt,
+                config=config
+            )
+
+            assistant_reply = response.text.strip()
+
+            # Save assistant message to history
+            Message.objects.create(module=module, content=assistant_reply, type='system')
+
+            return Response({"reply": assistant_reply}, status=status.HTTP_200_OK)
+
+        except Module.DoesNotExist:
+            return Response({"error": "Module not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ModuleFeedbackAPIView(APIView):
+    def post(self, request):
+        module_id = request.data.get("module_id")
+
+        if not module_id:
+            return Response({"error": "module_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            module = Module.objects.get(pk=module_id)
+            user = module.owner
+
+            # Gather chat history
+            messages = Message.objects.filter(module=module).order_by("timestamp")
+            chat_log = "\n".join([
+                f"User: {m.content}" if m.type == 'user' else f"AI: {m.content}"
+                for m in messages
+            ])
+
+            # Gather failed questions
+            failed = []
+            for quiz in user.quizzes.filter(modules=module):
+                for question in quiz.failed_questions.all():
+                    failed.append(f"Q: {question.question} | A: {question.answer} | Solution: {question.solution}")
+
+            failed_block = "\n".join(failed)
+
+            # Build feedback prompt
+            prompt = f"""
+            You are a learning assistant. Analyze the following:
+
+            1. Chat History:
+            {chat_log}
+
+            2. Missed Quiz Questions:
+            {failed_block}
+
+            Provide feedback about the student's learning progress in this module, including misunderstandings, learning style hints, or recommendations.
+            Then suggest updates to their learning preferences as a JSON list of recommendations.
+
+            Format:
+            {{
+              "feedback": "...",
+              "updated_preferences": ["Visual learner", "Needs slower pacing", ...]
+            }}
+            """
+
+            config = types.GenerateContentConfig(temperature=0.7)
+            response = client.models.generate_content(
+                model='gemini-2.0-flash-lite-preview',
+                contents=prompt,
+                config=config
+            )
+
+            result = json.loads(clean_response(response.text))
+
+            module.feedback = result.get("feedback", "")
+            module.save()
+
+            existing_prefs = set(user.preferences or [])
+            updated_prefs = set(result.get("updated_preferences", []))
+            user.preferences = list(existing_prefs.union(updated_prefs))
+            user.save()
+
+            return Response({
+                "feedback": module.feedback,
+                "updated_preferences": user.preferences
+            }, status=status.HTTP_200_OK)
+
+        except Module.DoesNotExist:
+            return Response({"error": "Module not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+def roadmap_progress(request, roadmap_id):
+    try:
+        roadmap = Roadmap.objects.get(pk=roadmap_id)
+        chapters = roadmap.chapters.all()
+        total_modules = sum(ch.modules.count() for ch in chapters)
+        completed_modules = sum(ch.modules.filter(status='completed').count() for ch in chapters)
+
+        progress = (completed_modules / total_modules) * 100 if total_modules > 0 else 0
+        return Response({"progress_percent": round(progress, 2)}, status=status.HTTP_200_OK)
+
+    except Roadmap.DoesNotExist:
+        return Response({"error": "Roadmap not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+def roadmap_chapter_count(request, roadmap_id):
+    try:
+        roadmap = Roadmap.objects.get(pk=roadmap_id)
+        chapter_count = roadmap.chapters.count()
+        return Response({"chapter_count": chapter_count}, status=status.HTTP_200_OK)
+
+    except Roadmap.DoesNotExist:
+        return Response({"error": "Roadmap not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

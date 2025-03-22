@@ -3,8 +3,13 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from pathways import views
-from pathways.gen_ai_endpoints import RoadmapGenerationAPIView
-from pathways.module_gen import ModuleContentGenerationAPIView
+from pathways.roadmaps_views import RoadmapGenerationAPIView, get_all_roadmaps, get_roadmap_by_id, update_roadmap, \
+    delete_roadmap, get_all_subjects, get_subject_by_id, create_subject, update_subject, delete_subject, \
+    get_all_chapters, get_chapter_by_id, create_chapter, update_chapter, delete_chapter
+from pathways.module_gen import ModuleContentGenerationAPIView, ModuleAssistantAPIView
+from pathways.quiz_gen import QuizGenerationAPIView, QuizEvaluationAPIView
+from pathways.classroom_views import classroom_analytics, classroom_student_details, join_classroom_as_student, \
+    join_classroom_as_teacher, create_classroom, student_classroom_analytics
 from django.contrib import admin
 
 router = DefaultRouter()
@@ -24,9 +29,14 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('generate-roadmap/', RoadmapGenerationAPIView.as_view(), name='generate-roadmap'),
     path('generate-module/', ModuleContentGenerationAPIView.as_view(), name='generate-module'),
+    path('module-assistant/', ModuleAssistantAPIView.as_view(), name='module-assistant'),
+
+    path('generate-quiz/', QuizGenerationAPIView.as_view(), name='generate-quiz'),
+    path('evauluate-quiz/', QuizEvaluationAPIView.as_view(), name='evaluate-quiz'),
 
     path('api/student-analytics/<int:user_id>/', views.StudentAnalyticsAPIView.as_view(), name='get-student-analytics'),
     path('api/teacher-analytics/<int:user_id>/', views.TeacherAnalyticsAPIView.as_view(), name='get-teacher-analytics'),
+
     # Function-based view URLs
     path('api/users/', views.user_list, name='user-list'),
     path('api/create-user/', views.create_user, name='create-user'),
@@ -39,37 +49,31 @@ urlpatterns = [
     path('api/roadmaps/<int:pk>/', views.roadmap_detail, name='roadmap-detail'),
     path('api/roadmaps/<int:pk>/chapters/', views.roadmap_chapters, name='roadmap-chapters'),
 
-    path('api/chapters/', views.chapter_list, name='chapter-list'),
-    path('api/chapters/<int:pk>/', views.chapter_detail, name='chapter-detail'),
-    path('api/chapters/<int:pk>/modules/', views.chapter_modules, name='chapter-modules'),
+    path('roadmaps/', views.get_all_roadmaps),
+    path('roadmaps/<int:roadmap_id>/', views.get_roadmap_by_id),
+    path('roadmaps/<int:roadmap_id>/update/', views.update_roadmap),
+    path('roadmaps/<int:roadmap_id>/delete/', views.delete_roadmap),
 
-    path('api/modules/', views.module_list, name='module-list'),
-    path('api/modules/<int:pk>/', views.module_detail, name='module-detail'),
-    path('api/modules/<int:pk>/contents/', views.module_contents, name='module-contents'),
-    path('api/modules/<int:pk>/chat-history/', views.module_chat_history, name='module-chat-history'),
-    path('api/modules/<int:pk>/add-message/', views.module_add_message, name='module-add-message'),
+    # Subject CRUD
+    path('subjects/', get_all_subjects),
+    path('subjects/<int:subject_id>/', get_subject_by_id),
+    path('subjects/create/', create_subject),
+    path('subjects/<int:subject_id>/update/', update_subject),
+    path('subjects/<int:subject_id>/delete/', delete_subject),
 
-    path('api/classrooms/', views.classroom_list, name='classroom-list'),
-    path('api/classrooms/<int:pk>/', views.classroom_detail, name='classroom-detail'),
-    path('api/classrooms/join/', views.classroom_join, name='classroom-join'),
-    path('api/classrooms/<int:pk>/subjects/', views.classroom_subjects, name='classroom-subjects'),
+    # Chapter CRUD
+    path('chapters/', get_all_chapters),
+    path('chapters/<int:chapter_id>/', get_chapter_by_id),
+    path('chapters/create/', create_chapter),
+    path('chapters/<int:chapter_id>/update/', update_chapter),
+    path('chapters/<int:chapter_id>/delete/', delete_chapter),
 
-    path('api/subjects/', views.subject_list, name='subject-list'),
-    path('api/subjects/<int:pk>/', views.subject_detail, name='subject-detail'),
+    # Classroom endpoints
+    path('classroom/create/', create_classroom),
+    path('classroom/join/student/', join_classroom_as_student),
+    path('classroom/join/teacher/', join_classroom_as_teacher),
+    path('classroom/<int:classroom_id>/analytics/', classroom_analytics),
+    path('classroom/<int:classroom_id>/students/', classroom_student_details),
+    path('student-classroom-analytics/', student_classroom_analytics),
 
-    path('api/questions/', views.question_list, name='question-list'),
-    path('api/questions/<int:pk>/', views.question_detail, name='question-detail'),
-
-    path('api/quizzes/', views.quiz_list, name='quiz-list'),
-    path('api/quizzes/<int:pk>/', views.quiz_detail, name='quiz-detail'),
-    path('api/quizzes/<int:pk>/submit-answer/', views.quiz_submit_answer, name='quiz-submit-answer'),
-
-    path('api/contents/', views.content_list, name='content-list'),
-    path('api/contents/<int:pk>/', views.content_detail, name='content-detail'),
-
-    path('api/messages/', views.message_list, name='message-list'),
-    path('api/messages/<int:pk>/', views.message_detail, name='message-detail'),
-
-    # API auth
-    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 ]

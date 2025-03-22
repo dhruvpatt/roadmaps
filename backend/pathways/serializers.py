@@ -73,64 +73,63 @@ class ContentSerializer(serializers.ModelSerializer):
         model = Content
         fields = ['id', 'type', 'content', 'module']
 
-
 class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
         fields = ['id', 'type', 'content', 'module', 'timestamp']
 
-
 class QuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Question
-        fields = ['id', 'question', 'solution', 'type']
-
+        fields = ['id', 'question', 'solution', 'type', 'answer']
 
 class QuizSerializer(serializers.ModelSerializer):
     questions = QuestionSerializer(many=True, read_only=True)
+    failed_questions = QuestionSerializer(many=True, read_only=True)
 
     class Meta:
         model = Quiz
         fields = ['id', 'questions', 'scores', 'failed_questions', 'user']
 
-
 class ModuleSerializer(serializers.ModelSerializer):
-    contents = ContentSerializer(many=True, read_only=True)
+    contents = ContentSerializer(source='content_list', many=True, read_only=True)
     chat_history = MessageSerializer(many=True, read_only=True)
+    prerequisites = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    next_modules = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
     class Meta:
         model = Module
-        fields = ['id', 'name', 'chapter', 'prerequisite', 'contents', 'yt_video',
-                  'practice', 'status', 'next_modules', 'learning_goals',
-                  'feedback', 'chat_history']
-
+        fields = [
+            'id', 'name', 'chapter', 'prerequisites', 'contents', 'yt_video',
+            'practice', 'status', 'next_modules', 'learning_goals',
+            'feedback', 'chat_history'
+        ]
 
 class ChapterSerializer(serializers.ModelSerializer):
     modules = ModuleSerializer(many=True, read_only=True)
+    next_chapters = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
     class Meta:
         model = Chapter
         fields = ['id', 'name', 'roadmap', 'status', 'next_chapters', 'modules']
-
 
 class RoadmapSerializer(serializers.ModelSerializer):
     chapters = ChapterSerializer(many=True, read_only=True)
 
     class Meta:
         model = Roadmap
-        fields = ['id', 'owner', 'scaffold', 'mode', 'chapters']
-
+        fields = [
+            'id', 'owner', 'title', 'details', 'mode', 'grade',
+            'learning_goals', 'progress', 'chapters'
+        ]
 
 class SubjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subject
         fields = ['id', 'classroom', 'topic', 'master_scaffold', 'progress', 'student_roadmap']
 
-
 class ClassroomSerializer(serializers.ModelSerializer):
     subjects = SubjectSerializer(many=True, read_only=True)
-    teachers = UserSerializer(many=True, read_only=True)
-    students = UserSerializer(many=True, read_only=True)
 
     class Meta:
         model = Classroom

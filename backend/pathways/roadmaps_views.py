@@ -8,10 +8,11 @@ from google import genai
 from google.genai import types  # Assuming Gemini text generation endpoint is like OpenAI's GPT-3
 
 from rest_framework.views import APIView
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Roadmap, User, Chapter, Module
-from .serializers import QueryRequestSerializer
+from .models import Roadmap, User, Chapter, Module, Subject
+from .serializers import QueryRequestSerializer, ChapterSerializer, SubjectSerializer, RoadmapSerializer
 from django.db import transaction
 from datetime import datetime, timedelta
 from django.conf import settings
@@ -131,8 +132,6 @@ class EvaluationAgent:
             raise ValueError(f"Error evaluating roadmap: {e}")
 
 
-# API View to Trigger Agentic Workflow
-
 class RoadmapGenerationAPIView(APIView):
     serializer_class = QueryRequestSerializer
 
@@ -194,6 +193,10 @@ class RoadmapGenerationAPIView(APIView):
                         if chapter['next']:
                             chapters[chapter['name']].next = chapters.get(chapter['next'])
                             chapters[chapter['name']].save()
+
+                    roadmap_object.chapter_count = len(module_list[0])
+                    roadmap_object.save()
+
                     print("CREATED CHAPTERS")
                     modules = {}
 
@@ -210,13 +213,11 @@ class RoadmapGenerationAPIView(APIView):
                     for module_data in module_list[1]:
                         module_instance = modules[module_data['name']]
 
-                        # Link prerequisite modules
                         module_instance.prerequisites.set(
                             [modules[prerequisite] for prerequisite in module_data['prerequisite_modules'] if
                              prerequisite in modules]
                         )
 
-                        # Link next modules
                         module_instance.next_modules.set(
                             [modules[next_module] for next_module in module_data['next_modules'] if
                              next_module in modules]
@@ -235,3 +236,132 @@ class RoadmapGenerationAPIView(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def get_all_roadmaps(request):
+    roadmaps = Roadmap.objects.all()
+    serializer = RoadmapSerializer(roadmaps, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def get_roadmap_by_id(request, roadmap_id):
+    try:
+        roadmap = Roadmap.objects.get(pk=roadmap_id)
+        serializer = RoadmapSerializer(roadmap)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Roadmap.DoesNotExist:
+        return Response({"error": "Roadmap not found"}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['PUT'])
+def update_roadmap(request, roadmap_id):
+    try:
+        roadmap = Roadmap.objects.get(pk=roadmap_id)
+        serializer = RoadmapSerializer(roadmap, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    except Roadmap.DoesNotExist:
+        return Response({"error": "Roadmap not found"}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['DELETE'])
+def delete_roadmap(request, roadmap_id):
+    try:
+        roadmap = Roadmap.objects.get(pk=roadmap_id)
+        roadmap.delete()
+        return Response({"message": "Roadmap deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+    except Roadmap.DoesNotExist:
+        return Response({"error": "Roadmap not found"}, status=status.HTTP_404_NOT_FOUND)
+
+# -------------------- SUBJECT CRUD --------------------
+
+@api_view(['GET'])
+def get_all_subjects(request):
+    subjects = Subject.objects.all()
+    serializer = SubjectSerializer(subjects, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def get_subject_by_id(request, subject_id):
+    try:
+        subject = Subject.objects.get(pk=subject_id)
+        serializer = SubjectSerializer(subject)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Subject.DoesNotExist:
+        return Response({"error": "Subject not found"}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['POST'])
+def create_subject(request):
+    serializer = SubjectSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['PUT'])
+def update_subject(request, subject_id):
+    try:
+        subject = Subject.objects.get(pk=subject_id)
+        serializer = SubjectSerializer(subject, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    except Subject.DoesNotExist:
+        return Response({"error": "Subject not found"}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['DELETE'])
+def delete_subject(request, subject_id):
+    try:
+        subject = Subject.objects.get(pk=subject_id)
+        subject.delete()
+        return Response({"message": "Subject deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+    except Subject.DoesNotExist:
+        return Response({"error": "Subject not found"}, status=status.HTTP_404_NOT_FOUND)
+
+# -------------------- CHAPTER CRUD --------------------
+
+@api_view(['GET'])
+def get_all_chapters(request):
+    chapters = Chapter.objects.all()
+    serializer = ChapterSerializer(chapters, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def get_chapter_by_id(request, chapter_id):
+    try:
+        chapter = Chapter.objects.get(pk=chapter_id)
+        serializer = ChapterSerializer(chapter)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Chapter.DoesNotExist:
+        return Response({"error": "Chapter not found"}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['POST'])
+def create_chapter(request):
+    serializer = ChapterSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['PUT'])
+def update_chapter(request, chapter_id):
+    try:
+        chapter = Chapter.objects.get(pk=chapter_id)
+        serializer = ChapterSerializer(chapter, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    except Chapter.DoesNotExist:
+        return Response({"error": "Chapter not found"}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['DELETE'])
+def delete_chapter(request, chapter_id):
+    try:
+        chapter = Chapter.objects.get(pk=chapter_id)
+        chapter.delete()
+        return Response({"message": "Chapter deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+    except Chapter.DoesNotExist:
+        return Response({"error": "Chapter not found"}, status=status.HTTP_404_NOT_FOUND)

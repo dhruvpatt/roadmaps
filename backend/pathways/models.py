@@ -1,6 +1,7 @@
 from django.db import models
-import uuid
 from django.contrib.auth.models import AbstractUser, Group, Permission
+import random
+import string
 
 class User(AbstractUser):
     TEACHER = 'teacher'
@@ -43,6 +44,7 @@ class Roadmap(models.Model):
     title = models.CharField(max_length=255)
     grade = models.CharField(max_length=255, default='Unspecified')
     learning_goals = models.JSONField(blank=True, default='list')
+    progress = models.IntegerField()
     def __str__(self):
         return f"Roadmap by {self.owner.username}"
 
@@ -64,13 +66,12 @@ class Question(models.Model):
     TYPE_CHOICES = [
         (TEXT, 'Text'),
         (MULTIPLE_CHOICE, 'Multiple Choice'),
-        (CODE, 'Code'),
     ]
 
     question = models.TextField()
     solution = models.TextField()
     type = models.CharField(max_length=20, choices=TYPE_CHOICES)
-
+    answer = models.CharField(max_length=1000, blank=True) # student inputted answer
     def __str__(self):
         return self.question[:50]
 
@@ -136,9 +137,11 @@ class Message(models.Model):
     def __str__(self):
         return f"{self.get_type_display()} message in {self.module.name}"
 
+def generate_join_id(length=6):
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
 
 class Classroom(models.Model):
-    join_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    join_id = models.CharField(max_length=6, unique=True, default=generate_join_id)
     name = models.CharField(max_length=255)
     teachers = models.ManyToManyField(User, related_name='teaching_classrooms')
     students = models.ManyToManyField(User, related_name='enrolled_classrooms')
