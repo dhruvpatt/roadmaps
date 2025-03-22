@@ -1,9 +1,10 @@
-"use client";
+
 
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import backendUrl from "@/backendUrl";
 
 function useAuth() {
   return {
@@ -28,11 +29,27 @@ export default function LoginPage() {
     setError("");
 
     try {
-      await login(email, password);
-      // If login succeeds, redirect or do something else:
-      router.push("/dashboard");
-    } catch (err) {
-      setError("Invalid email or password. Please try again.");
+      const res = await fetch(`${backendUrl}/api/login-with-email/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok){
+        console.error("Login failed:", res);
+        setError("Invalid email or password");
+        return;
+      }
+
+      if (res.ok){
+        const ret = await res.json();
+        console.log("Login successful:", ret);
+        localStorage.setItem("user", JSON.stringify(ret.user));
+        router.push("/dashboard");
+      }
+    } catch (error){
+      console.error("Login failed:", error);
+      setError("Invalid email or password");
     }
   };
 

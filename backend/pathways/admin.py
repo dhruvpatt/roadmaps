@@ -3,10 +3,10 @@ from .models import User, Roadmap, Chapter, Question, Quiz, Module, Content, Mes
 
 # Register User model with the custom admin interface
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('username', 'first_name', 'last_name', 'role', 'email')
-    search_fields = ('username', 'first_name', 'last_name')
+    list_display = ('first_name', 'last_name', 'role', 'email')
+    search_fields = ('first_name', 'last_name')
     list_filter = ('role',)
-    ordering = ('username',)
+    ordering = ('email',)
 
 admin.site.register(User, UserAdmin)
 
