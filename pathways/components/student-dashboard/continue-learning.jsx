@@ -11,7 +11,7 @@ export default function ContinueLearning() {
   const [user, setUser] = useState(null);
   const [courses, setCourses] = useState([]);
 
-  const scrollAmount = 300 * courses.length;
+  const scrollAmount = 400;
 
   const scrollLeft = () => {
     if (scrollRef.current) {
@@ -52,7 +52,7 @@ export default function ContinueLearning() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-screen-2xl px-4">
+    <div className="mx-auto max-w-screen-7xl w-full px-4">
       <div className="flex items-center justify-between mt-6 md:mt-8">
         <h2 className="text-black text-2xl md:text-3xl font-black">Continue Learning</h2>
       </div>

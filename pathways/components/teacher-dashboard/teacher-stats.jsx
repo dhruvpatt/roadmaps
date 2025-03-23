@@ -51,7 +51,8 @@ export default function TeacherStats() {
   }, [router]);
 
   return (
-    <div className="mx-auto max-w-screen-2xl px-4">
+    // Same container styling as your scrollable section
+    <div className="mx-auto px-4">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3 mt-6">
         {stats.map((stat) => (
           <TeacherStat

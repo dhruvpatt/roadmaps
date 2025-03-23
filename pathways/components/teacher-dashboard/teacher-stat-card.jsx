@@ -9,18 +9,15 @@ import React from "react";
  */
 export default function TeacherStat({ title, value, subtext, Icon }) {
   return (
-    <div className="p-6 bg-white rounded-lg shadow-md border border-transparent flex flex-col h-full">
-      {/* Top row: Title + optional Icon */}
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-semibold text-gray-600">{title}</h3>
-        {Icon && <Icon className="w-5 h-5 text-amber-600" />}
+    <div className="bg-white rounded-lg shadow-md p-8 flex flex-col justify-between">
+      <div>
+        <p className="text-black text-lg font-semibold">{title}</p>
+        <div className="flex flex-row justify-between mt-2 text-amber-600">
+          <p className="text-black text-3xl font-black">{value}</p>
+          <Icon />
+        </div>
       </div>
-
-      {/* Main value */}
-      <p className="text-3xl font-bold text-gray-900">{value}</p>
-
-      {/* Subtext */}
-      <p className="mt-auto text-sm text-gray-500">{subtext}</p>
+      <p className="mt-4 text-gray-800">{subtext}</p>
     </div>
-  );
+  )
 }

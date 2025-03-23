@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import  backendUrl  from '@/backendUrl';
+import emitter from "@/mitt";
 
 export default function YourClassrooms() {
   const router = useRouter();
@@ -21,7 +22,7 @@ export default function YourClassrooms() {
     { id: 7, title: "English Literature", teacher: "Mrs. Davis", nextClass: "Friday, 3:00 PM", pendingAssignments: 1 },
   ];
 
-  const scrollAmount = 320 * classrooms.length;
+  const scrollAmount = 500;
 
   const scrollLeft = () => {
     if (scrollRef.current) {
@@ -37,6 +38,7 @@ export default function YourClassrooms() {
 
 
   useEffect(() => {
+    
     const usr = JSON.parse(localStorage.getItem("user"));
     if (!usr) {
       router.push("/login");
@@ -45,6 +47,7 @@ export default function YourClassrooms() {
     setUser(usr);
 
     fetchClassrooms(usr);
+    emitter.on("update-classrooms", async () => await updateClassrooms(usr));
   }, []);
 
   const fetchClassrooms = async (usr) => {
@@ -66,8 +69,13 @@ export default function YourClassrooms() {
     }
   };
 
+  const updateClassrooms = async (user) => {
+    console.log("hit")
+    await fetchClassrooms(user);
+  }
+
   return (
-    <div className="mx-auto max-w-screen-2xl px-4">
+    <div className="mx-auto max-w-screen-7xl w-full px-4">
       {/* Header */}
       <div className="flex items-center justify-between mt-6 md:mt-8">
         <h2 className="text-black text-2xl md:text-3xl font-black">Your Classrooms</h2>

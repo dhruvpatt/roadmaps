@@ -4,10 +4,12 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import backendUrl from "@/backendUrl";
+import { useRouter } from "next/navigation";
 
 export default function JoinClassroomPage() {
 
   const [user, setUser] = useState({});
+  const router = useRouter();
   useEffect(() => {
     const usr = JSON.parse(localStorage.getItem("user"));
     if (!user) {
@@ -39,6 +41,7 @@ export default function JoinClassroomPage() {
   
         const ret = await res.json();
         console.log("Joined classroom", ret);
+        router.push("/classrooms");
       } else if (user.role === "teacher"){
         const res = await fetch(`${backendUrl}/classroom/join/teacher/`, {
           method: "POST",
