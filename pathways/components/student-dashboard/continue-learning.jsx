@@ -41,7 +41,7 @@ export default function ContinueLearning() {
           body: JSON.stringify({ user_id: usr.id }),
         });
         const data = await res.json();
-        console.log(data);
+        console.log("roadmaps", data);
         setCourses(data || []);
       } catch (error) {
         console.error("Failed to fetch roadmaps:", error);
@@ -54,7 +54,11 @@ export default function ContinueLearning() {
   return (
     <div className="mx-auto max-w-screen-7xl w-full px-4">
       <div className="flex items-center justify-between mt-6 md:mt-8">
-        <h2 className="text-black text-2xl md:text-3xl font-black">Continue Learning</h2>
+        {user && user.role === "student" ? (
+          <h2 className="text-black text-2xl md:text-3xl font-black">Continue Learning</h2>
+        ) : (
+          <h2 className="text-black text-2xl md:text-3xl font-black">Continue Teaching</h2>
+        )}
       </div>
 
       {courses.length === 0 ? (
@@ -77,7 +81,7 @@ export default function ContinueLearning() {
           >
             {courses.map((course) => (
               <div key={course.id} className="w-[280px] flex-shrink-0">
-                <CourseCard {...course} />
+                <CourseCard {...course} user={user} />
               </div>
             ))}
           </div>

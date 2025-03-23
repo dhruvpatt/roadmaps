@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Roadmap, User, Chapter, Module, Subject
+from .models import Roadmap, User, Chapter, Module, Subject, Classroom
 from .serializers import QueryRequestSerializer, ChapterSerializer, SubjectSerializer, RoadmapSerializer
 from django.db import transaction
 from datetime import datetime, timedelta
