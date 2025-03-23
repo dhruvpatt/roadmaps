@@ -4,13 +4,42 @@ import Sidebar from "@/components/sidebar"
 import PathwayCard from "@/components/pathways/pathways-card"
 import { useRouter } from "next/navigation"
 import CreateRoadmapModal from "@/components/modals/CreateRoadmapModal"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import backendUrl from "@/backendUrl"
 
 export default function Pathways() {
   const router = useRouter()
   const [showRoadmapModal, setShowRoadmapModal] = useState(false);
-  const user = JSON.parse(localStorage.getItem("user"));
+  const [user, setUser] = useState({});
+  const [pathways, setPathways] = useState([]);
+
+  useEffect(() => {
+    const usr = JSON.parse(localStorage.getItem("user"));
+    if (!usr){
+      router.push("/login");
+    }
+    setUser(usr);
+
+    fetchPathways(usr);
+
+  }, [])
+
+  const fetchPathways = async (usr) => {
+
+    try {
+      const res = await fetch(`${backendUrl}/get-user-roadmaps/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: usr.id }),
+      });
+      const ret = await res.json();
+      console.log("pathways", ret);
+      setPathways(ret);
+    } catch (error){
+      console.error("Failed to fetch pathways", error);
+    }
+
+  }
   const mockPathways = [
     {
       id: 1,
@@ -91,14 +120,14 @@ export default function Pathways() {
             </button>
 
             {/* Actual Pathway Cards */}
-            {mockPathways.map((pathway) => (
+            {pathways.map((pathway) => (
               <PathwayCard
-                key={pathway.id}
-                title={pathway.title}
-                progress={pathway.progress}
-                chapters={pathway.chapters}
-                onViewClick={() => router.push(`/pathways/${pathway.id}`)}
-              />
+              key={pathway.id}
+              title={pathway.title}
+              progress={pathway.progress}
+              chapters={Array.isArray(pathway.chapters) ? pathway.chapters.length : 0}
+              onViewClick={() => router.push(`/pathways/${pathway.id}`)}
+            />
             ))}
           </div>
           <CreateRoadmapModal
