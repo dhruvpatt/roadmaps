@@ -6,15 +6,10 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import backendUrl from "@/backendUrl";
 
-/**
- * Example auth hook placeholder.
- * Replace with your actual auth logic or remove if unnecessary.
- */
 function useAuth() {
   return {
     signup: async (data) => {
       console.log("Signup data:", data);
-      // Simulate success with a short delay
       await new Promise((resolve) => setTimeout(resolve, 500));
     },
     isLoading: false,
@@ -27,24 +22,22 @@ export default function SignupPage() {
     last_name: "",
     email: "",
     password: "",
+    confirmPassword: "",
     role: "student",
   });
   const [error, setError] = useState("");
   const { signup, isLoading } = useAuth();
   const router = useRouter();
 
-  // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle role change
   const handleRoleChange = (e) => {
     setFormData((prev) => ({ ...prev, role: e.target.value }));
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -53,33 +46,29 @@ export default function SignupPage() {
       setError("Passwords do not match");
       return;
     }
-    delete formData.confirmPassword;
-    console.log("Form data:", formData);
+
+    const payload = { ...formData };
+    delete payload.confirmPassword;
+
     try {
       const res = await fetch(`${backendUrl}/api/create-user/`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      })
-      
-      if (!res.ok){
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
         console.error("Error creating user:", res);
         setError("Try a different email.");
         setFormData((prev) => ({ ...prev, password: "", confirmPassword: "" }));
         return;
       }
-      const ret = await res.json();
-      if (res.ok){
-        console.log("User created successfully:", ret);
-        localStorage.setItem("user", JSON.stringify(ret));
-        router.push("/dashboard");
-      }
-      
 
-    } catch (error){
-      console.error("Error creating user:", error);
+      const user = await res.json();
+      localStorage.setItem("user", JSON.stringify(user));
+      router.push("/dashboard");
+    } catch (err) {
+      console.error("Signup error:", err);
       setError("An error occurred. Please try again.");
     }
   };
@@ -87,211 +76,164 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-amber-50 px-6 py-24 text-black">
       <div className="w-full max-w-2xl">
-        {/* Header Row */}
+        {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <button
             type="button"
             onClick={() => router.push("/")}
-            className="p-0 inline-flex items-center justify-center rounded-md px-4 py-2 font-medium 
-                       transition-colors focus:outline-none text-amber-700 hover:text-amber-900 
-                       hover:bg-transparent"
+            className="text-amber-700 hover:text-amber-900 flex items-center space-x-2 font-medium"
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to home
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back to home</span>
           </button>
-          <div className="flex items-center gap-1 text-xl font-bold">
+          <div className="text-xl font-bold">
             <span className="text-amber-600">Path</span>
             <span className="text-amber-800">ways</span>
           </div>
         </div>
 
-        {/* Form Card */}
-        <div className="bg-white p-8 rounded-lg shadow-md">
-          <h1 className="text-3xl font-bold text-amber-900 mb-6">
-            Create your account
-          </h1>
+        {/* Card */}
+        <div className="bg-white p-8 rounded-xl shadow">
+          <h1 className="text-3xl font-bold text-amber-900 mb-6">Create your account</h1>
 
           {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-md mb-4">
+            <div className="bg-red-100 text-red-700 px-4 py-3 rounded mb-4 text-sm">
               {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* First & Last Name */}
+            {/* Names */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label
-                  htmlFor="first_name"
-                  className="text-sm font-medium text-gray-700"
-                >
+              <div>
+                <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 mb-1">
                   First Name
                 </label>
                 <input
-                  id="first_name"
+                  type="text"
                   name="first_name"
+                  id="first_name"
                   value={formData.first_name}
                   onChange={handleChange}
                   required
-                  className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm 
-                             shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 
-                             focus:ring-amber-600 focus:border-amber-600"
+                  placeholder="First name"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-amber-600 focus:border-amber-600 outline-none"
                 />
               </div>
-              <div className="space-y-2">
-                <label
-                  htmlFor="last_name"
-                  className="text-sm font-medium text-gray-700"
-                >
+              <div>
+                <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 mb-1">
                   Last Name
                 </label>
                 <input
-                  id="last_name"
+                  type="text"
                   name="last_name"
+                  id="last_name"
                   value={formData.last_name}
                   onChange={handleChange}
                   required
-                  className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm 
-                             shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 
-                             focus:ring-amber-600 focus:border-amber-600"
+                  placeholder="Last name"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-amber-600 focus:border-amber-600 outline-none"
                 />
               </div>
             </div>
 
             {/* Email */}
-            <div className="space-y-2">
-              <label
-                htmlFor="email"
-                className="text-sm font-medium text-gray-700"
-              >
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email
               </label>
               <input
-                id="email"
-                name="email"
                 type="email"
+                name="email"
+                id="email"
                 placeholder="you@example.com"
                 value={formData.email}
                 onChange={handleChange}
                 required
-                className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm 
-                           shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 
-                           focus:ring-amber-600 focus:border-amber-600"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-amber-600 focus:border-amber-600 outline-none"
               />
             </div>
 
             {/* Password */}
-            <div className="space-y-2">
-              <label
-                htmlFor="password"
-                className="text-sm font-medium text-gray-700"
-              >
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                 Password
               </label>
               <input
-                id="password"
-                name="password"
                 type="password"
+                name="password"
+                id="password"
                 placeholder="••••••••"
                 value={formData.password}
                 onChange={handleChange}
                 required
-                className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm 
-                           shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 
-                           focus:ring-amber-600 focus:border-amber-600"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-amber-600 focus:border-amber-600 outline-none"
               />
             </div>
 
             {/* Confirm Password */}
-            <div className="space-y-2">
-              <label
-                htmlFor="confirmPassword"
-                className="text-sm font-medium text-gray-700"
-              >
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
                 Confirm Password
               </label>
               <input
-                id="confirmPassword"
-                name="confirmPassword"
                 type="password"
+                name="confirmPassword"
+                id="confirmPassword"
                 placeholder="••••••••"
-                value={formData.confirm_password}
+                value={formData.confirmPassword}
                 onChange={handleChange}
                 required
-                className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm 
-                           shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 
-                           focus:ring-amber-600 focus:border-amber-600"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-amber-600 focus:border-amber-600 outline-none"
               />
             </div>
 
-            {/* Role Selection */}
-            <fieldset className="space-y-2">
-              <legend className="text-sm font-medium text-gray-700">
-                I am a:
-              </legend>
-              <div className="flex space-x-4">
-                <div className="flex items-center space-x-2">
+            {/* Role */}
+            <div>
+              <span className="block text-sm font-medium text-gray-700 mb-2">I am a:</span>
+              <div className="flex space-x-6">
+                <label className="flex items-center space-x-2 text-sm text-gray-700">
                   <input
                     type="radio"
-                    id="student"
                     name="role"
                     value="student"
                     checked={formData.role === "student"}
                     onChange={handleRoleChange}
                     className="text-amber-600 focus:ring-amber-500"
                   />
-                  <label
-                    htmlFor="student"
-                    className="text-sm font-medium text-gray-700 cursor-pointer"
-                  >
-                    Student
-                  </label>
-                </div>
-                <div className="flex items-center space-x-2">
+                  <span>Student</span>
+                </label>
+                <label className="flex items-center space-x-2 text-sm text-gray-700">
                   <input
                     type="radio"
-                    id="teacher"
                     name="role"
                     value="teacher"
                     checked={formData.role === "teacher"}
                     onChange={handleRoleChange}
                     className="text-amber-600 focus:ring-amber-500"
                   />
-                  <label
-                    htmlFor="teacher"
-                    className="text-sm font-medium text-gray-700 cursor-pointer"
-                  >
-                    Teacher
-                  </label>
-                </div>
+                  <span>Teacher</span>
+                </label>
               </div>
-            </fieldset>
+            </div>
 
-            {/* Submit Button */}
+            {/* Submit */}
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full inline-flex items-center justify-center rounded-md px-4 py-3 
-                         font-medium transition-colors focus:outline-none bg-amber-600 
-                         hover:bg-amber-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={async (e) => await handleSubmit(e)}
+              className="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium py-3 px-4 rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? "Creating account..." : "Sign up"}
             </button>
           </form>
 
-          {/* Link to Login */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-amber-700">
-              Already have an account?{" "}
-              <Link
-                href="/login"
-                className="text-amber-600 hover:text-amber-800 font-medium"
-              >
-                Log in
-              </Link>
-            </p>
-          </div>
+          {/* Footer */}
+          <p className="mt-6 text-sm text-center text-amber-700">
+            Already have an account?{" "}
+            <Link href="/login" className="text-amber-600 hover:text-amber-800 font-medium">
+              Log in
+            </Link>
+          </p>
         </div>
       </div>
     </div>

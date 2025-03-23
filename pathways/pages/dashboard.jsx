@@ -43,7 +43,7 @@ const Dashboard = () => {
             const ret = await res.json();
             console.log("ret", ret);
 
-
+            return ret?.roadmap;
         } catch (error){
             console.error("Failed to create roadmap", error);
         }
