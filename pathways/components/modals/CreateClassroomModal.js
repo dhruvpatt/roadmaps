@@ -2,7 +2,7 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import mockStudents from "../../data/mockStudents";
 
-export default function CreateClassroomModal({ isOpen, onClose, onCreate }) {
+export default function CreateClassroomModal({ isOpen, onClose, onCreate, user }) {
   const [form, setForm] = useState({ name: "", details: "" });
   const [search, setSearch] = useState("");
   const [selectedStudents, setSelectedStudents] = useState([]);
@@ -34,7 +34,7 @@ export default function CreateClassroomModal({ isOpen, onClose, onCreate }) {
     const classroom = {
       name: form.name.trim(),
       details: form.details.trim(),
-      students: selectedStudents,
+      teacher_id: user.id,
     };
 
     onCreate(classroom);
