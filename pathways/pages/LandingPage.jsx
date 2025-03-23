@@ -40,8 +40,9 @@ export default function Home() {
         <div className="w-full flex h-16 items-center px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1 text-xl font-bold">
-              <span className="text-amber-600">Path</span>
-              <span className="text-gray-900">ways</span>
+              <img src="/logo.png" className="h-12 w-auto"></img>
+              <span className="text-amber-600 text-2xl">Path</span>
+              <span className="text-gray-900 text-2xl">ways</span>
             </div>
           </div>
           <nav className="ml-auto flex gap-4 sm:gap-6">

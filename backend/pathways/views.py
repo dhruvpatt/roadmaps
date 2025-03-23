@@ -883,103 +883,6 @@ def get_classroom(request):
     except Classroom.DoesNotExist:
         return Response({"error": "Classroom not found"}, status=status.HTTP_404_NOT_FOUND)
     
-
-
-# @api_view(['POST'])
-# @transaction.atomic
-# def assign_roadmap_to_user(request):
-#     roadmap_id = request.data.get("roadmap_id")
-#     student_id = request.data.get("user_id")
-    
-#     print("ids", roadmap_id, student_id)
-
-#     try:
-#         roadmap = Roadmap.objects.get(pk=roadmap_id)
-#         student = User.objects.get(pk=student_id)
-
-#         # Create a personal copy of the roadmap
-#         student_roadmap = Roadmap.objects.create(
-#             owner=student,
-#             title=roadmap.title,
-#             details=roadmap.details,
-#             mode=roadmap.mode,
-#             grade=roadmap.grade,
-#             learning_goals=roadmap.learning_goals,
-#             progress=0,
-#             classroom=None
-#         )
-
-#         # Clone chapters
-#         chapter_map = {}
-#         for chapter in roadmap.chapters.all():
-#             new_chapter = Chapter.objects.create(
-#                 name=chapter.name,
-#                 roadmap=student_roadmap,
-#                 status='not_started'
-#             )
-#             chapter_map[chapter.id] = new_chapter
-
-#         # Clone modules
-#         module_map = {}
-#         for chapter in roadmap.chapters.all():
-#             for module in chapter.modules.all():
-#                 # Clone quiz
-#                 new_quiz = None
-#                 if module.practice:
-#                     new_quiz = Quiz.objects.create(user=student)
-#                     for q in module.practice.questions.all():
-#                         new_question = Question.objects.create(
-#                             question=q.question,
-#                             solution=q.solution,
-#                             type=q.type
-#                         )
-#                         new_quiz.questions.add(new_question)
-
-#                 new_module = Module.objects.create(
-#                     name=module.name,
-#                     chapter=chapter_map[chapter.id],
-#                     owner=student,
-#                     yt_video=module.yt_video,
-#                     status='not_started',
-#                     learning_goals=module.learning_goals,
-#                     feedback="",
-#                     practice=new_quiz
-#                 )
-
-#                 for content in module.content_list.all():
-#                     Content.objects.create(
-#                         type=content.type,
-#                         content=content.content,
-#                         module=new_module
-#                     )
-
-#                 module_map[module.id] = new_module
-
-#         # Reassign module prerequisites and next_modules
-#         for chapter in roadmap.chapters.prefetch_related('modules'):
-#             for original_module in chapter.modules.all():
-#                 new_module = module_map[original_module.id]
-#                 new_module.prerequisites.set([
-#                     module_map[prereq.id] for prereq in original_module.prerequisites.all()
-#                 ])
-#                 new_module.next_modules.set([
-#                     module_map[next.id] for next in original_module.next_modules.all()
-#                 ])
-
-#         # Serialize and return the new roadmap
-#         student_roadmap.published = True
-#         serialized = RoadmapSerializer(student_roadmap)
-#         return Response({
-#             "message": "Standalone roadmap assigned to student successfully.",
-#             "roadmap": serialized.data
-#         }, status=status.HTTP_201_CREATED)
-
-#     except Roadmap.DoesNotExist:
-#         return Response({"error": "Roadmap not found"}, status=status.HTTP_404_NOT_FOUND)
-#     except User.DoesNotExist:
-#         return Response({"error": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
-#     except Exception as e:
-#         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 @api_view(['POST'])
 @transaction.atomic
 def assign_roadmap_to_user(request):
@@ -998,5 +901,34 @@ def assign_roadmap_to_user(request):
 
     except Roadmap.DoesNotExist:
         return Response({"error": "Roadmap not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+def mark_module_completed(request):
+    module_id = request.data.get("module_id")
+    user_id = request.data.get("user_id")
+
+    if not module_id or not user_id:
+        return Response({"error": "module_id and user_id are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        module = Module.objects.get(id=module_id)
+
+        if module.owner.id != user_id:
+            return Response({"error": "You do not have permission to modify this module"}, status=status.HTTP_403_FORBIDDEN)
+
+        module.status = "completed"
+        module.save()
+
+        serialized = ModuleSerializer(module)
+
+        return Response({
+            "message": "Module marked as completed",
+            "module": serialized.data
+        }, status=status.HTTP_200_OK)
+
+    except Module.DoesNotExist:
+        return Response({"error": "Module not found"}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

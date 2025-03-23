@@ -230,8 +230,9 @@ const ViewPathwayPage = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <span className="text-orange-500">▶</span>
-                        <p className="font-medium text-sm">{mod.name}</p>
+                        <p className="text-lg font-bold">{mod.name}</p>
                       </div>
+                      {(viewMode === "teacher" && !roadmap.published) && (
                       <div className="w-1/8">
                         {!isEditing ? (
                           <button
@@ -245,16 +246,17 @@ const ViewPathwayPage = () => {
                           >Save</button>
                         )}
                       </div>
+                      )}
                     </div>
 
-                    <p className="text-sm text-gray-700 mt-2 italic">{mod.module_description}</p>
+                    <p className="text-md text-gray-700 mt-2 italic">{mod.module_description}</p>
 
                     <div className="mt-2">
-                      <h3 className="text-md font-semibold mb-1">Learning Goals</h3>
+                      <h3 className="text-lg font-semibold mb-1">Learning Goals</h3>
                       {!isEditing ? (
                         <ul className="list-disc list-inside space-y-1">
                           {mod.learning_goals.map((goal, idx) => (
-                            <li key={idx} className="text-sm text-gray-700">{goal}</li>
+                            <li key={idx} className="text-md text-gray-700">{goal}</li>
                           ))}
                         </ul>
                       ) : (
@@ -269,12 +271,12 @@ const ViewPathwayPage = () => {
                                 updatedGoals[idx] = e.target.value;
                                 setTempGoals(updatedGoals);
                               }}
-                              className="w-full p-1 border rounded text-sm text-gray-700"
+                              className="w-full p-1 border rounded text-md text-gray-700"
                             />
                           ))}
                           <button
                             onClick={() => setTempGoals([...tempGoals, ""])}
-                            className="px-3 py-1 text-sm font-medium bg-gray-200 hover:bg-gray-300 rounded"
+                            className="px-3 py-1 text-md font-medium bg-gray-200 hover:bg-gray-300 rounded"
                           >+ Add Goal</button>
                         </div>
                       )}
@@ -282,8 +284,8 @@ const ViewPathwayPage = () => {
 
                     <div className="mt-2 flex space-x-4">
                       <div>
-                        <h4 className="text-sm font-semibold">Prerequisites:</h4>
-                        <ul className="list-disc list-inside text-sm text-gray-700">
+                        <h4 className="text-lg font-semibold">Prerequisites:</h4>
+                        <ul className="list-disc list-inside text-md text-gray-700">
                           {mod.prerequisite_modules.length > 0 ? (
                             mod.prerequisite_modules.map((pm, idx) => (
                               <li key={idx}>{pm}</li>
@@ -297,8 +299,8 @@ const ViewPathwayPage = () => {
 
                     <div className="mt-2 flex space-x-4">
                       <div>
-                        <h4 className="text-sm font-semibold">Next Modules:</h4>
-                        <ul className="list-disc list-inside text-sm text-gray-700">
+                        <h4 className="text-lg font-semibold">Next Modules:</h4>
+                        <ul className="list-disc list-inside text-md text-gray-700">
                           {mod.next_modules.length > 0 ? (
                             mod.next_modules.map((nm, idx) => (
                               <li key={idx}>{nm}</li>

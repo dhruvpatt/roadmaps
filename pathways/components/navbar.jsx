@@ -21,7 +21,9 @@ export default function Navbar() {
       <div className="flex items-center">
       <button type="button" onClick={handlelogoClick}>
         <div className="flex items-center gap-1 text-xl font-bold cursor-pointer">
-          <img src="/logo.png" alt="Pathways" className="h-12 w-auto"></img>
+          <img src="/logo.png" className="h-12 w-auto"></img>
+          <span className="text-amber-600 text-2xl">Path</span>
+              <span className="text-gray-900 text-2xl">ways</span>
         </div>
       </button>
 

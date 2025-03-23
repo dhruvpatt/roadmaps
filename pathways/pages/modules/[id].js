@@ -11,13 +11,14 @@ const ModulePage = () => {
 
   const [moduleData, setModuleData] = useState(null);
   const [showChat, setShowChat] = useState(true);
+  const [user, setUser] = useState({});
 
   useEffect(() => {
     if (!id) return;
 
     const fetchModule = async () => {
       try {
-        const user = JSON.parse(localStorage.getItem("user"));
+        const usr = JSON.parse(localStorage.getItem("user"));
         const res = await fetch(`${backendUrl}/api/get-module/`, {
           method: "POST",
           headers: {
@@ -25,11 +26,12 @@ const ModulePage = () => {
           },
           body: JSON.stringify({
             module_id: id,
-            user_id: user.id,
+            user_id: usr.id,
           }),
         });
 
         const data = await res.json();
+        setUser(usr);
         console.log("Module", data);
         setModuleData(data);
       } catch (error) {
@@ -39,6 +41,30 @@ const ModulePage = () => {
 
     fetchModule();
   }, [id]);
+
+  const markModuleComplete = async () => {
+    try {
+        const res = await fetch(`${backendUrl}/mark-module-completed/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            module_id: id,
+            user_id: user.id
+          }),
+        });
+
+        const ret = await res.json();
+        console.log("Module marked as complete", ret);
+        setModuleData(ret["module"]);
+
+
+    } catch (error){
+      console.error("Failed to mark module as complete");
+    }
+
+  }
 
   if (!moduleData) {
     return (

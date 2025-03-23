@@ -129,7 +129,7 @@ export default function Classrooms() {
               title={classroom.name}
               subtitle={classroom.join_id}
               students={classroom.students.length}
-              onViewClick={() => {}}
+              onViewClick={() => router.push(`/classroom/${classroom.id}`)}
             />
           ))}
         </div>
