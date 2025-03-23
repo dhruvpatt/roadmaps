@@ -343,7 +343,7 @@ const ViewPathwayPage = () => {
 
                     {unlocked ? (
                       <button
-                        onClick={() => router.push(`/modules/${mod.id}`)}
+                        onClick={() => router.push(`/modules/${mod.id.split("module-")[1]}`)}
                         className={`text-sm px-4 py-1.5 rounded-md ${
                           completed
                             ? "bg-white border border-gray-300 hover:bg-gray-100 text-gray-700"

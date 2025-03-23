@@ -7,7 +7,11 @@ export default function PathwayCard({
   chapters = 0,
   onMoreClick,
   onViewClick,
+  user,
+  published
 }) {
+
+
   return (
     <div className="relative bg-white p-6 border border-gray-200 rounded-lg shadow-md flex flex-col">
       <div className="flex items-start justify-between mb-2">
@@ -23,7 +27,7 @@ export default function PathwayCard({
       </div>
 
       {/* Progress */}
-      <div className="mb-3">
+      {/* <div className="mb-3">
         <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
           <div
             className="h-full bg-black transition-all duration-300"
@@ -31,7 +35,28 @@ export default function PathwayCard({
           />
         </div>
         <p className="mt-1 text-sm text-gray-500">{progress}% complete</p>
-      </div>
+      </div> */}
+      {user.role === "student" ? (
+        <>
+        <div className="mt-4 h-2 bg-gray-300 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-amber-600"
+            style={{ width: `${progress}%` }}
+          />
+
+        
+        </div>
+        <div className="flex justify-between text-md text-gray-600 mt-2">
+        <p className="font-medium">{progress}% complete</p>
+        </div>
+        </>
+      ) : (
+        // fill in for teacher or other roles
+        <div>
+          {published ? (
+            <p className="text-green-500">Published</p>): (<p className="text-red-500">Not Published</p>)}
+        </div>
+      )}
 
       {/* Chapters */}
       <p className="text-sm text-gray-700 mb-4">

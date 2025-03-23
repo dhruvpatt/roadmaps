@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Module, User, Content, Message
+from .models import Module, User, Content, Message, Quiz
 from django.conf import settings
 from datetime import datetime, timedelta
 import json
@@ -78,14 +78,15 @@ class ContentGenerationAgent:
         - content: the actual content or interactive structure
 
         Guidelines:
-        - For 'html' components: Use clean, valid HTML with headings, lists, interactive visualizaitons, or callout boxes to support understanding . DO NOT use images.
-        - For 'content': Use plain text or markdown-formatted explanations. DO NOT include HTML tags.
+        - For 'html' components: Use clean, valid HTML with headings, or static components visually support understanding. Focus on building lightweight, static visual representations using semantic HTML and good structure — like graphs and visualizations. DO NOT include actual image files (<img>) or attempt to embed media.
+        - For 'content': Use plain text or markdown-formatted explanations use asmath package when doing math DO NOT use . DO NOT include HTML tags.
         - For 'video': DO NOT provide a YouTube URL directly
             - INSTEAD, return a search query string describing the video needed (e.g., "Introduction to derivatives")
             - This query will be used to fetch a real YouTube video via API
 
         DO NOT include explanations outside of the JSON — the result will be shown directly to the user.
         NO NOT HAVE ANY HTML IN IF THE TYPE IS CONTENT THIS IS THE MOST IMPORTANT PART!!!!
+        DO NOT USE HTML TO REDER MATH DO THAT IN content type objects resever HTML blocks for headings and visualizations/interactive components!!
         Example:
         [
           {{"type": "html", "content": "<h2>Understanding Functions</h2><ul><li>Inputs and outputs</li><li>Notation: f(x)</li></ul>"}},
@@ -125,7 +126,6 @@ class EvaluationAgent:
         3. **HTML Validation**:
            - All HTML must be syntactically correct (properly closed tags, valid nesting).
            - HTML should enhance understanding — like headings, lists, tips — and must be simple enough to render properly in a web-based learning environment.
-           - No <script>, <style>, <iframe>, or <img> tags allowed.
 
         5. **Completeness**:
            - There should be at least one content block explaining the topic.
@@ -206,7 +206,11 @@ class ModuleContentGenerationAPIView(APIView):
                             )
                             content_objects.append(content)
                         # Now add these to the ManyToMany field manually
-                        module.content_list.set(content_objects)  # this sets content_list with ordering
+                        module.content_list.set(content_objects)
+                        quiz = Quiz.objects.create(user=user)  # associate with user
+                        module.practice = quiz
+                        module.save()
+                        # this sets content_list with ordering
                         return Response({"message": f"Content generated and saved in {iteration} iterations."}, status=status.HTTP_201_CREATED)
 
                     if datetime.now() - start_time > timeout:
