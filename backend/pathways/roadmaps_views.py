@@ -190,50 +190,51 @@ class RoadmapGenerationAPIView(APIView):
                             progress=0
                         )
                         roadmap_object.save()
+
+                        print("CREATED ROADMAP")
+                        chapters = dict()
+                        for chapter in module_list[0]:
+                            chapters[chapter['name']] = Chapter.objects.create(
+                                name=chapter['name'], roadmap=roadmap_object
+                            )
+                        for chapter in module_list[0]:
+                            if chapter['next']:
+                                chapters[chapter['name']].next = chapters.get(chapter['next'])
+                                chapters[chapter['name']].save()
+
+                        roadmap_object.chapter_count = len(module_list[0])
+                        roadmap_object.save()
+
+                        print("CREATED CHAPTERS")
+                        modules = {}
+
+                        # Step 1: Create all modules without setting "next_modules" or "prerequisite_modules" yet
+                        for module_data in module_list[1]:
+                            modules[module_data['name']] = Module.objects.create(
+                                name=module_data['name'],
+                                owner=user,
+                                chapter=chapters[module_data['chapter']],  # Assign the correct chapter
+                                learning_goals=module_data['learning_goals'],  # Use module-specific goals
+                            )
+
+                        # Step 2: Update "prerequisite_modules" and "next_modules"
+                        for module_data in module_list[1]:
+                            module_instance = modules[module_data['name']]
+
+                            module_instance.prerequisites.set(
+                                [modules[prerequisite] for prerequisite in module_data['prerequisite_modules'] if
+                                 prerequisite in modules]
+                            )
+
+                            module_instance.next_modules.set(
+                                [modules[next_module] for next_module in module_data['next_modules'] if
+                                 next_module in modules]
+                            )
+
+                        print("CREATED MODULES")
+                        return Response({"roadmap": roadmap_object.id}, status=status.HTTP_201_CREATED)
                     except Exception as e:
-                        print("ROADMAP CREATE FAIL", e)
-                    print("CREATED ROADMAP")
-                    chapters = dict()
-                    for chapter in module_list[0]:
-                        chapters[chapter['name']] = Chapter.objects.create(
-                            name=chapter['name'], roadmap=roadmap_object
-                        )
-                    for chapter in module_list[0]:
-                        if chapter['next']:
-                            chapters[chapter['name']].next = chapters.get(chapter['next'])
-                            chapters[chapter['name']].save()
-
-                    roadmap_object.chapter_count = len(module_list[0])
-                    roadmap_object.save()
-
-                    print("CREATED CHAPTERS")
-                    modules = {}
-
-                    # Step 1: Create all modules without setting "next_modules" or "prerequisite_modules" yet
-                    for module_data in module_list[1]:
-                        modules[module_data['name']] = Module.objects.create(
-                            name=module_data['name'],
-                            owner=user,
-                            chapter=chapters[module_data['chapter']],  # Assign the correct chapter
-                            learning_goals=module_data['learning_goals'],  # Use module-specific goals
-                        )
-
-                    # Step 2: Update "prerequisite_modules" and "next_modules"
-                    for module_data in module_list[1]:
-                        module_instance = modules[module_data['name']]
-
-                        module_instance.prerequisites.set(
-                            [modules[prerequisite] for prerequisite in module_data['prerequisite_modules'] if
-                             prerequisite in modules]
-                        )
-
-                        module_instance.next_modules.set(
-                            [modules[next_module] for next_module in module_data['next_modules'] if
-                             next_module in modules]
-                        )
-
-                    print("CREATED MODULES")
-                    return Response({"roadmap": roadmap_object.id}, status=status.HTTP_201_CREATED)
+                        print(e)
 
                 # Timeout check
                 if datetime.now() - start_time > timeout_duration:
