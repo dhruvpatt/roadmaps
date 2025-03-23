@@ -55,9 +55,9 @@ export default function ContinueLearning() {
     <div className="mx-auto max-w-screen-7xl w-full px-4">
       <div className="flex items-center justify-between mt-6 md:mt-8">
         {user && user.role === "student" ? (
-          <h2 className="text-black text-2xl md:text-3xl font-black">Continue Learning</h2>
+          <h2 className="text-black text-2xl md:text-3xl font-black">Your Pathways</h2>
         ) : (
-          <h2 className="text-black text-2xl md:text-3xl font-black">Continue Teaching</h2>
+          <h2 className="text-black text-2xl md:text-3xl font-black">Your Pathways</h2>
         )}
       </div>
 

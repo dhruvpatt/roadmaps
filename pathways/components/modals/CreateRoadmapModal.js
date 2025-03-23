@@ -15,7 +15,7 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user, cl
     mode: "CASUAL",
     classroom: "",
     grade: "",
-    learningGoals: [],
+    learningGoals: "",
     details: "",
     chapters: [],
   });
@@ -48,8 +48,8 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user, cl
   };
 
   const handleSubmit = async () => {
-    if (!form.title.trim() || !form.topic.trim() || !form.grade.trim()) {
-      setError("Title, Topic, and Grade are required.");
+    if (!form.title.trim() || !form.topic.trim() || !form.grade.trim() || !form.learningGoals.trim()) {
+      setError("Title, Topic, Grade and Learning Goals are required.");
       return;
     }
     console.log("form", form);
@@ -182,7 +182,7 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user, cl
 
           {/* Learning Goals */}
           <div className="md:col-span-2">
-            <label className="text-sm font-medium text-gray-700">Learning Goals</label>
+            <label className="text-sm font-medium text-gray-700">Learning Goals *</label>
             <input
               name="learningGoals"
               value={form.learningGoals}

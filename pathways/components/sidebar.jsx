@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { Home, BookOpen, Users, BarChart2, Settings } from "lucide-react";
+import { Home, BookOpen, Users } from "lucide-react";
 
 export default function Sidebar() {
   return (
@@ -29,6 +29,16 @@ export default function Sidebar() {
           <span className="text-gray-700">Classrooms</span>
         </Link>
       </nav>
+
+      {/* Mission Statement */}
+      <div className="p-4 border-t bg-gray-50 text-sm text-gray-600">
+        <p>
+          Empowering personalized and accessible learning experiences — built to
+          support teachers and elevate every student, especially those with
+          learning differences.
+
+        </p>
+      </div>
     </aside>
   );
 }

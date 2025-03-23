@@ -6,6 +6,7 @@ import RoadmapGraph from "@/components/pathways/RoadmapGraph";
 import Sidebar from "../../components/sidebar";
 import Navbar from "../../components/navbar";
 
+
 const isModuleUnlocked = (module, moduleMap) => {
   return (module.prereq || []).every(
     (id) => moduleMap.get(id)?.status === "completed"
@@ -95,12 +96,12 @@ const ViewPathwayPage = () => {
               prereq: [],
               next: chapter.next_chapters.map((nextId) => `chapter-${nextId}`),
               modules: chapter.modules.map((mod) => ({
-                id: `module-${mod.id}`,
+                id: `${mod.id}`,
                 name: mod.name,
                 chapter: `chapter-${mod.chapter}`,
                 status: mod.status,
-                prereq: mod.prerequisites.map((pid) => `module-${pid}`),
-                next: mod.next_modules.map((nid) => `module-${nid}`),
+                prereq: mod.prerequisites.map((pid) => `${pid}`),
+                next: mod.next_modules.map((nid) => `${nid}`),
                 owner: "student-a",
                 content: mod.contents || [],
                 learningGoals: mod.learning_goals,
@@ -369,7 +370,7 @@ const ViewPathwayPage = () => {
 
                     {unlocked ? (
                       <button
-                        onClick={() => router.push(`/modules/${mod.id.split("module-")[1]}`)}
+                        onClick={() => router.push(`/modules/${mod.id}`)}
                         className={`text-sm px-4 py-1.5 rounded-md ${
                           completed
                             ? "bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 cursor-pointer"
