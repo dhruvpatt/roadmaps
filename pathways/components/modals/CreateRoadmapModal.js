@@ -3,6 +3,9 @@ import { X, Plus, Minus } from "lucide-react";
 import { useRouter } from "next/router";
 
 // 🔹 Mock user (can be dynamic later)
+const mockpathwayID = {
+  id: 1,
+};
 
 export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user }) {
   const router = useRouter();
@@ -19,6 +22,7 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user }) 
   });
 
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const [showChapters, setShowChapters] = useState(false);
 
   const handleChange = (e) => {
@@ -44,7 +48,7 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user }) 
     setForm((prev) => ({ ...prev, chapters: updated }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.title.trim() || !form.topic.trim() || !form.grade.trim()) {
       setError("Title, Topic, and Grade are required.");
       return;
@@ -60,22 +64,33 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user }) 
       userid: user.id,
     };
 
-    onCreate(roadmap);
-    onClose();
-    setForm({
-      title: "",
-      topic: "",
-      mode: "CASUAL",
-      classroom: "",
-      grade: "",
-      learningGoals: "",
-      details: "",
-      chapters: [],
-    });
-    setShowChapters(false);
-    setError("");
+    setLoading(true);
 
-    router.push(`/pathways/${mockUser.id}`);
+    try {
+
+      const roadmap_id = await onCreate(roadmap);
+
+      onClose();
+      setForm({
+        title: "",
+        topic: "",
+        mode: "CASUAL",
+        classroom: "",
+        grade: "",
+        learningGoals: "",
+        details: "",
+        chapters: [],
+      });
+      setShowChapters(false);
+      setError("");
+
+      router.push(`/pathways/${roadmap_id}`);
+    } catch (error) {
+      console.error("Failed to create pathway", error);
+      setError("Failed to create pathway, Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -140,7 +155,7 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user }) 
           </div>
 
           {/* Classroom (optional) */}
-          {mockUser.role === "teacher" && (
+          {user.role === "teacher" && (
             <div>
               <label className="text-sm font-medium text-gray-700">Classroom</label>
               <input
@@ -271,11 +286,21 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user }) 
           <button
             onClick={handleSubmit}
             className="px-4 py-2 text-sm rounded-md bg-amber-600 hover:bg-amber-700 text-white font-semibold"
+            disabled={loading}
           >
             Create Pathway
           </button>
         </div>
       </div>
+      {/* Loading overlay */}
+      {loading && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white p-6 rounded shadow-lg text-center">
+            <div className="loader mb-2 mx-auto border-4 border-gray-300 border-t-4 border-t-amber-600 rounded-full w-8 h-8 animate-spin"></div>
+            <p className="text-gray-700 font-medium">Creating Pathway...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

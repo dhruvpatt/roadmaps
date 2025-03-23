@@ -49,7 +49,10 @@ const ViewPathwayPage = () => {
         if (!res.ok) throw new Error("Network response was not ok");
         const data = await res.json();
 
-        const isTeacher = data?.owner_role === "teacher";
+        const user = await fetch(`${backendUrl}/api/users/${data.owner}/`);
+        const userData = await user.json();
+
+        const isTeacher = userData?.role === "teacher";
         setViewMode(isTeacher ? "teacher" : "student");
 
         if (isTeacher) {
