@@ -95,7 +95,8 @@ class ContentGenerationAgent:
         ]
 
         EVERYTHING YOU RETURN WILL BE RENDERED AS IS. DO NOT ADD META COMMENTARY. DO NOT ADD EXTRA EXPLANATIONS OUTSIDE THE JSON.
-        KEEP HTML SIMPLE, AND INTERACTIVE BLOCKS STRUCTURED.
+        KEEP HTML SIMPLE, AND INTERACTIVE BLOCKS STRUCTURED. DO NOT HAVE *INSERT SOMETHING HERE* DO NOT MAKE CONTENT REFERENCING LINKS THAT 
+        THIS INCLUDES BUT IS NOT LIMITED SUGGESTIONS FOR LINKING TO TEXTBOOKS WEBSITES GRADING BREAKDOWNS OR LISTS OF MATERIALS DONT 
         """
         generation_config = types.GenerateContentConfig(temperature=0.7)
         response = client.models.generate_content(
@@ -388,7 +389,6 @@ def get_module(request):
     try:
         module = Module.objects.get(pk=module_id)
         user = User.objects.get(pk=user_id)
-
         if module.content_list.count() == 0:
             # Trigger content generation
             generate_url = "http://localhost:8000/generate-module/"
