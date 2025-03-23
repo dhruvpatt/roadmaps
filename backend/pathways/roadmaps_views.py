@@ -1,3 +1,4 @@
+import json
 import os
 import django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.backend.settings')  # Replace 'your_project_name' with the actual project name
@@ -81,31 +82,16 @@ class GenerationAgent:
         ]
         MAKE SURE THERE ARE NO TRAILING COMMAS
         """
-        try:
-            generation_config = types.GenerateContentConfig(temperature=0.7)
-            response = client.models.generate_content(
-                model='gemini-2.0-flash-lite-preview',
-                contents=prompt,
-                config=generation_config
-            )
-            roadmap = clean_response(response.text)
-            print(f"roadmap gen: {roadmap}")
+        generation_config = types.GenerateContentConfig(temperature=0.7)
+        response = client.models.generate_content(
+            model='gemini-2.0-flash-lite-preview',
+            contents=prompt,
+            config=generation_config
+        )
+        roadmap = clean_response(response.text)
+        print(f"roadmap gen: {roadmap}")
+        return roadmap
 
-            # Assuming the response is a valid JSON format like:
-            # [{"name": "Module 1", "learning_goals": ["Goal 1", "Goal 2"], "module_description": "Description", "prerequisite_modules": ["Module 0"], "next_modules": ["Module 2"]}, ...]
-            # Try to parse it as a list of dictionaries.
-            import json
-            try:
-                module_list = json.loads(roadmap)
-            except json.JSONDecodeError:
-                raise ValueError("The response from the model is not a valid JSON list of dictionaries.")
-
-            # Return the parsed list of modules
-            return module_list
-
-        except Exception as e:
-            print(f"ERROR generating roadmap: {e}")
-            raise ValueError(f"Error generating roadmap: {e}")
 
 
 class EvaluationAgent:
@@ -152,8 +138,9 @@ class RoadmapGenerationAPIView(APIView):
             mode = serializer.validated_data.get('mode', 'CASUAL')
             user_chapters = serializer.validated_data.get('chapters')
             classroomCode = serializer.validated_data.get('classroom')
-            
-            classroom = Classroom.objects.get(join_id=classroomCode)
+            classroom = None
+            if classroomCode:
+                classroom = Classroom.objects.get(join_id=classroomCode)
             print("CLASROOM:", classroom)
             user = User.objects.get(pk=user_id)
             # Create agent instances
@@ -182,6 +169,7 @@ class RoadmapGenerationAPIView(APIView):
                     print("inside")
                     print("DEBUG:", title, user, details, mode, learning_goals, grade)
                     try:
+                        module_list = json.loads(module_list)
                         roadmap_object = Roadmap(
                             title=title,
                             owner=user,

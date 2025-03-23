@@ -90,4 +90,6 @@ urlpatterns = [
     path("get-user-classrooms/", views.get_user_classrooms, name="get-user-classrooms"),
     path("get-classroom/", views.get_classroom, name="get-classroom"),
 
+    path("update-preferences/", views.update_preferences, name="update-preferences"),
+
 ]

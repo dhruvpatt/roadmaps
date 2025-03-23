@@ -13,7 +13,7 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user, cl
     title: "",
     topic: "",
     mode: "CASUAL",
-    classroom: classroomCode || "",
+    classroom: "",
     grade: "",
     learningGoals: "",
     details: "",
@@ -61,7 +61,7 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user, cl
         .map((g) => g.trim())
         .filter(Boolean),
       userid: user.id,
-      classroom: classroomCode || "",
+      classroom: classroomCode || null,
     };
     console.log("submit roadmap", roadmap);
     setLoading(true);
@@ -159,7 +159,7 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user, cl
                   <label className="text-sm font-medium text-gray-700">Classroom</label>
                   <input
                       name="classroom"
-                      value={classroomCode || ""}
+                      value={form.classroom}
                       onChange={handleChange}
                       placeholder="Optional"
                       className="w-full mt-1 border border-gray-300 rounded px-3 py-2"
