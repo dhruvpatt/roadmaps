@@ -34,8 +34,9 @@ class QueryRequestSerializer(serializers.Serializer):
     # Mode (STRICT or CASUAL)
     mode = serializers.ChoiceField(choices=['STRICT', 'CASUAL'], required=True)
     userid = serializers.IntegerField()
-    details = serializers.CharField(max_length=1000, allow_blank=True)
+    details = serializers.CharField(max_length=1000, allow_blank=True, required=False)
     chapters = serializers.CharField(max_length=1000)
+    published = serializers.BooleanField(default=False)
     # Optional: Add other fields if necessary
     # For example, you can include additional optional parameters here
 
@@ -121,7 +122,7 @@ class RoadmapSerializer(serializers.ModelSerializer):
         model = Roadmap
         fields = [
             'id', 'owner', 'title', 'details', 'mode', 'grade',
-            'learning_goals', 'progress', 'chapters'
+            'learning_goals', 'progress', 'chapters', 'published'
         ]
 
 class SubjectSerializer(serializers.ModelSerializer):
@@ -135,3 +136,23 @@ class ClassroomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Classroom
         fields = ['id', 'join_id', 'name', 'teachers', 'students', 'subjects']
+        
+
+class StudentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'first_name', 'last_name', 'email', 'role']
+
+class SubjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subject
+        fields = ['id', 'topic', 'master_scaffold', 'progress', 'student_roadmap']
+
+class ClassroomDetailSerializer(serializers.ModelSerializer):
+    students = StudentSerializer(many=True, read_only=True)
+    subjects = SubjectSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Classroom
+        fields = ['id', 'name', 'join_id', 'students', 'subjects']
+

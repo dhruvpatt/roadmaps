@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import OverviewComponent from "./overview-component";
 import StudentsComponent from "./classroom-students";
-export default function ClassroomTabs() {
+export default function ClassroomTabs({classroomCode}) {
   const [activeTab, setActiveTab] = useState("overview");
 
   const tabs = [
@@ -31,7 +31,7 @@ export default function ClassroomTabs() {
 
       {/* Tab content */}
       <div className="mt-4">
-        {activeTab === "overview" && <OverviewComponent />}
+        {activeTab === "overview" && <OverviewComponent classroomCode={classroomCode} />}
         {activeTab === "students" && <StudentsComponent />}
       </div>
     </div>

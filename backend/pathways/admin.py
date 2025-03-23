@@ -26,7 +26,7 @@ class UserAdmin(BaseUserAdmin):
 
 # Register Roadmap model with custom admin interface
 class RoadmapAdmin(admin.ModelAdmin):
-    list_display = ('title', 'owner', 'mode', 'grade')
+    list_display = ('title', 'owner', 'mode', 'grade', 'classroom', "id")
     search_fields = ('title', 'owner__username')
     list_filter = ('mode',)
     ordering = ('title',)

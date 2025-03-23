@@ -10,7 +10,8 @@ const mockUser = {
     role: "teacher" // or "student"
 };
 
-export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user }) {
+export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user, classroomCode }) {
+    const router = useRouter();
     const [form, setForm] = useState({
         title: "",
         topic: "",
@@ -19,6 +20,7 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user }) 
         grade: "",
         learningGoals: "",
         chapters: [],
+        details: "",
     });
 
     const [showChapters, setShowChapters] = useState(false);
@@ -130,7 +132,7 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user }) 
                             <label className="text-sm font-medium text-gray-700">Classroom</label>
                             <input
                                 name="classroom"
-                                value={form.classroom}
+                                value={classroomCode || ""}
                                 onChange={handleChange}
                                 placeholder="Optional"
                                 className="w-full mt-1 border border-gray-300 rounded px-3 py-2"
