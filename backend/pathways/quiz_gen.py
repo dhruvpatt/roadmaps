@@ -125,37 +125,54 @@ class QuizGenerationAPIView(APIView):
 
         if not module_id or not user_id:
             return Response({"error": "module_id and user_id are required"}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            module = Module.objects.get(pk=module_id)
-            user = User.objects.get(pk=user_id)
-            learning_goals = module.learning_goals or []
-
-            failed_questions = Question.objects.filter(failed_in_quizzes__user=user).distinct()
-            failed_topics = [q.question for q in failed_questions[:5]]
-
-            focus_text = f" The student previously struggled with: {', '.join(failed_topics)}." if failed_topics else ""
-
-            prompt = f"""
-            Create a quiz for the module titled '{module.name}'.
-            Learning goals: {', '.join(learning_goals)}.{focus_text}
-
-            Ensure the quiz includes review and new questions. Emphasize previously missed concepts while keeping it varied.
-
-            Return a JSON array of question objects. Each object must include:
-            - question (string)
-            - solution (string)
-            - type (either 'text' or 'multiple_choice')
-            """
-
-            generation_config = types.GenerateContentConfig(temperature=0.7)
-            response = client.models.generate_content(
-                model='gemini-2.0-flash-lite-preview',
-                contents=prompt,
-                config=generation_config
-            )
-
+        i = 0
+        while i < 5:
+            i+=1
             try:
+                module = Module.objects.get(pk=module_id)
+                user = User.objects.get(pk=user_id)
+                learning_goals = module.learning_goals or []
+
+                failed_questions = Question.objects.filter(failed_in_quizzes__user=user).distinct()
+                failed_topics = [q.question for q in failed_questions[:5]]
+
+                focus_text = f" The student previously struggled with: {', '.join(failed_topics)}." if failed_topics else ""
+
+                prompt = f"""
+                Create a quiz for the module titled '{module.name}'.
+                Learning goals: {', '.join(learning_goals)}.{focus_text}
+
+                Ensure the quiz includes review and new questions. Emphasize previously missed concepts while keeping it varied.
+
+                Return a JSON array of question objects. Each object must include:
+                - question (string)
+                - solution (string)
+                - type SHOULD ALWAYS BE text
+                MOST IMPORTANT THAT IT IS A JSON OBJECT WITH NO ERRORS
+
+                EX:
+                [
+                  {{
+                    "question": "What is 2 + 2?",
+                    "solution": "4",
+                    "type": "text"
+                  }},
+                  {{
+                    "question": "Which of the following is a prime number?",
+                    "solution": "The correct answer is 7",
+                    "type": "multiple_choice"
+                  }}
+                ]
+                """
+
+                generation_config = types.GenerateContentConfig(temperature=0.7)
+                response = client.models.generate_content(
+                    model='gemini-2.0-flash-lite-preview',
+                    contents=prompt,
+                    config=generation_config
+                )
+
+
                 print(response.text)
                 quiz_data = json.loads(clean_response(response.text))
                 quiz = Quiz.objects.create(user=user)
@@ -179,15 +196,10 @@ class QuizGenerationAPIView(APIView):
                     "quiz": QuizSerializer(quiz).data
                 }, status=status.HTTP_201_CREATED)
 
-            except json.JSONDecodeError:
-                return Response({"error": "Failed to parse Gemini response as JSON."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            except Exception as e:
+                print(e)
+        return Response({"Error Creating Quiz"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        except Module.DoesNotExist:
-            return Response({"error": "Module not found."}, status=status.HTTP_404_NOT_FOUND)
-        except User.DoesNotExist:
-            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
 def get_quiz_results(request, quiz_id):
