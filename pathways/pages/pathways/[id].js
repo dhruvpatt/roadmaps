@@ -230,8 +230,9 @@ const ViewPathwayPage = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <span className="text-orange-500">▶</span>
-                        <p className="font-medium text-sm">{mod.name}</p>
+                        <p className="text-lg font-bold">{mod.name}</p>
                       </div>
+                      {(viewMode === "teacher" && !roadmap.published) && (
                       <div className="w-1/8">
                         {!isEditing ? (
                           <button
@@ -245,6 +246,7 @@ const ViewPathwayPage = () => {
                           >Save</button>
                         )}
                       </div>
+                      )}
                     </div>
 
                     <p className="text-md text-gray-700 mt-2 italic">{mod.module_description}</p>
