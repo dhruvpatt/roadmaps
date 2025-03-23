@@ -7,7 +7,7 @@ import backendUrl from "@/backendUrl";
 
 export default function OverviewComponent({ classroomCode }) {
   const router = useRouter();
-  const [showModal, setShowModal] = useState(false);
+  const [showRoadmapModal, setShowRoadmapModal] = useState(false);
   const user = JSON.parse(localStorage.getItem("user"));
 
 
@@ -55,7 +55,7 @@ export default function OverviewComponent({ classroomCode }) {
           const ret = await res.json();
           console.log("ret", ret);
 
-
+          return ret?.roadmap;
       } catch (error){
           console.error("Failed to create roadmap", error);
       }
@@ -88,7 +88,9 @@ export default function OverviewComponent({ classroomCode }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Create Pathway Card FIRST */}
         <button
-          onClick={handleCreateNewPathway}
+          onClick={() => {
+            setShowRoadmapModal(true);
+        }}
           className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-4 text-center text-gray-500 hover:bg-amber-100 cursor-pointer transition"
         >
           <p className="text-sm md:text-base font-medium text-gray-600">
@@ -110,15 +112,10 @@ export default function OverviewComponent({ classroomCode }) {
 
       {/* Create Modal */}
       <CreateRoadmapModal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        onCreate={async (newRoadmap) => {
-          await createRoadmap(newRoadmap);
-          setShowModal(false);
-        }}
-        user={user}
-        classroomCode={classroomCode}
-
+          isOpen={showRoadmapModal}
+          onClose={() => setShowRoadmapModal(false)}
+          onCreate={async (data) => await createRoadmap(data)}
+          user={user}
       />
     </div>
   );

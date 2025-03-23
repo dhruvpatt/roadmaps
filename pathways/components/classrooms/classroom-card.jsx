@@ -63,7 +63,7 @@ export default function ClassroomCard({
       <button
         type="button"
         onClick={onViewClick}
-        className="mt-auto w-full bg-black text-white py-2 rounded hover:bg-gray-800 focus:outline-none"
+        className="mt-auto w-full bg-black text-white py-2 rounded focus:outline-none hover:bg-amber-600 transition-colors"
       >
         View Classroom
       </button>
