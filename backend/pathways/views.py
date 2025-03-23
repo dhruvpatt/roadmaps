@@ -13,6 +13,12 @@ from .serializers import (UserSerializer, RoadmapSerializer, ChapterSerializer,
                           ContentSerializer, MessageSerializer, ClassroomSerializer,
                           SubjectSerializer, ClassroomDetailSerializer)
 from django.db import transaction
+# from django.conf import settings
+# from google import genai
+# from google.genai import types
+# import json
+
+
 
 class StudentAnalyticsAPIView(APIView):
     def get(self, request, user_id):
@@ -336,6 +342,46 @@ def user_roadmaps(request, pk):
     roadmaps = user.roadmaps.all()
     serializer = RoadmapSerializer(roadmaps, many=True)
     return Response(serializer.data)
+
+
+
+# api_key = getattr(settings, 'LLM_API_KEY')
+# client = genai.Client(api_key=api_key)
+
+# def clean_response(response):
+#     splitted = response.split('```json')
+#     if len(splitted) < 2:
+#         raise ValueError("No JSON part found in the input string.")
+
+#     # Extract the JSON part and remove trailing backticks
+#     return splitted[1].split('```')[0].strip()
+
+# def create_lecture_materials(questions):
+#     prompt_items = "\n".join([
+#         f"Question: {q['question']}\nCorrect Answer: {q['solution']}\nStudent Answer: {q['answer']}" for q in questions
+#     ])
+#     prompt = f"""
+#     Evaluate the following student's answers to a quiz. For each item, respond with either 'correct' or 'incorrect' in order.
+
+#     {prompt_items}
+
+#     Format the result as a JSON list:
+#     ["correct", "incorrect", ...]
+#     """
+#     config = types.GenerateContentConfig(temperature=0.3)
+#     response = client.models.generate_content(
+#         model='gemini-2.0-flash-lite-preview',
+#         contents=prompt,
+#         config=config
+#     )
+#     try:
+#         print(response.text)
+#         print(clean_response(response.text))
+#         result = json.loads(clean_response(response.text))
+#         return result
+#     except Exception as e:
+#         print(e)
+#         raise ValueError(f"AI grading failed: {e}")
 
 
 @api_view(['GET'])
