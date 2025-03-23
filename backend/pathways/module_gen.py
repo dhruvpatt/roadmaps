@@ -190,13 +190,21 @@ class ModuleContentGenerationAPIView(APIView):
                         content_data = json.loads(content_list)
 
                         for item in content_data:
+                            if item['type'] == 'video':
+                                query = item['content']
+                                resolved_url = search_youtube_video(query)
+                                if resolved_url:
+                                    item['content'] = resolved_url
+                                else:
+                                    # Optionally skip if no valid video was found
+                                    print(f"No valid video found for query: {query}")
+                                    continue
                             content = Content.objects.create(
                                 module=module,  # this sets the FK
                                 type=item['type'],
                                 content=item['content']
                             )
                             content_objects.append(content)
-                        print("PAST")
                         # Now add these to the ManyToMany field manually
                         module.content_list.set(content_objects)  # this sets content_list with ordering
                         return Response({"message": f"Content generated and saved in {iteration} iterations."}, status=status.HTTP_201_CREATED)
