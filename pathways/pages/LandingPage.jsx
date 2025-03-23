@@ -46,24 +46,7 @@ export default function Home() {
             </div>
           </div>
           <nav className="ml-auto flex gap-4 sm:gap-6">
-            <Link
-              href="#features"
-              className="text-sm font-medium text-gray-900 hover:text-amber-600"
-            >
-              Features
-            </Link>
-            <Link
-              href="#about"
-              className="text-sm font-medium text-gray-900 hover:text-amber-600"
-            >
-              About
-            </Link>
-            <Link
-              href="#research"
-              className="text-sm font-medium text-gray-900 hover:text-amber-600"
-            >
-              Research
-            </Link>
+
           </nav>
           <div className="ml-4 flex items-center gap-4">
             <Link href="/login">
@@ -102,11 +85,7 @@ export default function Home() {
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </Link>
-                  <Link href="#how-it-works">
-                    <Button variant="outline" className="px-8">
-                      How It Works
-                    </Button>
-                  </Link>
+
                 </div>
               </div>
               <div className="flex items-center justify-center">

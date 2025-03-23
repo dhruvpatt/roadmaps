@@ -14,6 +14,7 @@ const Classroom = () => {
     const [user, setUser] = useState({});
     const [classroomId, setClassroomId] = useState(null);
     const [classroomCode, setClassroomCode] = useState("");
+    const [classroom, setClassroom] = useState({});
 
     useEffect(() => {
         console.log("Router query", router.query);
@@ -50,6 +51,8 @@ const Classroom = () => {
             const ret = await res.json();
             console.log("Classroom", ret);
             setClassroomCode(ret.join_id);
+            setClassroom(ret.classroom);
+            return ret
 
         } catch (error){
             console.error("Failed to fetch classroom", error);
@@ -67,15 +70,15 @@ const Classroom = () => {
                     <div className="max-w-6xl mx-auto">
                         {/* Classroom Header Component */}
                         <ClassroomHeader
-                        title="Algebra 101"
-                        subtitle="Fundamental algebraic concepts for beginners"
-                        code="ALGEBRA-101"
+                        title={classroom.name}
+                        subtitle=""
+                        code={classroom.join_id}
                         onInviteClick={() => setShowInviteModal(true)}
                         />
 
                         {/* You can continue your page content here */}
                         {/* ... */}
-                        {role === "student" ? <ClassroomTabsStudent classroomCode={classroomCode} /> : <ClassroomTabs classroomCode={classroomCode} />}
+                        {role === "student" ? <ClassroomTabsStudent classroomCode={classroomCode} user={user}  /> : <ClassroomTabs classroomCode={classroomCode} id={classroomId} />}
 
                     </div>
             </div>
