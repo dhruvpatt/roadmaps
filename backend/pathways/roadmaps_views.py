@@ -272,7 +272,8 @@ def publish_roadmap_to_classroom(request):
                 mode=roadmap.mode,
                 grade=roadmap.grade,
                 learning_goals=roadmap.learning_goals,
-                progress=0
+                progress=0,
+                classroom=classroom
             )
 
             chapter_map = {}
