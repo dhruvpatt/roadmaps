@@ -44,29 +44,38 @@ class TeacherAnalyticsAPIView(APIView):
     def get(self, request, user_id):
         try:
             user = User.objects.get(pk=user_id)
+
+            if user.role != "teacher":
+                return Response({"error": "User is not a teacher."}, status=status.HTTP_400_BAD_REQUEST)
+
             classrooms = user.teaching_classrooms.all()
             classroom_count = classrooms.count()
-            student_ids = set()
-            active_pathways = 0
 
+            # Get total number of students across classrooms
+            student_ids = set()
             for classroom in classrooms:
                 for student in classroom.students.all():
                     student_ids.add(student.id)
-                    student_roadmaps = student.roadmaps.all()
-                    for roadmap in student_roadmaps:
-                        if any(ch.status != 'completed' for ch in roadmap.chapters.all()):
-                            active_pathways += 1
+            total_students = len(student_ids)
+
+            # Get only teacher's own roadmaps
+            teacher_roadmaps = Roadmap.objects.filter(owner=user)
+            total_roadmaps = teacher_roadmaps.count()
+            active_pathways = teacher_roadmaps.exclude(chapters__status='completed').distinct().count()
 
             return Response({
                 "user": user.username,
                 "classrooms": classroom_count,
-                "total_students": len(student_ids),
+                "total_students": total_students,
+                "total_roadmaps": total_roadmaps,
                 "active_pathways": active_pathways
             })
+
         except User.DoesNotExist:
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 # User ViewSet
 class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
@@ -289,7 +298,7 @@ def user_list(request):
         users = User.objects.all()
         serializer = UserSerializer(users, many=True)
         return Response(serializer.data)
-    
+
 @api_view(['GET'])
 def student_list(request):
     if request.method == 'GET':
@@ -804,7 +813,7 @@ def message_detail(request, pk):
     elif request.method == 'DELETE':
         message.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
+
 
 @api_view(['POST'])
 def get_user_classrooms(request):
