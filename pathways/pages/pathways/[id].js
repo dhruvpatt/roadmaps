@@ -148,7 +148,19 @@ const ViewPathwayPage = () => {
       </div>
 
       <div>
+        <div className="flex space-x-2 justify-between">
         <h1 className="text-2xl font-bold text-gray-900">{pathway?.title || "Pathway"}</h1>
+
+        {viewMode === "teacher" && (
+        <div>
+        <button
+                            onClick={() => handleEdit(i)}
+                            className="w-full mt-4 px-3 py-1 text-sm font-medium text-white rounded bg-black hover:bg-amber-600 cursor-pointer"
+                          >Publish</button>
+        </div>
+        )}
+        </div>
+
         <p className="text-gray-600 mt-1">{pathway?.details}</p>
 
         {viewMode !== "teacher" && (
