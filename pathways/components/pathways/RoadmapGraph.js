@@ -6,7 +6,13 @@ import "reactflow/dist/style.css";
 import { nodeTypes as studentNodeTypes } from "@/components/pathways/RoadmapNode";
 import { nodeTypes as teacherNodeTypes } from "@/components/pathways/RoadmapNodeTeacher";
 
-const RoadmapGraph = ({ data, viewMode = "student" }) => {
+const isModuleUnlocked = (module, moduleMap) => {
+  return (module.prereq || []).every(
+    (id) => moduleMap.get(id)?.status === "completed"
+  );
+};
+
+const RoadmapGraph = ({ data, viewMode = "student", moduleStatusMap }) => {
   const isTeacher = viewMode === "teacher";
 
   console.log(isTeacher)
@@ -26,16 +32,19 @@ const RoadmapGraph = ({ data, viewMode = "student" }) => {
     // === STUDENT MODE ===
     data.chapters.forEach((chapter, chapterIndex) => {
       const x = chapterIndex > 0 ? chapterIndex * baseX : baseX - 200;
-
+    
       const numModules = chapter.modules.length;
       const totalHeight = (numModules - 1) * baseY;
       const yOffset = (diagramHeight - totalHeight) / 2;
-
+    
       chapter.modules.forEach((module, moduleIndex) => {
         const y = moduleIndex * baseY + yOffset;
         const hue = (chapterIndex * 60) % 360;
         const lightness = module.prereq?.length === 0 ? "85%" : "65%";
-
+    
+        moduleMap.set(module.id, module); // ⬅ store module first so it's accessible in the map
+    
+        const unlocked = isModuleUnlocked(module, moduleMap);
         nodes.push({
           id: module.id,
           type: "roadmapNode",
@@ -44,6 +53,8 @@ const RoadmapGraph = ({ data, viewMode = "student" }) => {
             label: module.name,
             status: module.status ?? 0,
             description: module.learningGoals?.[0] || "",
+            id: module.id,
+            unlocked,
           },
           style: {
             backgroundColor: `hsl(${hue}, 70%, ${lightness})`,
@@ -51,8 +62,6 @@ const RoadmapGraph = ({ data, viewMode = "student" }) => {
             padding: 10,
           },
         });
-
-        moduleMap.set(module.id, module);
       });
     });
 
@@ -66,7 +75,14 @@ const RoadmapGraph = ({ data, viewMode = "student" }) => {
               target: targetId,
               type: "straight",
               animated: true,
-              style: { stroke: "#999" },
+              style: { stroke: "#999", width: 2 },
+              markerEnd: {
+                type: "arrowclosed",
+                width: 12,
+                height: 12,
+                color: "#555",
+              },
+              
             });
           }
         });
@@ -135,12 +151,18 @@ const RoadmapGraph = ({ data, viewMode = "student" }) => {
           const targetId = moduleMap.get(targetName);
           if (targetId) {
             edges.push({
-              id: `e-${sourceId}-${targetId}`,
-              source: sourceId,
-              target: targetId,
+              id: `e-${source}-${target}`,
+              source,
+              target,
               type: "straight",
               animated: true,
-              style: { stroke: "#999" },
+              style: { stroke: "#555", strokeWidth: 5 },
+              markerEnd: {
+                type: "arrowclosed",
+                width: 12,
+                height: 12,
+                color: "#555",
+              },
             });
           }
         });
@@ -158,7 +180,13 @@ const RoadmapGraph = ({ data, viewMode = "student" }) => {
         defaultEdgeOptions={{
           type: "straight",
           animated: true,
-          style: { stroke: "#aaa" },
+          style: { stroke: "#555", strokeWidth: 2 },
+          markerEnd: {
+            type: "arrowclosed",
+            width: 12,
+            height: 12,
+            color: "#555",
+          },
         }}
       >
         <Background />

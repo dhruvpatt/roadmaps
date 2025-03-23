@@ -87,6 +87,8 @@ const ModulePage = () => {
       const data = await res.json();
       const { latex, script } = data;
 
+      console.log(latex, script)
+
       // Step 2: Send to external video generation API
       const formData = new FormData();
       formData.append("module_id", id);
@@ -116,6 +118,7 @@ const ModulePage = () => {
     } catch (err) {
       console.error("Error creating lecture video:", err);
       alert("Failed to generate lecture video.");
+      return
     } finally {
       setVideoLoading(false);
     }
