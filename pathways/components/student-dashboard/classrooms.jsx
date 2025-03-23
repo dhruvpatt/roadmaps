@@ -22,7 +22,7 @@ export default function YourClassrooms() {
     { id: 7, title: "English Literature", teacher: "Mrs. Davis", nextClass: "Friday, 3:00 PM", pendingAssignments: 1 },
   ];
 
-  const scrollAmount = 320 * classrooms.length;
+  const scrollAmount = 500;
 
   const scrollLeft = () => {
     if (scrollRef.current) {
@@ -75,7 +75,7 @@ export default function YourClassrooms() {
   }
 
   return (
-    <div className="mx-auto px-4">
+    <div className="mx-auto max-w-screen-7xl w-full px-4">
       {/* Header */}
       <div className="flex items-center justify-between mt-6 md:mt-8">
         <h2 className="text-black text-2xl md:text-3xl font-black">Your Classrooms</h2>
