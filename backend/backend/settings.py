@@ -35,7 +35,7 @@ if os.path.exists(env_path):
 else:
     print("unable to find env file")
 LLM_API_KEY = os.getenv("LLM_API_KEY")
-
+YT_API_KEY = os.getenv("YT_API_KEY")
 # Application definition
 
 INSTALLED_APPS = [

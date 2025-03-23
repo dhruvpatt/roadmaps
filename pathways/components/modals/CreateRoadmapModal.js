@@ -7,7 +7,7 @@ const mockpathwayID = {
   id: 1,
 };
 
-export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user }) {
+export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user, classroomCode }) {
   const router = useRouter();
 
   const [form, setForm] = useState({
@@ -154,18 +154,17 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user }) 
             </select>
           </div>
 
-          {/* Classroom (optional) */}
           {user.role === "teacher" && (
-            <div>
-              <label className="text-sm font-medium text-gray-700">Classroom</label>
-              <input
-                name="classroom"
-                value={form.classroom}
-                onChange={handleChange}
-                placeholder="Optional"
-                className="w-full mt-1 border border-gray-300 rounded px-3 py-2"
-              />
-            </div>
+              <div>
+                  <label className="text-sm font-medium text-gray-700">Classroom</label>
+                  <input
+                      name="classroom"
+                      value={classroomCode || ""}
+                      onChange={handleChange}
+                      placeholder="Optional"
+                      className="w-full mt-1 border border-gray-300 rounded px-3 py-2"
+                  />
+              </div>
           )}
 
           {/* Grade */}

@@ -8,7 +8,8 @@ import React from "react";
  * @param {number} progress    - Completion percentage (0–100)
  * @param {number} hoursLeft   - Hours left for the course or pathway
  */
-export default function PathwayCard({ title, subtitle, progress, hoursLeft }) {
+export default function PathwayCard({ title, subtitle, progress, published, user }) {
+  console.log("user pathway card", user, published);
   return (
     <div className="relative w-full max-w-sm bg-white rounded-lg shadow-md border-t-4 border-amber-600 p-6">
       {/* Title & Subtitle */}
@@ -20,18 +21,31 @@ export default function PathwayCard({ title, subtitle, progress, hoursLeft }) {
       <p className="text-md text-gray-500 mt-1">{subtitle}</p>
 
       {/* Progress Bar */}
-      <div className="mt-4 h-2 bg-gray-300 rounded-full overflow-hidden">
-        <div
-          className="h-full bg-amber-600"
-          style={{ width: `${progress}%` }}
-        />
-      </div>
+      {user.role === "student" ? (
+        <>
+        <div className="mt-4 h-2 bg-gray-300 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-amber-600"
+            style={{ width: `${progress}%` }}
+          />
+
+        
+        </div>
+        <div className="flex justify-between text-md text-gray-600 mt-2">
+        <p className="font-medium">{progress}% complete</p>
+        </div>
+        </>
+      ) : (
+        // fill in for teacher or other roles
+        <div>
+          {published ? (
+            <p className="text-green-500">Published</p>): (<p className="text-red-500">Not Published</p>)}
+        </div>
+      )}
+
 
       {/* Stats (Completion % & Hours Left) */}
-      <div className="flex justify-between text-md text-gray-600 mt-2">
-        <p className="font-medium">{progress}% complete</p>
-        <p className="font-medium">{hoursLeft} hours left</p>
-      </div>
+      
 
       {/* Continue Button */}
       <button
