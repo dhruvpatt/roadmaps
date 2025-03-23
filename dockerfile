@@ -7,11 +7,13 @@ WORKDIR /app
 #Comment out when testing locally
 ARG LLM_API_KEY
 ARG DJANGO_SECRET_KEY
+ARG YT_API_KEY
 
 
 # Set environment variables from build-time arguments
 ENV LLM_API_KEY=$LLM_API_KEY
 ENV DJANGO_SECRET_KEY=$DJANGO_SECRET_KEY
+ENV YT_API_KEY=$YT_API_KEY
 
 RUN apt-get update && apt-get install -y libpq-dev gcc && rm -rf /var/lib/apt/lists/*
 

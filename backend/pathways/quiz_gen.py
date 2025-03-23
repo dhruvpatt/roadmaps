@@ -45,9 +45,12 @@ def bulk_ai_grade_text_answers(questions):
         config=config
     )
     try:
+        print(response.text)
+        print(clean_response(response.text))
         result = json.loads(clean_response(response.text))
         return result
     except Exception as e:
+        print(e)
         raise ValueError(f"AI grading failed: {e}")
 
 class QuizEvaluationAPIView(APIView):
@@ -67,6 +70,8 @@ class QuizEvaluationAPIView(APIView):
             text_questions = []
             text_index_map = {}
 
+
+
             for question in quiz.questions.all():
                 submitted = user_answers.get(str(question.id), "").strip()
                 question.answer = submitted
@@ -79,8 +84,8 @@ class QuizEvaluationAPIView(APIView):
                         "solution": question.solution,
                         "answer": submitted
                     })
-
             ai_results = bulk_ai_grade_text_answers(text_questions) if text_questions else []
+            print("HERE")
 
             for question in quiz.questions.all():
                 if question.type == 'text':
@@ -99,6 +104,7 @@ class QuizEvaluationAPIView(APIView):
             quiz.failed_questions.set(failed_questions)
             quiz.scores.append({"score": correct, "total": total})
             quiz.save()
+
 
             return Response({
                 "score": correct,

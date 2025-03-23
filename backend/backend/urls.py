@@ -6,7 +6,7 @@ from pathways import views
 from pathways.roadmaps_views import RoadmapGenerationAPIView, get_all_roadmaps, get_roadmap_by_id, update_roadmap, \
     delete_roadmap, get_all_subjects, get_subject_by_id, create_subject, update_subject, delete_subject, \
     get_all_chapters, get_chapter_by_id, create_chapter, update_chapter, delete_chapter, get_user_roadmaps, publish_roadmap_to_classroom
-from pathways.module_gen import ModuleContentGenerationAPIView, ModuleAssistantAPIView, get_module
+from pathways.module_gen import ModuleContentGenerationAPIView, ModuleAssistantAPIView, get_module, create_lecture_materials, update_module_video
 from pathways.quiz_gen import QuizGenerationAPIView, QuizEvaluationAPIView, get_quiz_results
 from pathways.classroom_views import classroom_analytics, classroom_student_details, join_classroom_as_student, \
     join_classroom_as_teacher, create_classroom, student_classroom_analytics
@@ -32,6 +32,9 @@ urlpatterns = [
     path('generate-module/', ModuleContentGenerationAPIView.as_view(), name='generate-module'),
     path('module-assistant/', ModuleAssistantAPIView.as_view(), name='module-assistant'),
     path('api/get-module/', get_module),
+    path('api/update-module-video/', update_module_video),
+    path('api/create-lecture-materials/', create_lecture_materials),
+
     path('api/gen-quiz/', QuizGenerationAPIView.as_view(), name='generate-quiz'),
     path('api/evaluate-quiz/', QuizEvaluationAPIView.as_view(), name='evaluate-quiz'),
     path('api/get-quiz-results/<int:quiz_id>/', get_quiz_results),

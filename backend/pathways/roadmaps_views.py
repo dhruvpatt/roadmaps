@@ -138,8 +138,9 @@ class RoadmapGenerationAPIView(APIView):
             mode = serializer.validated_data.get('mode', 'CASUAL')
             user_chapters = serializer.validated_data.get('chapters')
             classroomCode = serializer.validated_data.get('classroom')
-            
-            classroom = Classroom.objects.get(join_id=classroomCode)
+            classroom = None
+            if classroomCode:
+                classroom = Classroom.objects.get(join_id=classroomCode)
             print("CLASROOM:", classroom)
             user = User.objects.get(pk=user_id)
             # Create agent instances

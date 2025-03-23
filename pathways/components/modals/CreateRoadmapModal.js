@@ -13,7 +13,7 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user, cl
     title: "",
     topic: "",
     mode: "CASUAL",
-    classroom: classroomCode || "",
+    classroom: classroomCode || null,
     grade: "",
     learningGoals: [],
     details: "",
@@ -61,7 +61,7 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user, cl
         .map((g) => g.trim())
         .filter(Boolean),
       userid: user.id,
-      classroom: classroomCode || "",
+      classroom: classroomCode || null,
     };
     console.log("submit roadmap", roadmap);
     setLoading(true);
