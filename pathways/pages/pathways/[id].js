@@ -168,7 +168,7 @@ const ViewPathwayPage = () => {
     <div className="min-h-screen bg-white p-6 space-y-6 text-gray-800">
       <div className="flex items-center text-sm text-gray-500 cursor-pointer hover:underline" onClick={() => router.push("/pathways")}>
         <ArrowLeft size={16} className="mr-1" />
-        Back to Pathways
+        Back to pathways
       </div>
 
       <div>
