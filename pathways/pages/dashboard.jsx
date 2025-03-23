@@ -11,6 +11,8 @@ import { Plus, BookOpenText, Map } from "lucide-react";
 import {useRouter} from "next/navigation"
 import TeacherStats from "@/components/teacher-dashboard/teacher-stats";
 import backendUrl from "@/backendUrl"
+import emitter from "@/mitt";
+
 
 const Dashboard = () => {
     const [drawerOpen, setDrawerOpen] = useState(false);
@@ -61,6 +63,8 @@ const Dashboard = () => {
 
             const ret = await res.json();
             console.log("ret", ret);
+
+
         } catch (error){
             console.error("Failed to create roadmap", error);
         }
@@ -76,6 +80,7 @@ const Dashboard = () => {
 
             const ret = await res.json();
             console.log("ret", ret);
+            emitter.emit("update-classrooms");
         } catch (error){
             console.error("Failed to create classroom", error);
         }

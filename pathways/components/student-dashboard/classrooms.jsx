@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import  backendUrl  from '@/backendUrl';
+import emitter from "@/mitt";
 
 export default function YourClassrooms() {
   const router = useRouter();
@@ -37,6 +38,7 @@ export default function YourClassrooms() {
 
 
   useEffect(() => {
+    
     const usr = JSON.parse(localStorage.getItem("user"));
     if (!usr) {
       router.push("/login");
@@ -45,6 +47,7 @@ export default function YourClassrooms() {
     setUser(usr);
 
     fetchClassrooms(usr);
+    emitter.on("update-classrooms", async () => await updateClassrooms(usr));
   }, []);
 
   const fetchClassrooms = async (usr) => {
@@ -65,6 +68,11 @@ export default function YourClassrooms() {
       console.error("Failed to fetch classrooms:", error);
     }
   };
+
+  const updateClassrooms = async (user) => {
+    console.log("hit")
+    await fetchClassrooms(user);
+  }
 
   return (
     <div className="mx-auto max-w-screen-2xl px-4">
