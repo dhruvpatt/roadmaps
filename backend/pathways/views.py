@@ -903,3 +903,32 @@ def assign_roadmap_to_user(request):
         return Response({"error": "Roadmap not found"}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+def mark_module_completed(request):
+    module_id = request.data.get("module_id")
+    user_id = request.data.get("user_id")
+
+    if not module_id or not user_id:
+        return Response({"error": "module_id and user_id are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        module = Module.objects.get(id=module_id)
+
+        if module.owner.id != user_id:
+            return Response({"error": "You do not have permission to modify this module"}, status=status.HTTP_403_FORBIDDEN)
+
+        module.status = "completed"
+        module.save()
+
+        serialized = ModuleSerializer(module)
+
+        return Response({
+            "message": "Module marked as completed",
+            "module": serialized.data
+        }, status=status.HTTP_200_OK)
+
+    except Module.DoesNotExist:
+        return Response({"error": "Module not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -55,6 +55,8 @@ urlpatterns = [
     path('get-user-roadmaps/', get_user_roadmaps),
     path("publish-roadmap-to-classroom/", publish_roadmap_to_classroom),
     path("publish-roadmap/",  views.assign_roadmap_to_user, name="publish-roadmap"),
+    
+    path("mark-module-completed/", views.mark_module_completed, name="mark-module-as-complete"),
 
     # path('roadmaps/', views.get_all_roadmaps),
     # path('roadmaps/<int:roadmap_id>/', views.get_roadmap_by_id),

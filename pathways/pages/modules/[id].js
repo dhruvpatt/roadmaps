@@ -11,13 +11,14 @@ const ModulePage = () => {
 
   const [moduleData, setModuleData] = useState(null);
   const [showChat, setShowChat] = useState(true);
+  const [user, setUser] = useState({});
 
   useEffect(() => {
     if (!id) return;
 
     const fetchModule = async () => {
       try {
-        const user = JSON.parse(localStorage.getItem("user"));
+        const usr = JSON.parse(localStorage.getItem("user"));
         const res = await fetch(`${backendUrl}/api/get-module/`, {
           method: "POST",
           headers: {
@@ -25,11 +26,12 @@ const ModulePage = () => {
           },
           body: JSON.stringify({
             module_id: id,
-            user_id: user.id,
+            user_id: usr.id,
           }),
         });
 
         const data = await res.json();
+        setUser(usr);
         console.log("Module", data);
         setModuleData(data);
       } catch (error) {
@@ -39,6 +41,30 @@ const ModulePage = () => {
 
     fetchModule();
   }, [id]);
+
+  const markModuleComplete = async () => {
+    try {
+        const res = await fetch(`${backendUrl}/mark-module-completed/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            module_id: id,
+            user_id: user.id
+          }),
+        });
+
+        const ret = await res.json();
+        console.log("Module marked as complete", ret);
+        setModuleData(ret["module"]);
+
+
+    } catch (error){
+      console.error("Failed to mark module as complete");
+    }
+
+  }
 
   if (!moduleData) {
     return (
@@ -127,9 +153,19 @@ const ModulePage = () => {
         {/* Title + Button */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2 gap-3">
           <h1 className="text-3xl font-bold text-gray-900">{name}</h1>
-          <button className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-all">
+          {moduleData.status === "completed" ? (
+          <button className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium cursor-default">
+            Completed
+          </button>
+        ) : (
+          <button
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-all"
+            onClick={async () => await markModuleComplete()}
+          >
             Mark as Complete
           </button>
+        )}
+
         </div>
 
         {/* Subtitle */}
