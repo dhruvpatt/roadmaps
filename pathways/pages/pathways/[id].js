@@ -3,6 +3,8 @@ import { useRouter } from "next/router";
 import { ArrowLeft } from "lucide-react";
 import backendUrl from "@/backendUrl";
 import RoadmapGraph from "@/components/pathways/RoadmapGraph";
+import Sidebar from "../../components/sidebar";
+import Navbar from "../../components/navbar";
 
 const isModuleUnlocked = (module, moduleMap) => {
   return (module.prereq || []).every(
@@ -165,7 +167,11 @@ const ViewPathwayPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white p-6 space-y-6 text-gray-800">
+    <div className="flex flex-col bg-gray-100 w-full min-h-screen">
+      <Navbar />
+      <div className="flex flex-1 flex-col md:flex-row">
+          <Sidebar className="hidden md:block w-64" />
+    <div className="min-h-screen bg-white p-6 space-y-6 text-gray-800 w-full">
       <div className="flex items-center text-sm text-gray-500 cursor-pointer hover:underline" onClick={() => router.push("/pathways")}>
         <ArrowLeft size={16} className="mr-1" />
         Back to Pathways
@@ -206,7 +212,7 @@ const ViewPathwayPage = () => {
 
       <div className="gap-6">
       <div className="border rounded-xl p-4 flex flex-col h-full">
-          <h2 className="text-lg font-semibold mb-1 text-gray-800">Pathway Map</h2>
+          <h2 className="text-lg font-semibold mb-1 text-gray-600">Pathway Map</h2>
           <p className="text-sm text-gray-600 mb-3">
             Visual representation of your learning journey
           </p>
@@ -368,6 +374,8 @@ const ViewPathwayPage = () => {
         </div>
       </div>
     </div>
+  </div>
+</div>
   );
 };
 
