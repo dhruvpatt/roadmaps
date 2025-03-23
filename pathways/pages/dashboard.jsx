@@ -30,28 +30,7 @@ const Dashboard = () => {
         }
 
         setUser(usr);
-
-        // fetchRoadmaps(usr);
     },[]);
-
-    // const fetchRoadmaps = async (usr) => {
-    //     try {
-    //         console.log('userid', usr.id);
-    //         const res = await fetch(`${backendUrl}/get-user-roadmaps/`, {
-    //             method: "POST",
-    //             headers: { "Content-Type": "application/json" },
-    //             body: JSON.stringify({ user_id: usr.id }),
-    //         })
-
-    //         const ret = await res.json();
-
-    //         console.log("Roadmaps", ret);
-    //     } catch (error){
-
-    //         console.error("Failed to fetch roadmaps", error);
-
-    //     }
-    // }
 
     const createRoadmap = async (data) => {
         try {
@@ -92,7 +71,7 @@ const Dashboard = () => {
             <Navbar />
             <div className="flex flex-1 flex-col md:flex-row">
                 <Sidebar className="hidden md:block w-64" />
-                <div className="flex-1 p-4 md:p-16 relative max-w-7xl mx-auto w-full">
+                <div className="flex-1 p-4 md:p-16  w-full">
                     <h1 className="text-black text-3xl md:text-4xl font-bold text-center md:text-left">Welcome Back {user.first_name}</h1>
                     {user.role === "student" ? (<p className="text-gray-600 text-lg md:text-2xl text-center md:text-left mb-6">Continue your learning journey</p>):
                     (<p className="text-gray-600 text-lg md:text-2xl text-center md:text-left mb-6">Continue your teaching journey</p>)

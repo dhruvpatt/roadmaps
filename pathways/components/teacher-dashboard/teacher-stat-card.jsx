@@ -9,7 +9,7 @@ import React from "react";
  */
 export default function TeacherStat({ title, value, subtext, Icon }) {
   return (
-    <div className="p-6 bg-white rounded-lg shadow-md border border-transparent flex flex-col h-full">
+    <div className="bg-white rounded-lg shadow-md p-8 flex flex-col justify-between">
       {/* Top row: Title + optional Icon */}
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-sm font-semibold text-gray-600">{title}</h3>
