@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { X, Plus, Minus } from "lucide-react";
+import { useRouter } from "next/router";
 
 // 🔹 Mock user (can be dynamic later)
 const mockUser = {
@@ -74,6 +75,8 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user }) 
             chapters: [],
         });
         setShowChapters(false);
+
+        router.push(`/pathways/unpublished/${mockUser.id}`);
     };
 
     if (!isOpen) return null;
@@ -88,7 +91,7 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user }) 
                     <X className="w-5 h-5" />
                 </button>
 
-                <h2 className="text-2xl font-bold text-amber-800 mb-4">Create Roadmap</h2>
+                <h2 className="text-2xl font-bold text-amber-800 mb-4">Create Pathway</h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
@@ -255,7 +258,7 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user }) 
                         onClick={handleSubmit}
                         className="px-4 py-2 text-sm rounded-md bg-amber-600 hover:bg-amber-700 text-white font-semibold"
                     >
-                        Create Roadmap
+                        Create Pathway
                     </button>
                 </div>
             </div>
