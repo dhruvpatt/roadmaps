@@ -360,7 +360,7 @@ def roadmap_list(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['GET', 'PUT', 'DELETE'])
+@api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
 def roadmap_detail(request, pk):
     try:
         roadmap = Roadmap.objects.get(pk=pk)
@@ -378,9 +378,17 @@ def roadmap_detail(request, pk):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    elif request.method == 'PATCH':
+        serializer = RoadmapSerializer(roadmap, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     elif request.method == 'DELETE':
         roadmap.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 
 @api_view(['GET'])

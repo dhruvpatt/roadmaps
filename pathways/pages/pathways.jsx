@@ -78,7 +78,7 @@ export default function Pathways() {
                 title={pathway.title}
                 progress={pathway.progress}
                 chapters={pathway.chapters}
-                onViewClick={() => router.push(`/pathway/${pathway.id}`)}
+                onViewClick={() => router.push(`/pathways/${pathway.id}`)}
               />
             ))}
           </div>
