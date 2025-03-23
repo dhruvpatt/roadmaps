@@ -1,25 +1,37 @@
-// components/QuestionCard.js
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 
-const QuestionCard = ({ data, onAnswer }) => {
+const QuestionCard = ({ data, onAnswer, defaultAnswer }) => {
   const [input, setInput] = useState("");
 
+  useEffect(() => {
+    if (defaultAnswer !== undefined) {
+      setInput(defaultAnswer);
+    }
+  }, [defaultAnswer]);
+
   const handleSubmit = () => {
-    // Only submit if input isn't empty
     if (input.trim() !== "") {
       onAnswer({ id: data.id, answer: input });
-      setInput(""); // Clear out the input (optional)
     }
   };
 
   return (
     <div className="bg-white p-8 rounded-lg shadow-md text-amber-900 space-y-6">
-      <h2 className="text-2xl font-semibold">{data.question}</h2>
+      {/* Render Markdown question with math support */}
+      <div className="text-2xl font-semibold">
+        <ReactMarkdown
+          children={data.question}
+          remarkPlugins={[remarkMath]}
+          rehypePlugins={[rehypeKatex]}
+        />
+      </div>
 
+      {/* MULTIPLE CHOICE */}
       {data.type === "multiple" ? (
-        /* ----------------------------------
-           MULTIPLE CHOICE (BUTTONS)
-        ------------------------------------- */
         <div className="space-y-4">
           {data.options.map((option, idx) => (
             <button
@@ -32,9 +44,7 @@ const QuestionCard = ({ data, onAnswer }) => {
           ))}
         </div>
       ) : data.type === "dropdown" ? (
-        /* ----------------------------------
-           DROPDOWN SELECT
-        ------------------------------------- */
+        /* DROPDOWN SELECT */
         <div className="space-y-4">
           <select
             value={input}
@@ -58,9 +68,7 @@ const QuestionCard = ({ data, onAnswer }) => {
           </button>
         </div>
       ) : (
-        /* ----------------------------------
-           TEXT INPUT (Default fallback)
-        ------------------------------------- */
+        /* TEXT INPUT */
         <div className="space-y-4">
           <input
             type="text"
