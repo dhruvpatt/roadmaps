@@ -72,7 +72,7 @@ export default function Classrooms() {
 
   const fetchClassrooms = async (usr) => {
     try {
-      const res = await fetch(`${backendUrl}/get-user-classrooms`, {
+      const res = await fetch(`${backendUrl}/get-user-classrooms/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
