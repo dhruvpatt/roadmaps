@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Users, BookOpen, BarChart2 } from "lucide-react";
 import PathwayCard from "@/components/pathways/pathways-card";
 import CreateRoadmapModal from "@/components/modals/CreateRoadmapModal";
 import { useRouter } from "next/navigation";
+import backendUrl from "@/backendUrl";
 
-export default function OverviewComponent() {
+export default function OverviewComponent({ classroomCode }) {
   const router = useRouter();
   const [showModal, setShowModal] = useState(false);
+  const user = JSON.parse(localStorage.getItem("user"));
+
 
   const mockPathways = [
     { id: 1, title: "Algebra Fundamentals", progress: 75, chapters: 10 },
@@ -39,6 +42,24 @@ export default function OverviewComponent() {
       text: "text-amber-700",
     },
   ];
+
+
+  const createRoadmap = async (data) => {
+      try {
+          const res = await fetch(`${backendUrl}/generate-roadmap/`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(data),
+          });
+
+          const ret = await res.json();
+          console.log("ret", ret);
+
+
+      } catch (error){
+          console.error("Failed to create roadmap", error);
+      }
+  }
 
   const handleCreateNewPathway = () => setShowModal(true);
 
@@ -91,10 +112,13 @@ export default function OverviewComponent() {
       <CreateRoadmapModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
-        onCreate={(newRoadmap) => {
-          console.log("Created roadmap:", newRoadmap);
+        onCreate={async (newRoadmap) => {
+          await createRoadmap(newRoadmap);
           setShowModal(false);
         }}
+        user={user}
+        classroomCode={classroomCode}
+
       />
     </div>
   );

@@ -49,8 +49,13 @@ const ViewPathwayPage = () => {
         if (!res.ok) throw new Error("Network response was not ok");
         const data = await res.json();
 
-        const isTeacher = data?.owner_role === "teacher";
+        const user = await fetch(`${backendUrl}/api/users/${data.owner}/`);
+        const userData = await user.json();
+
+        const isTeacher = userData?.role === "teacher";
         setViewMode(isTeacher ? "teacher" : "student");
+
+        console.log("data", data);
 
         if (isTeacher) {
           const flattenedModules = data.chapters.flatMap((chapter, chapterIndex) =>
@@ -137,13 +142,25 @@ const ViewPathwayPage = () => {
 
   return (
     <div className="min-h-screen bg-white p-6 space-y-6 text-gray-800">
-      <div className="flex items-center text-sm text-gray-500 cursor-pointer hover:underline" onClick={() => router.back()}>
+      <div className="flex items-center text-sm text-gray-500 cursor-pointer hover:underline" onClick={() => router.push("/pathways")}>
         <ArrowLeft size={16} className="mr-1" />
-        Back to pathway
+        Back to Pathways
       </div>
 
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">{pathway?.title || "Teacher View"}</h1>
+        <div className="flex space-x-2 justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">{pathway?.title || "Pathway"}</h1>
+
+        {viewMode === "teacher" && (
+        <div>
+        <button
+                            onClick={() => handleEdit(i)}
+                            className="w-full mt-4 px-3 py-1 text-sm font-medium text-white rounded bg-black hover:bg-amber-600 cursor-pointer"
+                          >Publish</button>
+        </div>
+        )}
+        </div>
+
         <p className="text-gray-600 mt-1">{pathway?.details}</p>
 
         {viewMode !== "teacher" && (
@@ -163,7 +180,16 @@ const ViewPathwayPage = () => {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="gap-6">
+      <div className="border rounded-xl p-4 flex flex-col h-full">
+          <h2 className="text-lg font-semibold mb-1 text-gray-800">Pathway Map</h2>
+          <p className="text-sm text-gray-600 mb-3">
+            Visual representation of your learning journey
+          </p>
+          <div className="relative flex-1">
+            <RoadmapGraph data={viewMode === "student" ? pathway : modulesData} viewMode={viewMode} />
+          </div>
+        </div>
         <div className="border rounded-xl p-4">
           <h2 className="text-lg font-semibold mb-2">Modules</h2>
           <p className="text-sm text-gray-600 mb-4">
@@ -313,16 +339,6 @@ const ViewPathwayPage = () => {
                   </div>
                 );
               })}
-        </div>
-
-        <div className="border rounded-xl p-4 flex flex-col h-full">
-          <h2 className="text-lg font-semibold mb-1 text-gray-800">Pathway Map</h2>
-          <p className="text-sm text-gray-600 mb-3">
-            Visual representation of your learning journey
-          </p>
-          <div className="relative flex-1">
-            <RoadmapGraph data={viewMode === "student" ? pathway : modulesData} viewMode={viewMode} />
-          </div>
         </div>
       </div>
     </div>

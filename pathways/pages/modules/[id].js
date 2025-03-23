@@ -1,34 +1,123 @@
 // pages/module/[id].js
-import { useRouter } from "next/router";
-import mockRoadmap from "@/data/mockRoadmap";
-import moduleContent from "@/data/mockModuleContent";
-import ModuleChat from "@/components/modules/ModuleChat";
-import { ArrowLeft, MessageSquare } from "lucide-react";
-import { useMemo, useState } from "react";
-import ReactMarkdown from "react-markdown";
 
-const findModuleById = (id) => {
-    for (const chapter of mockRoadmap.chapters) {
-        for (const mod of chapter.modules) {
-            if (mod.id === id) return { ...mod, chapter };
-        }
-    }
-    return null;
-};
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
+import { ArrowLeft, MessageSquare } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import ModuleChat from "@/components/modules/ModuleChat";
+import backendUrl from "@/backendUrl";
 
 const ModulePage = () => {
     const router = useRouter();
     const { id } = router.query;
+
+    const [moduleData, setModuleData] = useState(null);
     const [showChat, setShowChat] = useState(true);
 
-    const module = useMemo(() => findModuleById(id), [id]);
-    const contentBlocks = moduleContent[id] || [];
+    useEffect(() => {
+        if (!id) return;
 
-    if (!module) return <div className="p-8">Module not found</div>;
+        const fetchModule = async () => {
+            try {
+                const user = JSON.parse(localStorage.getItem("user"));
+                const res = await fetch(`${backendUrl}/api/get-module/`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        module_id: id,
+                        user_id: user.id,
+                    }),
+                });
+
+                const data = await res.json();
+                console.log("Module", data);
+                setModuleData(data);
+            } catch (error) {
+                console.error("Error fetching module:", error);
+            }
+        };
+
+        fetchModule();
+    }, [id]);
+
+    if (!moduleData) return <div className="p-8">Loading module...</div>;
+
+    const {
+        name,
+        learning_goals,
+        yt_video,
+        contents = [],
+    } = moduleData;
+
+    const renderContentBlock = (block, i) => {
+        const type = block.type?.toLowerCase();
+        const content = block.content;
+
+        // Markdown/Text/Content
+        if (["text", "content", "md", "markdown"].includes(type)) {
+            return (
+                <div key={i} className="prose max-w-none">
+                    <ReactMarkdown>{content}</ReactMarkdown>
+                </div>
+            );
+        }
+
+        // Raw HTML
+        if (type === "html") {
+            return (
+                <div
+                    key={i}
+                    className="prose max-w-none"
+                    dangerouslySetInnerHTML={{ __html: content }}
+                />
+            );
+        }
+
+        // Video (YouTube or MP4)
+        if (type === "video") {
+            const isYoutube = content.includes("youtube.com") || content.includes("youtu.be");
+
+            if (isYoutube) {
+                let embedUrl = content;
+
+                if (embedUrl.includes("watch?v=")) {
+                    embedUrl = embedUrl.replace("watch?v=", "embed/");
+                } else if (embedUrl.includes("youtu.be")) {
+                    const videoId = embedUrl.split("youtu.be/")[1];
+                    embedUrl = `https://www.youtube.com/embed/${videoId}`;
+                }
+
+                return (
+                    <div key={i} className="aspect-video w-full rounded-lg overflow-hidden shadow">
+                        <iframe
+                            className="w-full h-full"
+                            src={embedUrl}
+                            title="YouTube Video"
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                        />
+                    </div>
+                );
+            }
+
+            // MP4 or fallback
+            return (
+                <video key={i} controls className="w-full rounded-lg shadow">
+                    <source src={content} type="video/mp4" />
+                    Your browser does not support the video tag.
+                </video>
+            );
+        }
+
+        return null;
+    };
 
     return (
         <div className="min-h-screen p-6 bg-white text-gray-800">
-            {/* Back link */}
+            {/* Back Button */}
             <div
                 className="flex items-center text-sm text-gray-500 cursor-pointer hover:underline mb-4"
                 onClick={() => router.back()}
@@ -37,51 +126,38 @@ const ModulePage = () => {
                 Back to pathway
             </div>
 
-            <h1 className="text-2xl font-bold text-gray-900 mb-1">{module.name}</h1>
-            <p className="text-gray-600 mb-6">{module.learningGoals?.[0]}</p>
+            {/* Header */}
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">{name}</h1>
+            {learning_goals?.length > 0 && (
+                <p className="text-gray-600 mb-6">{learning_goals[0]}</p>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left: Video + Content */}
+                {/* Left Column: Video & Content */}
                 <div className="lg:col-span-2 space-y-6">
-                    {/* Video */}
-                    <div className="aspect-video w-full rounded-lg overflow-hidden shadow">
-                        <iframe
-                            className="w-full h-full"
-                            src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                            title="Module video"
-                            frameBorder="0"
-                            allowFullScreen
-                        />
-                    </div>
+                    {/* Main YouTube Video if exists */}
+                    {yt_video && (
+                        <div className="aspect-video w-full rounded-lg overflow-hidden shadow">
+                            <iframe
+                                className="w-full h-full"
+                                src={yt_video.replace("watch?v=", "embed/")}
+                                title="Module video"
+                                frameBorder="0"
+                                allowFullScreen
+                            />
+                        </div>
+                    )}
 
-                    {/* Dynamic Content */}
-                    <div className="space-y-6">
-                        {contentBlocks.map((block, i) => {
-                            if (block.type === "text") {
-                                return <p key={i} className="text-gray-800 leading-relaxed">{block.content}</p>;
-                            } else if (block.type === "md") {
-                                return <div key={i} className="prose max-w-none">
-                                    <ReactMarkdown>{block.content}</ReactMarkdown>;
-                                </div>
-                            } else if (block.type === "html") {
-                                return (
-                                    <div
-                                        key={i}
-                                        className="prose max-w-none"
-                                        dangerouslySetInnerHTML={{ __html: block.content }}
-                                    />
-                                );
-                            }
-                            return null;
-                        })}
-                    </div>
+                    {/* Content Blocks */}
+                    {contents.map((block, i) => renderContentBlock(block, i))}
 
+                    {/* Completion Button */}
                     <button className="mt-6 bg-black text-white px-4 py-2 rounded-md hover:bg-gray-900">
                         Mark as Complete
                     </button>
                 </div>
 
-                {/* Right: AI Chat Assistant */}
+                {/* Right Column: Chat Assistant */}
                 <div className="relative">
                     <button
                         onClick={() => setShowChat(!showChat)}
@@ -92,7 +168,7 @@ const ModulePage = () => {
 
                     {showChat && (
                         <div className="border rounded-xl p-4 mt-6 lg:mt-0 h-full">
-                            <ModuleChat />
+                            <ModuleChat moduleId={id} />
                         </div>
                     )}
                 </div>

@@ -11,7 +11,7 @@ from .models import User, Roadmap, Chapter, Question, Quiz, Module, Content, Mes
 from .serializers import (UserSerializer, RoadmapSerializer, ChapterSerializer,
                           QuestionSerializer, QuizSerializer, ModuleSerializer,
                           ContentSerializer, MessageSerializer, ClassroomSerializer,
-                          SubjectSerializer)
+                          SubjectSerializer, ClassroomDetailSerializer)
 
 
 class StudentAnalyticsAPIView(APIView):
@@ -842,4 +842,45 @@ def get_user_classrooms(request):
 
     serializer = ClassroomSerializer(classrooms, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# @api_view(['POST'])
+# def get_classroom(request):
+    
+#     classroom_id = request.data.get('classroom_id')
+#     user_id = request.data.get("user_id")
+#     print("get classroom hit")
+#     if not classroom_id:
+#         return Response({"error": "classroom_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+    
+#     if not user_id:
+#         return Response({"error": "user_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+    
+#     try: 
+#         classroom = Classroom.objects.get(id=classroom_id)
+#         serializer = ClassroomSerializer(classroom)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
+#     except Classroom.DoesNotExist:
+#         return Response({"error": "Classroom not found"}, status=status.HTTP_404_NOT_FOUND)
+    
+@api_view(['POST'])
+def get_classroom(request):
+    classroom_id = request.data.get('classroom_id')
+    user_id = request.data.get("user_id")
+
+    print("get classroom hit")
+
+    if not classroom_id:
+        return Response({"error": "classroom_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not user_id:
+        return Response({"error": "user_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        classroom = Classroom.objects.get(id=classroom_id)
+        serializer = ClassroomDetailSerializer(classroom)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Classroom.DoesNotExist:
+        return Response({"error": "Classroom not found"}, status=status.HTTP_404_NOT_FOUND)
+
 
