@@ -207,7 +207,7 @@ const ModulePage = () => {
           {/* Back Button */}
           <div
             className="flex items-center text-sm text-gray-500 cursor-pointer hover:underline mb-4 cursor-pointer"
-            onClick={() => router.push("/pathways")}
+            onClick={() => router.back()}
           >
             <ArrowLeft size={16} className="mr-1 text-amber-600" />
             <span className="text-amber-600 ">Back to pathway</span>

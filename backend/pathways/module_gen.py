@@ -189,7 +189,7 @@ class ModuleContentGenerationAPIView(APIView):
                     if evaluation_agent.evaluate(content_list):
                         print("EVALUATE: TRUE")
                         content_objects = []
-                        content_data = json.loads(content_list)
+                        content_data = pyjson.loads(content_list)
 
                         for item in content_data:
                             if item['type'] == 'video':
@@ -327,7 +327,7 @@ class ModuleFeedbackAPIView(APIView):
                 config=config
             )
 
-            result = json.loads(clean_response(response.text))
+            result = pyjson.loads(clean_response(response.text))
 
             module.feedback = result.get("feedback", "")
             module.save()
@@ -465,7 +465,8 @@ Educational Content:
 Chat Interaction Summary:
 {chat_log}
 
-Only return the LaTeX code, starting with \documentclass{{beamer}} and ending with \end{{document}}.
+Only return the LaTeX code, starting with \documentclass{{beamer}} and ending with \end{{document}} keep the latex simple and do not add any crazy imports.
+The slides should be simple yet informative.
 """
 
         config = types.GenerateContentConfig(temperature=0.7)
@@ -481,6 +482,9 @@ Only return the LaTeX code, starting with \documentclass{{beamer}} and ending wi
         script_prompt = f"""
 Given the following LaTeX Beamer slide content, generate a corresponding script to be read aloud per slide, use words to represent symbols when generating an output.
 
+LaTeX Slides:
+{latex_output}
+
 Format the response strictly as a JSON object like:
 {{
   "scripts": {{
@@ -489,10 +493,8 @@ Format the response strictly as a JSON object like:
   }}
 }}
 
-Do not include any commentary outside the JSON.
+Do not include any commentary outside the JSON. The script should not just be reading off the slide, the idea is to subsidize and expand on what is being written on the slides. 
 
-LaTeX Slides:
-{latex_output}
 """
         script_response = client.models.generate_content(
             model='gemini-2.0-flash-lite-preview',
