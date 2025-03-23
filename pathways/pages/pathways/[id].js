@@ -30,6 +30,7 @@ const ViewPathwayPage = () => {
   const { id } = router.query;
 
   const [pathway, setPathway] = useState();
+  const [roadmap, setRoadmap] = useState({});
   const [modulesData, setModulesData] = useState([]);
   const [moduleList, setModuleList] = useState([]);
   const [moduleMap, setModuleMap] = useState(new Map());
@@ -56,6 +57,7 @@ const ViewPathwayPage = () => {
         setViewMode(isTeacher ? "teacher" : "student");
 
         console.log("data", data);
+        setRoadmap(data);
 
         if (isTeacher) {
           const flattenedModules = data.chapters.flatMap((chapter, chapterIndex) =>
@@ -104,7 +106,7 @@ const ViewPathwayPage = () => {
             })),
           };
           setPathway(transformed);
-
+          console.log("transformed", transformed);
           const { list, moduleMap } = getOrderedModules(transformed);
           const completed = list.filter((m) => m.status === "completed").length;
           const total = list.length;
@@ -140,6 +142,28 @@ const ViewPathwayPage = () => {
     setTempGoals([]);
   };
 
+  const handlePublish = async () => {
+      try {
+        console.log("roadmap", roadmap)
+        const res = await fetch(`${backendUrl}/publish-roadmap/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            roadmap_id: roadmap.id,
+            user_id: roadmap.owner,
+          }),
+        })
+
+        const ret = await res.json();
+        console.log("published", ret)
+        setRoadmap(ret.roadmap);
+      } catch (error){
+        console.error("Something went wrong", error);
+      }
+  }
+
   return (
     <div className="min-h-screen bg-white p-6 space-y-6 text-gray-800">
       <div className="flex items-center text-sm text-gray-500 cursor-pointer hover:underline" onClick={() => router.push("/pathways")}>
@@ -149,12 +173,12 @@ const ViewPathwayPage = () => {
 
       <div>
         <div className="flex space-x-2 justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{pathway?.title || "Pathway"}</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{roadmap?.title || "Pathway"}</h1>
 
-        {viewMode === "teacher" && (
+        {(viewMode === "teacher" && !roadmap.published) && (
         <div>
         <button
-                            onClick={() => handleEdit(i)}
+                            onClick={async () => await handlePublish()}
                             className="w-full mt-4 px-3 py-1 text-sm font-medium text-white rounded bg-black hover:bg-amber-600 cursor-pointer"
                           >Publish</button>
         </div>

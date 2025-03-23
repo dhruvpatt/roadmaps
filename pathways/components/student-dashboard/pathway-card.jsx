@@ -1,5 +1,5 @@
 import React from "react";
-
+import { useRouter } from "next/router";
 /**
  * Renders a course card with a title, subtitle, progress bar, stats, and a button.
  *
@@ -8,8 +8,13 @@ import React from "react";
  * @param {number} progress    - Completion percentage (0–100)
  * @param {number} hoursLeft   - Hours left for the course or pathway
  */
-export default function PathwayCard({ title, subtitle, progress, published, user }) {
-  console.log("user pathway card", user, published);
+export default function PathwayCard({ id, title, subtitle, progress, published, user }) {
+  console.log("user pathway card", user, published, id);
+  const router = useRouter();
+  const handleContinue = () => {
+    router.push(`/pathways/${id}`);
+  }
+
   return (
     <div className="relative w-full max-w-sm bg-white rounded-lg shadow-md border-t-4 border-amber-600 p-6">
       {/* Title & Subtitle */}
@@ -51,6 +56,7 @@ export default function PathwayCard({ title, subtitle, progress, published, user
       <button
         type="button"
         className="mt-4 w-full bg-black text-white py-3 text-lg font-bold rounded-lg hover:bg-amber-600 hover:border-amber-600 transition-colors"
+        onClick={() => handleContinue()}
       >
         Continue
       </button>
