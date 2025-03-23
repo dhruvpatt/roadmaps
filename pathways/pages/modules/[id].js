@@ -88,9 +88,8 @@ const ModulePage = () => {
                 src={
                   content.includes("watch?v=")
                     ? content.replace("watch?v=", "embed/")
-                    : `https://www.youtube.com/embed/${
-                        content.split("youtu.be/")[1]
-                      }`
+                    : `https://www.youtube.com/embed/${content.split("youtu.be/")[1]
+                    }`
                 }
                 title="YouTube Video"
                 frameBorder="0"
@@ -112,59 +111,71 @@ const ModulePage = () => {
   };
 
   return (
-    <div className="h-screen flex overflow-hidden bg-white">
-      {/* Main Content */}
+    <div className="h-screen flex overflow-hidden bg-gray-100">
+      {/* Main Content Area */}
       <div className="flex-grow w-full lg:w-10/12 p-6 overflow-y-auto">
-        {/* Back Button */}
-        <div
-          className="flex items-center text-sm text-gray-500 cursor-pointer hover:underline mb-4"
-          onClick={() => router.back()}
-        >
-          <ArrowLeft size={16} className="mr-1" />
-          Back to pathway
-        </div>
-
-        {/* Title + Button */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2 gap-3">
-          <h1 className="text-3xl font-bold text-gray-900">{name}</h1>
-          <button className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-all">
-            Mark as Complete
-          </button>
-        </div>
-
-        {/* Subtitle */}
-        {learning_goals?.length > 0 && (
-          <p className="text-gray-600 text-base mb-6">{learning_goals[0]}</p>
-        )}
-
-        {/* Main YouTube Video */}
-        {yt_video && (
-          <div className="aspect-video w-[90%] max-w-2xl mx-auto rounded-lg overflow-hidden shadow mb-6">
-            <iframe
-              className="w-full h-full"
-              src={yt_video.replace("watch?v=", "embed/")}
-              title="Module video"
-              frameBorder="0"
-              allowFullScreen
-            />
+        <div className="bg-white rounded-xl shadow-lg p-8 hover:shadow-l">
+  
+          {/* Back Button */}
+          <div
+            className="flex items-center text-sm text-gray-500 cursor-pointer hover:underline mb-4"
+            onClick={() => router.back()}
+          >
+            <ArrowLeft size={16} className="mr-1" />
+            Back to pathway
           </div>
-        )}
-
-        {/* Content Blocks */}
-        <div className="space-y-8">
-          {contents.map((block, i) => renderContentBlock(block, i))}
+  
+          {/* Title and Action Buttons */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
+            <h1 className="text-3xl font-bold text-gray-900">{name}</h1>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-all duration-200">
+                Mark as Complete
+              </button>
+              <button
+                onClick={() => router.push(`/quiz/${id}`)}
+                className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-all duration-200"
+              >
+                Go to Quiz
+              </button>
+            </div>
+          </div>
+  
+          {/* Learning Goal */}
+          {learning_goals?.length > 0 && (
+            <p className="text-gray-600 text-base mb-6">{learning_goals[0]}</p>
+          )}
+  
+          {/* YouTube Video */}
+          {yt_video && (
+            <div className="aspect-video w-[90%] max-w-2xl mx-auto rounded-lg overflow-hidden shadow mb-6">
+              <iframe
+                className="w-full h-full"
+                src={yt_video.replace("watch?v=", "embed/")}
+                title="Module video"
+                frameBorder="0"
+                allowFullScreen
+              />
+            </div>
+          )}
+  
+          {/* Module Content */}
+          <div className="space-y-8 mb-8">
+            {contents.map((block, i) => renderContentBlock(block, i))}
+          </div>
         </div>
       </div>
-
+  
       {/* Assistant Sidebar */}
       <div className="hidden lg:block w-full max-w-md min-w-[320px] p-6 border-l bg-white shadow-inner overflow-y-auto">
         <button
           onClick={() => setShowChat(!showChat)}
           className="flex items-center gap-1 text-sm text-blue-600 hover:underline mb-4"
         >
-          <MessageSquare size={16} /> {showChat ? "Hide" : "Show"} Assistant
+          <MessageSquare size={16} />
+          {showChat ? "Hide" : "Show"} Assistant
         </button>
-
+  
         {showChat && (
           <div className="border rounded-xl p-4 h-full">
             <ModuleChat id={id} />

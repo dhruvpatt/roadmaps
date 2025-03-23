@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import QuestionCard from "./QuestionCard";
 import backendUrl from "@/backendUrl";
 
-const QuizContainer = ({ questions, quizId }) => {
+const QuizContainer = ({ questions, quizId, moduleId }) => {
   const router = useRouter();
   const [questionList, setQuestionList] = useState(questions);
   const [currentStep, setCurrentStep] = useState(0);
@@ -33,32 +33,42 @@ const QuizContainer = ({ questions, quizId }) => {
   const handleSubmit = async (finalAnswers) => {
     setSubmitting(true);
 
-    const formattedAnswers = {};
-    finalAnswers.forEach((ans) => {
-      formattedAnswers[ans.id] = ans.answer;
-    });
-
-    try {
-      const res = await fetch(`${backendUrl}/api/evaluate-quiz/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          quiz_id: quizId,
-          answers: formattedAnswers,
-        }),
+    if (moduleId && quizId) {
+      const formattedAnswers = {};
+      finalAnswers.forEach((ans) => {
+        formattedAnswers[ans.id] = ans.answer;
       });
+      console.log(formattedAnswers)
+      try {
+        const res = await fetch(`${backendUrl}/api/evaluate-quiz/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            quiz_id: quizId,
+            answers: formattedAnswers,
+          }),
+        });
 
-      const data = await res.json();
-      if (res.ok) {
-        router.push(`/quiz-results/${quizId}`);
-      } else {
-        console.error("Evaluation failed:", data.error);
+        const data = await res.json();
+        if (res.ok) {
+          router.push({
+            pathname: `/quiz-results/${quizId}`,
+            query: { moduleId },
+          });
+        } else {
+          console.error("Evaluation failed:", data.error);
+        }
+      } catch (err) {
+        console.error("Submission error:", err);
       }
-    } catch (err) {
-      console.error("Submission error:", err);
     }
+    else {
+      router.push("/dashboard")
+    }
+
+
   };
 
   const progress = ((currentStep + 1) / questionList.length) * 100;
