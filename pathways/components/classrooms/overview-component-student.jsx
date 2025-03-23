@@ -14,10 +14,9 @@ export default function OverviewComponentStudent() {
     { id: 5, title: "Biology Essentials", progress: 50, chapters: 7 },
   ];
 
-  const totalPathways = mockPathways.length;
-  const averageProgress =
-    mockPathways.reduce((sum, p) => sum + p.progress, 0) / totalPathways;
-  const averageGrade = "87%"; // Replace with real logic if needed
+  const totalPathways = 0;
+  const averageProgress =0 ;
+  const averageGrade = "0%"; // Replace with real logic if needed
 
   return (
     <div className="space-y-10">
