@@ -3,11 +3,22 @@ import Navbar from "@/components/navbar"
 import Sidebar from "@/components/sidebar"
 import ClassroomCard from "@/components/classrooms/classroom-card"
 import CreateClassroomModal from "@/components/modals/CreateClassroomModal"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 import { useRouter } from "next/navigation"
+import backendUrl from "@/backendUrl"
 
 export default function Classrooms() {
+  const [user, setUser] = useState(null)
+  useEffect(() =>{
+    const usr = JSON.parse(localStorage.getItem("user"))
+    if (!usr){
+      router.push("/login")
+    }
+    setUser(user);
+
+    fetchClassrooms(usr)
+  })
 
   const [showModal, setShowModal] = useState(false)
   // Mock classroom data
@@ -55,6 +66,25 @@ export default function Classrooms() {
   ]
 
   const router = useRouter();
+
+  const fetchClassrooms = async (usr) => {
+    try {
+      const res = await fetch(`${backendUrl}/get-user-classrooms`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_id: usr.id
+        })
+      });
+
+      const ret = await res.json();
+      console.log("fetched classrooms", ret)
+    } catch (error){
+      console.error("Failed to fetch classrooms:", error)
+    }
+  }
 
   const handleCreateNewClassroom = () => {
     setShowModal(true);

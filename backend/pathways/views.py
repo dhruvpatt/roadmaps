@@ -804,3 +804,25 @@ def message_detail(request, pk):
     elif request.method == 'DELETE':
         message.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+
+@api_view(['POST'])
+def get_user_classrooms(request):
+    user_id = request.data.get('user_id')
+
+    if not user_id:
+        return Response({"error": "user_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    if user.role == User.TEACHER:
+        classrooms = user.teaching_classrooms.all()
+    else:
+        classrooms = user.enrolled_classrooms.all()
+
+    serializer = ClassroomSerializer(classrooms, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
