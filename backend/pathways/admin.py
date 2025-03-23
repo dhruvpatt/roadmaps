@@ -65,7 +65,7 @@ admin.site.register(Quiz, QuizAdmin)
 
 # Register Module model with custom admin interface
 class ModuleAdmin(admin.ModelAdmin):
-    list_display = ('name', 'chapter', 'status', 'owner', 'get_prerequisites')  # Fields to display in the list view
+    list_display = ('id', 'name', 'chapter', 'status', 'owner', 'get_prerequisites')  # Fields to display in the list view
     search_fields = ('name', 'chapter__name', 'owner__username')  # Enable search by name, chapter name, and owner
     list_filter = ('status', 'chapter')  # Add filters for status and chapter
     filter_horizontal = ('prerequisites', 'next_modules')  # Allows for a more user-friendly many-to-many interface
