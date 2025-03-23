@@ -12,7 +12,7 @@ from rest_framework import status
 from .models import Module, User, Content, Message
 from django.conf import settings
 from datetime import datetime, timedelta
-import json
+import json as pyjson
 import time
 from pathways.serializers import ModuleSerializer
 from django.shortcuts import get_object_or_404
@@ -41,13 +41,14 @@ def search_youtube_video(query):
         return f"https://www.youtube.com/watch?v={video_id}"
 
     return None  # No valid video found
-def clean_response(response):
-    splitted = response.split('```json')
+def clean_response(response, mode="json"):
+    splitted = response.split(f'```{mode}')
     if len(splitted) < 2:
-        raise ValueError("No JSON part found in the input string.")
+        raise ValueError(f"No {mode} part found in the input string.")
 
     # Extract the JSON part and remove trailing backticks
     return splitted[1].split('```')[0].strip()
+
 class PerceptionAgent:
     def analyze_context(self, module_name, learning_goals, prerequisites_feedback, user_preferences):
         prompt = f"""
@@ -95,7 +96,8 @@ class ContentGenerationAgent:
         ]
 
         EVERYTHING YOU RETURN WILL BE RENDERED AS IS. DO NOT ADD META COMMENTARY. DO NOT ADD EXTRA EXPLANATIONS OUTSIDE THE JSON.
-        KEEP HTML SIMPLE, AND INTERACTIVE BLOCKS STRUCTURED.
+        KEEP HTML SIMPLE, AND INTERACTIVE BLOCKS STRUCTURED. DO NOT HAVE *INSERT SOMETHING HERE* DO NOT MAKE CONTENT REFERENCING LINKS THAT 
+        THIS INCLUDES BUT IS NOT LIMITED SUGGESTIONS FOR LINKING TO TEXTBOOKS WEBSITES GRADING BREAKDOWNS OR LISTS OF MATERIALS DONT 
         """
         generation_config = types.GenerateContentConfig(temperature=0.7)
         response = client.models.generate_content(
@@ -188,7 +190,7 @@ class ModuleContentGenerationAPIView(APIView):
                     if evaluation_agent.evaluate(content_list):
                         print("EVALUATE: TRUE")
                         content_objects = []
-                        content_data = json.loads(content_list)
+                        content_data = pyjson.loads(content_list)
 
                         for item in content_data:
                             if item['type'] == 'video':
@@ -326,7 +328,7 @@ class ModuleFeedbackAPIView(APIView):
                 config=config
             )
 
-            result = json.loads(clean_response(response.text))
+            result = pyjson.loads(clean_response(response.text))
 
             module.feedback = result.get("feedback", "")
             module.save()
@@ -385,7 +387,6 @@ def get_module(request):
     try:
         module = Module.objects.get(pk=module_id)
         user = User.objects.get(pk=user_id)
-
         if module.content_list.count() == 0:
             # Trigger content generation
             generate_url = "http://localhost:8000/generate-module/"
@@ -411,5 +412,115 @@ def get_module(request):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@api_view(['POST'])
+def update_module_video(request):
+    module_id = request.data.get('module_id')
+    video_url = request.data.get('video_url')
 
+    if not module_id or not video_url:
+        return Response({"error": "module_id and video_url are required"}, status=status.HTTP_400_BAD_REQUEST)
 
+    try:
+        module = Module.objects.get(pk=module_id)
+        module.yt_video = video_url
+        module.save()
+
+        return Response({"message": "Module video updated successfully.", "video_url": module.yt_video}, status=status.HTTP_200_OK)
+
+    except Module.DoesNotExist:
+        return Response({"error": "Module not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(["POST"])
+def create_lecture_materials(request):
+    module_id = request.data.get("module_id")
+
+    if not module_id:
+        return Response({"error": "module_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        module = Module.objects.get(pk=module_id)
+
+        # Gather context
+        chat_history = Message.objects.filter(module=module).order_by("timestamp")
+        chat_log = "\n".join([
+            f"User: {msg.content}" if msg.type == "user" else f"AI: {msg.content}"
+            for msg in chat_history
+        ])
+        content_texts = [c.content for c in module.contents.all() if c.type != "video"]
+        content_combined = "\n".join(content_texts)
+        feedback = module.feedback or "No feedback provided."
+
+        # Prompt for LaTeX
+        latex_prompt = f"""
+You are a LaTeX slide generator. Write a Beamer presentation based on the following content.
+
+Module Title: {module.name}
+Learning Goals: {', '.join(module.learning_goals)}
+Feedback: {feedback}
+
+Educational Content:
+{content_combined}
+
+Chat Interaction Summary:
+{chat_log}
+
+Only return the LaTeX code, starting with \documentclass{{beamer}} and ending with \end{{document}} keep the latex simple and do not add any crazy imports.
+The slides should be simple yet informative.
+"""
+
+        config = types.GenerateContentConfig(temperature=0.7)
+        latex_response = client.models.generate_content(
+            model='gemini-2.0-flash-lite-preview',
+            contents=latex_prompt,
+            config=config
+        )
+        latex_output = clean_response(latex_response.text.strip(), mode="latex")
+        print("LaTeX Output:", latex_output)
+
+        # Prompt for Script JSON
+        script_prompt = f"""
+Given the following LaTeX Beamer slide content, generate a corresponding script to be read aloud per slide, use words to represent symbols when generating an output.
+
+LaTeX Slides:
+{latex_output}
+
+Format the response strictly as a JSON object like:
+{{
+  "scripts": {{
+    "1": "text for slide 1",
+    "2": "text for slide 2"
+  }}
+}}
+
+Do not include any commentary outside the JSON. The script should not just be reading off the slide, the idea is to subsidize and expand on what is being written on the slides. 
+
+"""
+        script_response = client.models.generate_content(
+            model='gemini-2.0-flash-lite-preview',
+            contents=script_prompt,
+            config=config
+        )
+        script_output = clean_response(script_response.text.strip())
+        print("Script Output:", script_output)
+
+        try:
+            json_start = script_output.index('{')
+            script_json = pyjson.loads(script_output[json_start:])
+        except Exception as e:
+            return Response({
+                "error": "Failed to parse script JSON",
+                "raw_response": script_output
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Return everything for the frontend to handle video generation
+        return Response({
+            "latex": latex_output,
+            "script": script_json
+        }, status=status.HTTP_200_OK)
+
+    except Module.DoesNotExist:
+        return Response({"error": "Module not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

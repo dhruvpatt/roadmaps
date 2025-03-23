@@ -79,7 +79,7 @@ class Roadmap(models.Model):
     title = models.CharField(max_length=255)
     grade = models.CharField(max_length=255, default='Unspecified')
     learning_goals = models.JSONField(blank=True, default=list)
-    progress = models.IntegerField()
+    progress = models.IntegerField(default=0)
     published = models.BooleanField(default=False)
     def __str__(self):
         return f"Roadmap by {self.owner.username}"

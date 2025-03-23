@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import OverviewComponent from "./overview-component";
 import StudentsComponent from "./classroom-students";
-export default function ClassroomTabs({classroomCode}) {
+export default function ClassroomTabs({classroomCode, classroomId}) {
   const [activeTab, setActiveTab] = useState("overview");
-
   const tabs = [
     { key: "overview", label: "Overview" },
     { key: "students", label: "Students" },
@@ -31,7 +30,7 @@ export default function ClassroomTabs({classroomCode}) {
 
       {/* Tab content */}
       <div className="mt-4">
-        {activeTab === "overview" && <OverviewComponent classroomCode={classroomCode} />}
+        {activeTab === "overview" && <OverviewComponent classroomCode={classroomCode} classroomId={classroomId} />}
         {activeTab === "students" && <StudentsComponent />}
       </div>
     </div>

@@ -33,6 +33,7 @@ const Dashboard = () => {
     },[]);
 
     const createRoadmap = async (data) => {
+        console.log("DATA R:", data)
         try {
             const res = await fetch(`${backendUrl}/generate-roadmap/`, {
                 method: "POST",

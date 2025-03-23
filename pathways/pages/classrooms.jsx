@@ -17,7 +17,7 @@ export default function Classrooms() {
     if (!usr){
       router.push("/login")
     }
-    setUser(user);
+    setUser(usr);
 
     fetchClassrooms(usr)
     
@@ -25,49 +25,7 @@ export default function Classrooms() {
 
   const [showModal, setShowModal] = useState(false)
   // Mock classroom data
-  const mockClassrooms = [
-    {
-      id: 1,
-      title: "Algebra 101",
-      subtitle: "Fundamental algebraic concepts for beginners",
-      students: 24,
-      schedule: "Mon, Wed, Fri - 10:00 AM",
-      lastActive: "Today",
-    },
-    {
-      id: 2,
-      title: "Computer Science Basics",
-      subtitle: "Introduction to programming and computer science principles",
-      students: 18,
-      schedule: "Tue, Thu - 2:00 PM",
-      lastActive: "1 day ago",
-    },
-    {
-      id: 3,
-      title: "Physics Fundamentals",
-      subtitle: "Core concepts of physics including mechanics and energy",
-      students: 20,
-      schedule: "Mon, Wed - 11:00 AM",
-      lastActive: "2 days ago",
-    },
-    {
-      id: 4,
-      title: "English Literature",
-      subtitle: "Analysis of classic and contemporary literature",
-      students: 16,
-      schedule: "Tue, Thu - 10:00 AM",
-      lastActive: "Today",
-    },
-    {
-      id: 5,
-      title: "History of Arts",
-      subtitle: "Exploring various art movements and historical context",
-      students: 12,
-      schedule: "Wed, Fri - 3:00 PM",
-      lastActive: "4 days ago",
-    },
-  ]
-
+  
   const router = useRouter();
 
   const fetchClassrooms = async (usr) => {
@@ -89,6 +47,23 @@ export default function Classrooms() {
       console.error("Failed to fetch classrooms:", error)
     }
   }
+
+   const createClassroom = async (data) => {
+          try {
+              const res = await fetch(`${backendUrl}/classroom/create/`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(data),
+              })
+  
+              const ret = await res.json();
+              console.log("ret", ret);
+              await fetchClassrooms(user);
+          } catch (error){
+              console.error("Failed to create classroom", error);
+          }
+  
+    }
 
   const handleCreateNewClassroom = () => {
     setShowModal(true);
@@ -129,18 +104,19 @@ export default function Classrooms() {
               title={classroom.name}
               subtitle={classroom.join_id}
               students={classroom.students.length}
-              onViewClick={() => {}}
+              onViewClick={() => router.push(`/classroom/${classroom.id}`)}
             />
           ))}
         </div>
         <CreateClassroomModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
-        onCreate={(newClassroom) => {
-          console.log("Created classroom:", newClassroom);
+        onCreate={async (newClassroom) => {
+          await createClassroom(newClassroom);
           // Optional: add to state if you want to update list live
           setShowModal(false);
         }}
+        user={user}
       />
 
 
