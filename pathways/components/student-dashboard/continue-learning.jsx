@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import CourseCard from "./pathway-card";
 import { useRouter } from "next/navigation";
+import backendUrl from "@/backendUrl";
 
 export default function ContinueLearning() {
   const scrollRef = useRef(null);
@@ -34,8 +35,13 @@ export default function ContinueLearning() {
 
     const fetchRoadmaps = async () => {
       try {
-        const res = await fetch(`/api/get-user-roadmaps/?user_id=${usr.id}`);
+        const res = await fetch(`${backendUrl}/get-user-roadmaps/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: usr.id }),
+        });
         const data = await res.json();
+        console.log(data);
         setCourses(data || []);
       } catch (error) {
         console.error("Failed to fetch roadmaps:", error);
