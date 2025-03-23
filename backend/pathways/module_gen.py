@@ -12,7 +12,7 @@ from rest_framework import status
 from .models import Module, User, Content, Message
 from django.conf import settings
 from datetime import datetime, timedelta
-import json as pyjson
+import json
 import time
 from pathways.serializers import ModuleSerializer
 from django.shortcuts import get_object_or_404
