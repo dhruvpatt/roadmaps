@@ -64,7 +64,7 @@ class GenerationAgent:
         - chapter: the corresponding chapter name it should be the exact name of the chapter 
         - learning_goals: A list of objectives the students should achieve by the end of the module should have a high degree of exellency.
         - module_description: A brief overview of the content and approach for this module.
-        - prerequisite_modules: A list of prior modules required for this one to make sense (if any).
+        - prerequisite_modules: A list of prior modules required for this one to make sense (if any) **IT SHOULD BE THE EXACT NAME OF THE MODULE**.
         - next_modules: A list of modules that should logically follow this one in the learning path.
         
         For each Chapter, provide the following parameters:
@@ -114,7 +114,7 @@ class EvaluationAgent:
             Evaluate the roadmap '{roadmap}' based on the learning goals '{learning_goals}'. 
             Is the roadmap valid and complete?
             Return in the output Valid or Incomplete return incomplete if there are trailing commas or other syntax errors that would make a json.load() call fail
-            If it is incomplete or there are prequisites missing or missmatches between modules give constructive
+            If it is incomplete or there are prequisites missing or missmatches between prerequiste names and the module names give constructive
             feedback and return do not have valid anywhere in the string
             """
         try:

@@ -73,7 +73,7 @@ class Roadmap(models.Model):
     ]
 
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='roadmaps')
-    details = models.TextField(max_length=10000)
+    details = models.CharField(max_length=10000, blank=True)
     mode = models.CharField(max_length=10, choices=MODE_CHOICES, default=CASUAL)
     title = models.CharField(max_length=255)
     grade = models.CharField(max_length=255, default='Unspecified')
