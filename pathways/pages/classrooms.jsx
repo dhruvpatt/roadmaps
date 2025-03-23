@@ -10,6 +10,8 @@ import backendUrl from "@/backendUrl"
 
 export default function Classrooms() {
   const [user, setUser] = useState(null)
+  const [classrooms, setClassrooms] = useState([]);
+  const [loading, setLoading] = useState(true);
   useEffect(() =>{
     const usr = JSON.parse(localStorage.getItem("user"))
     if (!usr){
@@ -18,7 +20,8 @@ export default function Classrooms() {
     setUser(user);
 
     fetchClassrooms(usr)
-  })
+    
+  }, [])
 
   const [showModal, setShowModal] = useState(false)
   // Mock classroom data
@@ -80,6 +83,7 @@ export default function Classrooms() {
       });
 
       const ret = await res.json();
+      setClassrooms(ret);
       console.log("fetched classrooms", ret)
     } catch (error){
       console.error("Failed to fetch classrooms:", error)
@@ -119,14 +123,13 @@ export default function Classrooms() {
           </button>
 
           {/* Render existing classrooms AFTER */}
-          {mockClassrooms.map((classroom) => (
+          {classrooms.map((classroom) => (
             <ClassroomCard
               key={classroom.id}
-              title={classroom.title}
-              subtitle={classroom.subtitle}
-              students={classroom.students}
-              schedule={classroom.schedule}
-              lastActive={classroom.lastActive}
+              title={classroom.name}
+              subtitle={classroom.join_id}
+              students={classroom.students.length}
+              onViewClick={() => {}}
             />
           ))}
         </div>
