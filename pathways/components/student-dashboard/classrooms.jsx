@@ -105,9 +105,6 @@ import { useRouter } from "next/navigation";
 
 export default function YourClassrooms() {
   const router = useRouter();
-  const handleClick = () => {
-    router.push("join-classroom");
-  };
 
   const scrollRef = useRef(null);
 
@@ -143,14 +140,14 @@ export default function YourClassrooms() {
       {/* Header */}
       <div className="flex items-center justify-between mt-6 md:mt-8">
         <h2 className="text-black text-2xl md:text-3xl font-black">Your Classrooms</h2>
-        <button
+        {/* <button
           type="button"
           className="border border-black text-white rounded px-4 py-2 bg-black
                      hover:bg-amber-600 hover:border-amber-600 transition-colors"
           onClick={handleClick}
         >
           Join Classroom
-        </button>
+        </button> */}
       </div>
 
       {/* Carousel container */}
@@ -174,7 +171,7 @@ export default function YourClassrooms() {
               key={classroom.id} 
               className="w-[280px] flex-shrink-0 bg-white shadow-md rounded-xl p-4 border border-gray-200"
             >
-              <h3 className="font-bold text-lg">{classroom.title}</h3>
+              <h3 className="font-bold text-black text-lg">{classroom.title}</h3>
               <p className="text-gray-600 text-sm">Teacher: {classroom.teacher}</p>
               <p className="text-gray-500 text-xs">Next class: {classroom.nextClass}</p>
               <p className="text-gray-500 text-xs">

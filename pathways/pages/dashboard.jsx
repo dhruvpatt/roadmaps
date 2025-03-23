@@ -143,7 +143,26 @@ const Dashboard = () => {
                                                     </div>
                                                     </div>
                                         )}
-
+                                    {user.role === "student" && (
+                                                        <div
+                                                    onClick={() => {
+                                                        setDrawerOpen(false);
+                                                        // setShowClassroomModal(true);
+                                                        router.push("/join-classroom");
+                                                    }}
+                                                    className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-amber-50 transition"
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <BookOpenText className="w-6 h-6 text-amber-700" />
+                                                        <div>
+                                                            <p className="text-sm font-semibold text-amber-900">Classroom</p>
+                                                            <button onClick={() => console.log("clicked")}>
+                                                                <p className="text-xs text-gray-500">Join a Classroom</p>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    </div>
+                                        )}
 
 
                                     {/* Create Roadmap */}
