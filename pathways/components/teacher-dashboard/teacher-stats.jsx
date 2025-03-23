@@ -21,12 +21,12 @@ export default function TeacherStats() {
       try {
         const response = await fetch(`${backendUrl}/api/teacher-analytics/${usr.id}/`);
         const data = await response.json();
-
+        console.log(data)
         // Format data into stats for display
         const formattedStats = [
           {
             title: "Active Classrooms",
-            value: data.classroom_count || 0,
+            value: data.classrooms || 0,
             Icon: Lock,
           },
           {
