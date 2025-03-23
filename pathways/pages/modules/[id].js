@@ -112,7 +112,7 @@ const ModulePage = () => {
   };
 
   return (
-    <div className="h-screen flex overflow-hidden">
+    <div className="h-screen flex overflow-hidden bg-white">
       {/* Main Content */}
       <div className="flex-grow w-full lg:w-10/12 p-6 overflow-y-auto">
         {/* Back Button */}

@@ -127,6 +127,8 @@ export default function Pathways() {
               progress={pathway.progress}
               chapters={Array.isArray(pathway.chapters) ? pathway.chapters.length : 0}
               onViewClick={() => router.push(`/pathways/${pathway.id}`)}
+              user={user}
+              published={pathway.published}
             />
             ))}
           </div>
