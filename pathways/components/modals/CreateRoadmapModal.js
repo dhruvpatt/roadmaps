@@ -13,7 +13,7 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user }) 
     const [form, setForm] = useState({
         title: "",
         topic: "",
-        mode: "casual",
+        mode: "CASUAL",
         classroom: "",
         grade: "",
         learningGoals: "",
@@ -48,11 +48,7 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user }) 
     const handleSubmit = () => {
         const roadmap = {
             ...form,
-            chapters: form.chapters.map((c) => ({
-                ...c,
-                prereq: c.prereq.split(",").map((s) => s.trim()).filter(Boolean),
-                next: c.next.split(",").map((s) => s.trim()).filter(Boolean),
-            })),
+            chapters: JSON.stringify(form.chapters),
             learning_goals: form.learningGoals
                 .split(",")
                 .map((g) => g.trim())
@@ -67,7 +63,7 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user }) 
         setForm({
             title: "",
             details: "",
-            mode: "casual",
+            mode: "CASUAL",
             classroom: "",
             grade: "",
             learningGoals: "",

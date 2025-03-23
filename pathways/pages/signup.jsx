@@ -85,7 +85,7 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-amber-50 px-6 py-24">
+    <div className="min-h-screen flex items-center justify-center bg-amber-50 px-6 py-24 text-black">
       <div className="w-full max-w-2xl">
         {/* Header Row */}
         <div className="flex justify-between items-center mb-6">
