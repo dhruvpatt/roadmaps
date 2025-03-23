@@ -145,6 +145,23 @@ const ViewPathwayPage = () => {
   const handlePublish = async () => {
       try {
         console.log("roadmap", roadmap)
+        if (roadmap.classroom !== null){
+          const res = await fetch(`${backendUrl}/publish-roadmap-to-classroom/`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              roadmap_id: roadmap.id,
+              user_id: roadmap.owner,
+              classroom_id: roadmap.classroom,
+            }),
+          })
+
+          const ret = await res.json();
+          console.log("published", ret)
+          setRoadmap(ret.roadmap);
+        } else {
         const res = await fetch(`${backendUrl}/publish-roadmap/`, {
           method: "POST",
           headers: {
@@ -159,6 +176,7 @@ const ViewPathwayPage = () => {
         const ret = await res.json();
         console.log("published", ret)
         setRoadmap(ret.roadmap);
+      }
       } catch (error){
         console.error("Something went wrong", error);
       }
