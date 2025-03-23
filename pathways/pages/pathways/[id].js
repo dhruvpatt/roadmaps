@@ -348,8 +348,8 @@ const ViewPathwayPage = () => {
                         onClick={() => router.push(`/modules/${mod.id.split("module-")[1]}`)}
                         className={`text-sm px-4 py-1.5 rounded-md ${
                           completed
-                            ? "bg-white border border-gray-300 hover:bg-gray-100 text-gray-700"
-                            : "bg-black text-white"
+                            ? "bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 cursor-pointer"
+                            : "bg-black text-white cursor-pointer"
                         }`}
                       >
                         {completed ? "Review" : "Start"}
