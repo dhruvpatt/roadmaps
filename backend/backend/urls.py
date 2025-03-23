@@ -10,6 +10,7 @@ from pathways.module_gen import ModuleContentGenerationAPIView, ModuleAssistantA
 from pathways.quiz_gen import QuizGenerationAPIView, QuizEvaluationAPIView
 from pathways.classroom_views import classroom_analytics, classroom_student_details, join_classroom_as_student, \
     join_classroom_as_teacher, create_classroom, student_classroom_analytics
+
 from django.contrib import admin
 
 router = DefaultRouter()
@@ -45,6 +46,7 @@ urlpatterns = [
     path('api/users/<int:pk>/roadmaps/', views.user_roadmaps, name='user-roadmaps'),
     path('api/users/<int:pk>/classrooms/', views.user_classrooms, name='user-classrooms'),
     path('api/login-with-email/', views.login_with_email),
+    path('api/get-all-students/', views.student_list, name='student-list'),
 
 
     path('api/roadmaps/', views.roadmap_list, name='roadmap-list'),

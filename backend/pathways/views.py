@@ -289,6 +289,13 @@ def user_list(request):
         users = User.objects.all()
         serializer = UserSerializer(users, many=True)
         return Response(serializer.data)
+    
+@api_view(['GET'])
+def student_list(request):
+    if request.method == 'GET':
+        students = User.objects.filter(role='student')
+        serializer = UserSerializer(students, many=True)
+        return Response(serializer.data)
 
 
 @api_view(['GET', 'POST'])

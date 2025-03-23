@@ -347,9 +347,10 @@ def get_roadmap_by_id(request, roadmap_id):
     except Roadmap.DoesNotExist:
         return Response({"error": "Roadmap not found"}, status=status.HTTP_404_NOT_FOUND)
 
-@api_view(['GET'])
+@api_view(['POST'])
 def get_user_roadmaps(request):
-    user_id = request.GET.get("user_id")
+    user_id = request.data.get("user_id")
+    print("user_id", user_id)
     try:
         user = User.objects.get(pk=user_id)
         roadmaps = Roadmap.objects.filter(owner=user)

@@ -10,7 +10,7 @@ import CreateRoadmapModal from "@/components/modals/CreateRoadmapModal";
 import { Plus, BookOpenText, Map } from "lucide-react";
 import {useRouter} from "next/navigation"
 import TeacherStats from "@/components/teacher-dashboard/teacher-stats";
-import backendUrl from '../backendUrl';
+import backendUrl from "@/backendUrl"
 
 const Dashboard = () => {
     const [drawerOpen, setDrawerOpen] = useState(false);
@@ -19,6 +19,7 @@ const Dashboard = () => {
     const [analytics, setAnalytics] = useState({})
     const router = useRouter();
     const [user, setUser] = useState({});
+    const [loadingRoadmaps, setLoadingRoadmaps] = useState(false);
     useEffect(() => {
         const usr = JSON.parse(localStorage.getItem("user"));
         console.log("user", usr);
@@ -28,27 +29,55 @@ const Dashboard = () => {
 
         setUser(usr);
 
-
-        const fetchAnalytics = async () => {
-            try {
-                const endpoint = usr.role === "student"
-                    ? `${backendUrl}/api/student-analytics/${usr.id}/`
-                    : `${backendUrl}/api/teacher-analytics/${usr.id}/`;
-
-                console.log("ENDPOINT", endpoint)
-                const res = await fetch(endpoint);
-                const data = await res.json();
-
-                console.log("Analytics data:", data);
-                setAnalytics(analytics)
-            } catch (error) {
-                console.error("Failed to fetch analytics:", error);
-            }
-        };
-
-        fetchAnalytics();
-
+        fetchRoadmaps(usr);
     },[]);
+
+    const fetchRoadmaps = async (usr) => {
+        try {
+            console.log('userid', usr.id);
+            const res = await fetch(`${backendUrl}/get-user-roadmaps/`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ user_id: usr.id }),
+            })
+
+            const ret = await res.json();
+            console.log("Roadmaps", ret);
+        } catch (error){
+
+            console.error("Failed to fetch roadmaps", error);
+
+        }
+    }
+
+    const createRoadmap = async (data) => {
+        try {
+            const res = await fetch(`${backendUrl}/generate-roadmap/`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+            });
+
+            const ret = await res.json();
+            console.log("ret", ret);
+        } catch (error){
+            console.error("Failed to create roadmap", error);
+        }
+    }
+
+    const createClassroom = async (data) => {
+        try {
+            const res = await fetch(`${backendUrl}/classroom/create`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+            })
+        } catch (error){
+            console.error("Failed to create classroom", error);
+        }
+
+    }
+
     return (
         <div className="flex flex-col bg-gray-100 min-h-screen w-full min-h-screen">
             <Navbar />
@@ -94,21 +123,25 @@ const Dashboard = () => {
 
                                 <div className="space-y-4">
                                     {/* Create Classroom */}
-                                    <div
-                                        onClick={() => {
-                                            setDrawerOpen(false);
-                                            setShowClassroomModal(true);
-                                        }}
-                                        className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-amber-50 transition"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <BookOpenText className="w-6 h-6 text-amber-700" />
-                                            <div>
-                                                <p className="text-sm font-semibold text-amber-900">Classroom</p>
-                                                <p className="text-xs text-gray-500">Set up a new classroom</p>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    {user.role === "teacher" && (
+                                                        <div
+                                                    onClick={() => {
+                                                        setDrawerOpen(false);
+                                                        setShowClassroomModal(true);
+                                                    }}
+                                                    className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-amber-50 transition"
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <BookOpenText className="w-6 h-6 text-amber-700" />
+                                                        <div>
+                                                            <p className="text-sm font-semibold text-amber-900">Classroom</p>
+                                                            <p className="text-xs text-gray-500">Set up a new classroom</p>
+                                                        </div>
+                                                    </div>
+                                                    </div>
+                                        )}
+
+
 
                                     {/* Create Roadmap */}
                                     <div
@@ -135,13 +168,14 @@ const Dashboard = () => {
                     <CreateClassroomModal
                         isOpen={showClassroomModal}
                         onClose={() => setShowClassroomModal(false)}
-                        onCreate={(data) => console.log("Classroom created:", data)}
+                        onCreate={async (data) => await createClassroom(data)}
                     />
 
                     <CreateRoadmapModal
                         isOpen={showRoadmapModal}
                         onClose={() => setShowRoadmapModal(false)}
-                        onCreate={(data) => console.log("Roadmap created:", data)}
+                        onCreate={async (data) => await createRoadmap(data)}
+                        user={user}
                     />
                 </div>
             </div>

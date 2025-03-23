@@ -9,10 +9,10 @@ const mockUser = {
     role: "teacher" // or "student"
 };
 
-export default function CreateRoadmapModal({ isOpen, onClose, onCreate }) {
+export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user }) {
     const [form, setForm] = useState({
         title: "",
-        details: "",
+        topic: "",
         mode: "casual",
         classroom: "",
         grade: "",
@@ -48,17 +48,19 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate }) {
     const handleSubmit = () => {
         const roadmap = {
             ...form,
-            owner: `${mockUser.firstName} ${mockUser.lastName}`,
             chapters: form.chapters.map((c) => ({
                 ...c,
                 prereq: c.prereq.split(",").map((s) => s.trim()).filter(Boolean),
                 next: c.next.split(",").map((s) => s.trim()).filter(Boolean),
             })),
-            learningGoals: form.learningGoals
+            learning_goals: form.learningGoals
                 .split(",")
                 .map((g) => g.trim())
                 .filter(Boolean),
         };
+        roadmap.userid = user.id;
+        console.log("Roadmap", roadmap);
+
 
         onCreate(roadmap);
         onClose();
@@ -101,6 +103,17 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate }) {
                     </div>
 
                     <div>
+                        <label className="text-sm font-medium text-gray-700">Topic</label>
+                        <input
+                            name="topic"
+                            value={form.topic}
+                            onChange={handleChange}
+                            placeholder="e.g. Algebra, Geometry, Photosynthesis"
+                            className="w-full mt-1 border border-gray-300 rounded px-3 py-2"
+                        />
+                    </div>
+
+                    <div>
                         <label className="text-sm font-medium text-gray-700">Mode</label>
                         <select
                             name="mode"
@@ -108,8 +121,8 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate }) {
                             onChange={handleChange}
                             className="w-full mt-1 border border-gray-300 rounded px-3 py-2"
                         >
-                            <option value="strict">Strict</option>
-                            <option value="casual">Casual</option>
+                            <option value="STRICT">Strict</option>
+                            <option value="CASUAL">Casual</option>
                         </select>
                     </div>
 

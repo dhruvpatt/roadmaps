@@ -31,6 +31,8 @@ class User(AbstractBaseUser):
     username = None  # 🔥 Remove username field
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []  # No username required
+    first_name = models.CharField(max_length=255)
+    last_name = models.CharField(max_length=255)
     email = models.EmailField(unique=True, blank=False)
     password = models.CharField(max_length=255)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default=STUDENT)
