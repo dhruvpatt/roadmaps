@@ -1,5 +1,6 @@
 import React from "react"
 import { MoreHorizontal } from "lucide-react"
+import {useEffect, useState} from 'react'
 
 export default function PathwayCard({
   title,
@@ -7,10 +8,19 @@ export default function PathwayCard({
   chapters = 0,
   onMoreClick,
   onViewClick,
-  user,
   published
 }) {
+    const [user, setUser] = useState({})
+    useEffect(() => {
+        const usr = JSON.parse(localStorage.getItem("user"));
+        console.log("user", usr);
+        if (!user) {
+            router.push("/login");
+        }
 
+        setUser(usr);
+
+    }, [])
 
   return (
     <div className="relative bg-white p-6 border border-gray-200 rounded-lg shadow-md flex flex-col">
@@ -44,7 +54,7 @@ export default function PathwayCard({
             style={{ width: `${progress}%` }}
           />
 
-        
+
         </div>
         <div className="flex justify-between text-md text-gray-600 mt-2">
         <p className="font-medium">{progress}% complete</p>
