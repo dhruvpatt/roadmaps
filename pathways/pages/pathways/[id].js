@@ -124,14 +124,14 @@ const ViewPathwayPage = () => {
         </div>
 
         {/* Pathway Map */}
-        <div className="border rounded-xl p-4">
+        <div className="border rounded-xl p-4 flex flex-col h-full">
           <h2 className="text-lg font-semibold mb-1 text-gray-800">
             Pathway Map
           </h2>
           <p className="text-sm text-gray-600 mb-3">
             Visual representation of your learning journey
           </p>
-          <div className="h-[500px]">
+          <div className="relative flex-1">
             <RoadmapGraph roadmap={mockRoadmap} />
           </div>
         </div>
