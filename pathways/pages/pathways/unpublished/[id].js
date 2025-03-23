@@ -251,18 +251,18 @@ const ViewPathwayPageTeacher = () => {
                     <p className="font-medium text-sm">{mod.name}</p>
                   </div>
 
-                  <div className="w-1/8">
+                  <div className="w-1/16">
                     {!isEditing ? (
                         <button
                         onClick={() => handleEdit(i)}
-                        className="w-full mt-4 px-3 py-1 text-sm font-medium text-white rounded bg-black text-white rounded-lg"
+                        className="w-full mt-4 px-3 py-2 text-lg font-bold text-white bg-black rounded-lg"
                         >
                         Edit
                         </button>
                     ) : (
                         <button
                         onClick={() => handleSave(i)}
-                        className="w-full mt-4 px-3 py-1 text-sm font-medium text-white rounded bg-amber-600 text-white rounded-lg"
+                        className="w-full mt-4 px-3 py-2 text-lg font-bold text-white bg-amber-600 rounded-lg"
                         >
                         Save
                         </button>
@@ -271,19 +271,19 @@ const ViewPathwayPageTeacher = () => {
                 </div>
 
                 {/* Module Description */}
-                <p className="text-sm text-gray-700 mt-2 italic">
+                <p className="text-md text-gray-700 mt-2 italic">
                   {mod.module_description}
                 </p>
 
                 {/* Learning Goals */}
                 <div className="mt-2">
-                  <h3 className="text-md font-semibold mb-1">Learning Goals</h3>
+                  <h3 className="text-lg font-semibold mb-1">Learning Goals</h3>
 
                   {!isEditing ? (
                     // READ-ONLY MODE
                     <ul className="list-disc list-inside space-y-1">
                       {mod.learning_goals.map((goal, idx) => (
-                        <li key={idx} className="text-sm text-gray-700">
+                        <li key={idx} className="text-md text-gray-700">
                           {goal}
                         </li>
                       ))}
