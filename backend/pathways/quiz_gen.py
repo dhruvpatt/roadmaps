@@ -6,9 +6,11 @@ django.setup()
 from google import genai
 from google.genai import types
 from rest_framework.views import APIView
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Module, User, Quiz, Question
+from pathways.serializers import QuizSerializer
 from django.conf import settings
 import json
 
@@ -166,7 +168,10 @@ class QuizGenerationAPIView(APIView):
                 module.practice = quiz
                 module.save()
 
-                return Response({"message": "Quiz generated successfully.", "quiz_id": quiz.id}, status=status.HTTP_201_CREATED)
+                return Response({
+                    "message": "Quiz generated successfully.",
+                    "quiz": QuizSerializer(quiz).data
+                }, status=status.HTTP_201_CREATED)
 
             except json.JSONDecodeError:
                 return Response({"error": "Failed to parse Gemini response as JSON."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -178,3 +183,23 @@ class QuizGenerationAPIView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@api_view(['GET'])
+def get_quiz_results(request, quiz_id):
+
+    # quiz_id = request.GET.get("quiz_id")
+    try:
+        quiz = Quiz.objects.get(pk=quiz_id)
+        failed = quiz.failed_questions.all()
+        return Response({
+            "score": quiz.scores[-1]["score"],
+            "total": quiz.scores[-1]["total"],
+            "failed_questions": [
+                {
+                    "question": q.question,
+                    "solution": q.solution,
+                    "answer": q.answer
+                } for q in failed
+            ]
+        }, status=200)
+    except Quiz.DoesNotExist:
+        return Response({"error": "Quiz not found."}, status=404)
