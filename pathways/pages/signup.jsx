@@ -66,7 +66,13 @@ export default function SignupPage() {
 
       const user = await res.json();
       localStorage.setItem("user", JSON.stringify(user));
-      router.push("/dashboard");
+
+      if (user.role === "teacher") {
+        router.push("/dashboard");
+        return;
+      } else {
+        router.push("/ProfilePage");
+      }
     } catch (err) {
       console.error("Signup error:", err);
       setError("An error occurred. Please try again.");
@@ -221,7 +227,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium py-3 px-4 rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium py-3 px-4 rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus:outline-none"
             >
               {isLoading ? "Creating account..." : "Sign up"}
             </button>
