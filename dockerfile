@@ -28,7 +28,7 @@ COPY backend/ /app/
 
 # Set environment variables (Cloud Run uses PORT=8080)
 ENV PYTHONUNBUFFERED=1
-ENV PORT=8000
+ENV PORT=8080
 ENV DJANGO_SETTINGS_MODULE=backend.settings
 
 # Run Django migrations
@@ -39,7 +39,7 @@ RUN python manage.py makemigrations pathways
 RUN python manage.py migrate pathways
 
 # Expose the default port for Cloud Run
-EXPOSE 8000
+EXPOSE 8080
 
 # Run the Gunicorn server
-CMD ["gunicorn", "backend.wsgi:application", "--bind", "0.0.0.0:8000"]
+CMD ["gunicorn", "backend.wsgi:application", "--bind", "0.0.0.0:8080"]
