@@ -15,8 +15,6 @@ export default function ClassroomCard({
   title,
   subtitle,
   students,
-  schedule,
-  lastActive,
   onMoreClick,
   onViewClick,
 }) {
@@ -36,7 +34,7 @@ export default function ClassroomCard({
 
       {/* Subtitle / Description */}
       <p className="text-sm text-gray-500 mb-3 line-clamp-2">
-        {subtitle}
+        Classroom Code: {subtitle}
       </p>
 
       {/* Students */}

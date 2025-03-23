@@ -11,6 +11,8 @@ import { Plus, BookOpenText, Map } from "lucide-react";
 import {useRouter} from "next/navigation"
 import TeacherStats from "@/components/teacher-dashboard/teacher-stats";
 import backendUrl from "@/backendUrl"
+import emitter from "@/mitt";
+
 
 const Dashboard = () => {
     const [drawerOpen, setDrawerOpen] = useState(false);
@@ -28,27 +30,7 @@ const Dashboard = () => {
         }
 
         setUser(usr);
-
-        fetchRoadmaps(usr);
     },[]);
-
-    const fetchRoadmaps = async (usr) => {
-        try {
-            console.log('userid', usr.id);
-            const res = await fetch(`${backendUrl}/get-user-roadmaps/`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ user_id: usr.id }),
-            })
-
-            const ret = await res.json();
-            console.log("Roadmaps", ret);
-        } catch (error){
-
-            console.error("Failed to fetch roadmaps", error);
-
-        }
-    }
 
     const createRoadmap = async (data) => {
         try {
@@ -60,6 +42,8 @@ const Dashboard = () => {
 
             const ret = await res.json();
             console.log("ret", ret);
+
+
         } catch (error){
             console.error("Failed to create roadmap", error);
         }
@@ -75,6 +59,7 @@ const Dashboard = () => {
 
             const ret = await res.json();
             console.log("ret", ret);
+            emitter.emit("update-classrooms");
         } catch (error){
             console.error("Failed to create classroom", error);
         }
@@ -86,7 +71,7 @@ const Dashboard = () => {
             <Navbar />
             <div className="flex flex-1 flex-col md:flex-row">
                 <Sidebar className="hidden md:block w-64" />
-                <div className="flex-1 p-4 md:p-16 relative max-w-7xl mx-auto w-full">
+                <div className="flex-1 p-4 md:p-16 max-w-7xl mx-auto w-full">
                     <h1 className="text-black text-3xl md:text-4xl font-bold text-center md:text-left">Welcome Back {user.first_name}</h1>
                     {user.role === "student" ? (<p className="text-gray-600 text-lg md:text-2xl text-center md:text-left mb-6">Continue your learning journey</p>):
                     (<p className="text-gray-600 text-lg md:text-2xl text-center md:text-left mb-6">Continue your teaching journey</p>)
@@ -143,7 +128,26 @@ const Dashboard = () => {
                                                     </div>
                                                     </div>
                                         )}
-
+                                    {user.role === "student" && (
+                                                        <div
+                                                    onClick={() => {
+                                                        setDrawerOpen(false);
+                                                        // setShowClassroomModal(true);
+                                                        router.push("/join-classroom");
+                                                    }}
+                                                    className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-amber-50 transition"
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <BookOpenText className="w-6 h-6 text-amber-700" />
+                                                        <div>
+                                                            <p className="text-sm font-semibold text-amber-900">Classroom</p>
+                                                            <button onClick={() => console.log("clicked")}>
+                                                                <p className="text-xs text-gray-500">Join a Classroom</p>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    </div>
+                                        )}
 
 
                                     {/* Create Roadmap */}
