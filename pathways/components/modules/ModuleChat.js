@@ -99,7 +99,7 @@ const ModuleChat = ({ id }) => {
         />
         <button
           onClick={sendMessage}
-          className="bg-black text-white px-3 py-2 rounded-md"
+          className="bg-black text-white px-3 py-2 rounded-md cursor-pointer"
         >
           ➤
         </button>
