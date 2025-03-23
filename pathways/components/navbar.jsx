@@ -27,19 +27,6 @@ export default function Navbar() {
         </div>
       </button>
 
-      {/* Middle: Search Bar */}
-      <div className="relative flex-1 max-w-md mx-4 hidden sm:block">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-          <Search className="w-4 h-4" />
-        </span>
-        <input
-          type="text"
-          placeholder="Search..."
-          className="w-full rounded-md border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm 
-                     text-gray-700 shadow-sm placeholder-gray-400 
-                     focus:outline-none focus:ring-2 focus:ring-amber-600 focus:border-amber-600"
-        />
-      </div>
       </div>
 
     

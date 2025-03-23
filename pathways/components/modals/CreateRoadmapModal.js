@@ -9,14 +9,13 @@ const mockpathwayID = {
 
 export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user, classroomCode }) {
   const router = useRouter();
-
   const [form, setForm] = useState({
     title: "",
     topic: "",
     mode: "CASUAL",
-    classroom: "",
+    classroom: classroomCode || "",
     grade: "",
-    learningGoals: "",
+    learningGoals: [],
     details: "",
     chapters: [],
   });
@@ -53,7 +52,7 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user, cl
       setError("Title, Topic, and Grade are required.");
       return;
     }
-
+    console.log("form", form);
     const roadmap = {
       ...form,
       chapters: JSON.stringify(form.chapters),
@@ -62,8 +61,9 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user, cl
         .map((g) => g.trim())
         .filter(Boolean),
       userid: user.id,
+      classroom: classroomCode || "",
     };
-
+    console.log("submit roadmap", roadmap);
     setLoading(true);
 
     try {

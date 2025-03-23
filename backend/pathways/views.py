@@ -424,6 +424,7 @@ def roadmap_detail(request, pk):
 
     if request.method == 'GET':
         serializer = RoadmapSerializer(roadmap)
+        print("roadmap get", serializer.data)
         return Response(serializer.data)
 
     elif request.method == 'PUT':
@@ -909,12 +910,31 @@ def get_user_classrooms(request):
 #     except Classroom.DoesNotExist:
 #         return Response({"error": "Classroom not found"}, status=status.HTTP_404_NOT_FOUND)
     
+# @api_view(['POST'])
+# def get_classroom(request):
+#     classroom_id = request.data.get('classroom_id')
+#     user_id = request.data.get("user_id")
+
+#     print("get classroom hit")
+
+#     if not classroom_id:
+#         return Response({"error": "classroom_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+#     if not user_id:
+#         return Response({"error": "user_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+#     try:
+#         classroom = Classroom.objects.get(id=classroom_id)
+#         serializer = ClassroomDetailSerializer(classroom)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
+#     except Classroom.DoesNotExist:
+#         return Response({"error": "Classroom not found"}, status=status.HTTP_404_NOT_FOUND)
 @api_view(['POST'])
 def get_classroom(request):
     classroom_id = request.data.get('classroom_id')
     user_id = request.data.get("user_id")
 
-    print("get classroom hit")
+    print("get classroom hit", classroom_id, user_id)
 
     if not classroom_id:
         return Response({"error": "classroom_id is required"}, status=status.HTTP_400_BAD_REQUEST)
@@ -924,8 +944,19 @@ def get_classroom(request):
 
     try:
         classroom = Classroom.objects.get(id=classroom_id)
-        serializer = ClassroomDetailSerializer(classroom)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+
+        # ✅ Get all roadmaps directly linked to the classroom
+        roadmaps = Roadmap.objects.filter(classroom=classroom)
+
+        # Serialize
+        classroom_serializer = ClassroomDetailSerializer(classroom)
+        roadmap_serializer = RoadmapSerializer(roadmaps, many=True)
+
+        return Response({
+            "classroom": classroom_serializer.data,
+            "roadmaps": roadmap_serializer.data
+        }, status=status.HTTP_200_OK)
+
     except Classroom.DoesNotExist:
         return Response({"error": "Classroom not found"}, status=status.HTTP_404_NOT_FOUND)
     

@@ -4,6 +4,8 @@ import { ArrowLeft, MessageSquare } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import ModuleChat from "@/components/modules/ModuleChat";
 import backendUrl from "@/backendUrl";
+import Sidebar from "../../components/sidebar";
+import Navbar from "../../components/navbar";
 
 const ModulePage = () => {
   const router = useRouter();
@@ -190,18 +192,22 @@ const ModulePage = () => {
   };
 
   return (
+    <div className="flex flex-col bg-gray-100 min-h-screen w-full min-h-screen">
+      <Navbar />
+      <div className="flex flex-1 flex-col md:flex-row">
+          <Sidebar className="hidden md:block w-64" />
     <div className="h-screen flex overflow-hidden bg-gray-100">
       {/* Main Content Area */}
-      <div className="flex-grow w-full lg:w-10/12 p-6 overflow-y-auto">
+      <div className="flex-grow w-full lg:w-10/12 p-6 overflow-y-auto bg-gray-100">
         <div className="bg-white rounded-xl shadow-lg p-8 hover:shadow-l">
 
           {/* Back Button */}
           <div
-            className="flex items-center text-sm text-gray-500 cursor-pointer hover:underline mb-4"
+            className="flex items-center text-sm text-gray-500 cursor-pointer hover:underline mb-4 cursor-pointer"
             onClick={() => router.push("/pathways")}
           >
-            <ArrowLeft size={16} className="mr-1" />
-            Back to pathway
+            <ArrowLeft size={16} className="mr-1 text-amber-600" />
+            <span className="text-amber-600 ">Back to pathway</span>
           </div>
 
           {/* Title and Action Buttons */}
@@ -210,7 +216,7 @@ const ModulePage = () => {
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
-                  className="bg-amber-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-amber-700 transition-all duration-200"
+                  className="bg-amber-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-amber-700 transition-all cursor-pointer duration-200"
                   onClick={markModuleComplete}
                 >
                   Mark as Complete
@@ -276,7 +282,7 @@ const ModulePage = () => {
       <div className="hidden lg:block w-full max-w-md min-w-[320px] p-6 border-l bg-white shadow-inner overflow-y-auto">
         <button
           onClick={() => setShowChat(!showChat)}
-          className="flex items-center gap-1 text-sm text-blue-600 hover:underline mb-4"
+          className="flex items-center gap-1 text-sm text-blue-600 hover:underline mb-4 cursor-pointer"
         >
           <MessageSquare size={16} />
           {showChat ? "Hide" : "Show"} Assistant
@@ -289,6 +295,8 @@ const ModulePage = () => {
         )}
       </div>
     </div>
+  </div>
+</div>
   );
 };
 
