@@ -14,11 +14,32 @@ from django.conf import settings
 from datetime import datetime, timedelta
 import json
 import time
+from pathways.serializers import ModuleSerializer
+from django.shortcuts import get_object_or_404
+import requests
 
 # Gemini API key setup
 api_key = getattr(settings, 'LLM_API_KEY')
 client = genai.Client(api_key=api_key)
+yt_key = getattr(settings, 'YT_API_KEY')
+def search_youtube_video(query):
+    url = "https://www.googleapis.com/youtube/v3/search"
+    params = {
+        "part": "snippet",
+        "q": query,
+        "key": yt_key,
+        "maxResults": 1,
+        "type": "video"
+    }
 
+    res = requests.get(url, params=params)
+    data = res.json()
+
+    if "items" in data and data["items"]:
+        video_id = data["items"][0]["id"]["videoId"]
+        return f"https://www.youtube.com/watch?v={video_id}"
+
+    return None  # No valid video found
 def clean_response(response):
     splitted = response.split('```json')
     if len(splitted) < 2:
@@ -54,17 +75,26 @@ class ContentGenerationAgent:
 
         Return a JSON list of dictionaries. Each dictionary must include:
         - type: one of ['html', 'content', 'video']
-        - content: the actual content or recommendation
-        For html components focus of creating appealing visualization that will further the students understanding 
-        for content this is the core lecture material 
-        For video these are link to youtube videos these should be education in nature
+        - content: the actual content or interactive structure
+
+        Guidelines:
+        - For 'html' components: Use clean, valid HTML with headings, lists, interactive visualizaitons, or callout boxes to support understanding . DO NOT use images.
+        - For 'content': Use plain text or markdown-formatted explanations. DO NOT include HTML tags.
+        - For 'video': DO NOT provide a YouTube URL directly
+            - INSTEAD, return a search query string describing the video needed (e.g., "Introduction to derivatives")
+            - This query will be used to fetch a real YouTube video via API
+
+        DO NOT include explanations outside of the JSON — the result will be shown directly to the user.
+        NO NOT HAVE ANY HTML IN IF THE TYPE IS CONTENT THIS IS THE MOST IMPORTANT PART!!!!
         Example:
         [
-          {{"type": "html", "content": "<h2>Understanding Fractions</h2><p>...</p>"}},
-          {{"type": "content", "content": "Fractions represent parts of a whole..."}},
-          {{"type": "video", "content": "Intro to Fractions by Khan Academy"}}
+          {{"type": "html", "content": "<h2>Understanding Functions</h2><ul><li>Inputs and outputs</li><li>Notation: f(x)</li></ul>"}},
+          {{"type": "content", "content": "A function relates each input to exactly one output. For example, f(x) = x + 1."}},
+          {{"type": "video", "content": "Introdiction "}},
         ]
-        NO TEXT BEFORE OR AFTER THE JSON.
+
+        EVERYTHING YOU RETURN WILL BE RENDERED AS IS. DO NOT ADD META COMMENTARY. DO NOT ADD EXTRA EXPLANATIONS OUTSIDE THE JSON.
+        KEEP HTML SIMPLE, AND INTERACTIVE BLOCKS STRUCTURED.
         """
         generation_config = types.GenerateContentConfig(temperature=0.7)
         response = client.models.generate_content(
@@ -77,10 +107,36 @@ class ContentGenerationAgent:
 class EvaluationAgent:
     def evaluate(self, content_list):
         prompt = f"""
-        Evaluate the following content structure: {content_list}
-        Check for JSON validity, relevance to learning goals, and overall completeness.
-        Respond with either 'Valid' or 'Incomplete'. If incomplete, provide a reason.
+        You are evaluating a generated educational module with the following content structure:
+
+        {content_list}
+
+        Your task is to validate this content based on the following criteria:
+
+        1. **JSON Validity**: Ensure the structure is a valid JSON list of dictionaries. Each dictionary must include:
+           - A "type" field (one of ['html', 'content', 'video'])
+           - A "content" field containing a valid value based on type
+
+        2. **Type-Content Consistency**:
+           - If "type" is "html": "content" must be a string of clean, valid HTML. It must render meaningfully and clearly in a learning environment. No scripts or broken tags.
+           - If "type" is "content": "content" must be plain text or markdown, not HTML.
+           - If "type" is "video": "content" must be a valid and working YouTube video URL. Do not allow placeholder text or fake links.
+
+        3. **HTML Validation**:
+           - All HTML must be syntactically correct (properly closed tags, valid nesting).
+           - HTML should enhance understanding — like headings, lists, tips — and must be simple enough to render properly in a web-based learning environment.
+           - No <script>, <style>, <iframe>, or <img> tags allowed.
+
+        5. **Completeness**:
+           - There should be at least one content block explaining the topic.
+           - Visual aids (html) and videos (if present) must support the topic and learning goals.
+           - All blocks should make sense together and follow a logical flow.
+
+        If all checks pass, respond exactly: **Valid**
+
+        If any issue is found, respond exactly: **Incomplete**, followed by a brief reason.
         """
+
         generation_config = types.GenerateContentConfig(temperature=0.7)
         response = client.models.generate_content(
             model='gemini-2.0-flash-lite-preview',
@@ -117,30 +173,39 @@ class ModuleContentGenerationAPIView(APIView):
             iteration = 0
 
             while iteration < max_iterations:
-                iteration += 1
-                print("PERCEPTION")
-                print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-                insights = perception_agent.analyze_context(module.name, learning_goals, prerequisites_feedback, user_preferences)
-                print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-                print("Generation")
-                print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-                content_list = generation_agent.generate_content(module.name, learning_goals, insights, user_preferences)
-                print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+                try:
+                    iteration += 1
+                    print("PERCEPTION")
+                    print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+                    insights = perception_agent.analyze_context(module.name, learning_goals, prerequisites_feedback, user_preferences)
+                    print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+                    print("Generation")
+                    print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+                    content_list = generation_agent.generate_content(module.name, learning_goals, insights, user_preferences)
+                    print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
-                if evaluation_agent.evaluate(content_list):
-                    print("EVALUATE: TRUE")
-                    content_list = json.loads(content_list)
-                    for item in content_list:
-                        Content.objects.create(
-                            module=module,
-                            type=item['type'],
-                            content=item['content']
-                        )
-                    return Response({"message": f"Content generated and saved in {iteration} iterations."}, status=status.HTTP_201_CREATED)
+                    if evaluation_agent.evaluate(content_list):
+                        print("EVALUATE: TRUE")
+                        content_objects = []
+                        content_data = json.loads(content_list)
 
-                if datetime.now() - start_time > timeout:
-                    return Response({"error": "Timeout reached, content generation failed."}, status=status.HTTP_408_REQUEST_TIMEOUT)
-                time.sleep(2)
+                        for item in content_data:
+                            content = Content.objects.create(
+                                module=module,  # this sets the FK
+                                type=item['type'],
+                                content=item['content']
+                            )
+                            content_objects.append(content)
+                        print("PAST")
+                        # Now add these to the ManyToMany field manually
+                        module.content_list.set(content_objects)  # this sets content_list with ordering
+                        return Response({"message": f"Content generated and saved in {iteration} iterations."}, status=status.HTTP_201_CREATED)
+
+                    if datetime.now() - start_time > timeout:
+                        return Response({"error": "Timeout reached, content generation failed."}, status=status.HTTP_408_REQUEST_TIMEOUT)
+                    time.sleep(2)
+                except Exception as e:
+                    print(e)
 
             return Response({"error": "Minimum iterations reached without valid content."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -299,3 +364,43 @@ def roadmap_chapter_count(request, roadmap_id):
         return Response({"error": "Roadmap not found"}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+def get_module(request):
+    module_id = request.data.get('module_id')
+    user_id = request.data.get('user_id')
+
+    if not module_id or not user_id:
+        return Response({"error": "module_id and user_id are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        module = Module.objects.get(pk=module_id)
+        user = User.objects.get(pk=user_id)
+
+        if module.content_list.count() == 0:
+            # Trigger content generation
+            generate_url = "http://localhost:8000/generate-module/"
+            response = requests.post(generate_url, json={
+                "module_id": module_id,
+                "user_id": user_id
+            })
+
+            if response.status_code != 201:
+                return Response({"error": "Content generation failed"}, status=response.status_code)
+
+            module.refresh_from_db()
+            module.status = "in_progress"
+            module.save()
+
+        serializer = ModuleSerializer(module)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    except Module.DoesNotExist:
+        return Response({"error": "Module not found"}, status=status.HTTP_404_NOT_FOUND)
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
