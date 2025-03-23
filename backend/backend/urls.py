@@ -80,6 +80,6 @@ urlpatterns = [
     path('classroom/<int:classroom_id>/analytics/', classroom_analytics),
     path('classroom/<int:classroom_id>/students/', classroom_student_details),
     path('student-classroom-analytics/', student_classroom_analytics),
-    path("get-user-classrooms", views.get_user_classrooms, name="get-user-classrooms"),
+    path("get-user-classrooms/", views.get_user_classrooms, name="get-user-classrooms"),
 
 ]

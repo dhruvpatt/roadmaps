@@ -67,7 +67,7 @@ export default function ContinueLearning() {
             className="hidden md:block absolute -left-12 top-1/2 -translate-y-1/2 z-10
               bg-white p-2 rounded-full shadow hover:bg-gray-100 focus:outline-none"
           >
-            <ChevronLeft />
+            <ChevronLeft className="text-black"/>
           </button>
 
           {/* Scrollable course row */}
@@ -88,7 +88,7 @@ export default function ContinueLearning() {
             className="hidden md:block absolute -right-12 top-1/2 -translate-y-1/2 z-10
               bg-white p-2 rounded-full shadow hover:bg-gray-100 focus:outline-none"
           >
-            <ChevronRight />
+            <ChevronRight className="text-black" />
           </button>
         </div>
       )}

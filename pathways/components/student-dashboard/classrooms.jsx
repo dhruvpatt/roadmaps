@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
+import  backendUrl  from '@/backendUrl';
 
 export default function YourClassrooms() {
   const router = useRouter();
@@ -34,9 +35,6 @@ export default function YourClassrooms() {
     }
   };
 
-  const handleClick = () => {
-    router.push("join-classroom");
-  };
 
   useEffect(() => {
     const usr = JSON.parse(localStorage.getItem("user"));
@@ -46,18 +44,27 @@ export default function YourClassrooms() {
     }
     setUser(usr);
 
-    const fetchClassrooms = async () => {
-      try {
-        const response = await fetch(`/api/get-user-classrooms/?user_id=${usr.id}`);
-        const data = await response.json();
-        setClassrooms(data.classrooms || []);
-      } catch (error) {
-        console.error("Failed to fetch classrooms:", error);
-      }
-    };
+    fetchClassrooms(usr);
+  }, []);
 
-//     fetchClassrooms();
-  }, [router]);
+  const fetchClassrooms = async (usr) => {
+    try {
+      const response = await fetch(`${backendUrl}/get-user-classrooms/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ user_id: usr.id }),
+      });
+      console.log(response);
+      const data = await response.json();
+
+      console.log("ret", data)
+      setClassrooms(data || []);
+    } catch (error) {
+      console.error("Failed to fetch classrooms:", error);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-screen-2xl px-4">
@@ -82,7 +89,7 @@ export default function YourClassrooms() {
             onClick={scrollLeft}
             className="hidden md:block absolute -left-12 top-1/2 -translate-y-1/2 z-10 bg-white p-2 rounded-full shadow hover:bg-gray-100 focus:outline-none"
           >
-            <ChevronLeft />
+            <ChevronLeft className="text-black" />
           </button>
 
           {/* Scrollable classroom cards */}
@@ -95,7 +102,7 @@ export default function YourClassrooms() {
                 key={classroom.id}
                 className="w-[280px] flex-shrink-0 bg-white shadow-md rounded-xl p-4 border border-gray-200"
               >
-                <h3 className="font-bold text-lg">{classroom.name}</h3>
+                <h3 className="font-bold text-lg text-black">{classroom.name}</h3>
                 <p className="text-gray-600 text-sm">Classroom ID: {classroom.join_id}</p>
                 <button
                   className="mt-3 w-full bg-black text-white py-2 rounded-lg text-sm hover:bg-amber-600 hover:border-amber-600 transition-colors"
@@ -112,7 +119,7 @@ export default function YourClassrooms() {
             onClick={scrollRight}
             className="hidden md:block absolute -right-12 top-1/2 -translate-y-1/2 z-10 bg-white p-2 rounded-full shadow hover:bg-gray-100 focus:outline-none"
           >
-            <ChevronRight />
+            <ChevronRight className="text-black" />
           </button>
         </div>
       )}
