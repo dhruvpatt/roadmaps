@@ -15,6 +15,9 @@ ENV LLM_API_KEY=$LLM_API_KEY
 ENV DJANGO_SECRET_KEY=$DJANGO_SECRET_KEY
 ENV YT_API_KEY=$YT_API_KEY
 
+RUN echo foo
+RUN echo "LLM API KEY: $LLM_API_KEY"
+
 RUN apt-get update && apt-get install -y libpq-dev gcc && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install dependencies

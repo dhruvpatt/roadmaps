@@ -20,6 +20,7 @@ import requests
 
 # Gemini API key setup
 api_key = getattr(settings, 'LLM_API_KEY')
+print(api_key)
 client = genai.Client(api_key=api_key)
 yt_key = getattr(settings, 'YT_API_KEY')
 def search_youtube_video(query):
