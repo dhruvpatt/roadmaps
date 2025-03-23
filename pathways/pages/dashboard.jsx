@@ -29,26 +29,27 @@ const Dashboard = () => {
 
         setUser(usr);
 
-        fetchRoadmaps(usr);
+        // fetchRoadmaps(usr);
     },[]);
 
-    const fetchRoadmaps = async (usr) => {
-        try {
-            console.log('userid', usr.id);
-            const res = await fetch(`${backendUrl}/get-user-roadmaps/`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ user_id: usr.id }),
-            })
+    // const fetchRoadmaps = async (usr) => {
+    //     try {
+    //         console.log('userid', usr.id);
+    //         const res = await fetch(`${backendUrl}/get-user-roadmaps/`, {
+    //             method: "POST",
+    //             headers: { "Content-Type": "application/json" },
+    //             body: JSON.stringify({ user_id: usr.id }),
+    //         })
 
-            const ret = await res.json();
-            console.log("Roadmaps", ret);
-        } catch (error){
+    //         const ret = await res.json();
 
-            console.error("Failed to fetch roadmaps", error);
+    //         console.log("Roadmaps", ret);
+    //     } catch (error){
 
-        }
-    }
+    //         console.error("Failed to fetch roadmaps", error);
+
+    //     }
+    // }
 
     const createRoadmap = async (data) => {
         try {
