@@ -9,6 +9,17 @@ export default function YourClassrooms() {
   const [classrooms, setClassrooms] = useState([]);
   const [user, setUser] = useState(null);
 
+  // Mock data
+  const classrooms = [
+    { id: 1, title: "Algebra 101", teacher: "Mr. Johnson", nextClass: "Tomorrow, 10:00 AM", pendingAssignments: 2 },
+    { id: 2, title: "Computer Science Basics", teacher: "Ms. Williams", nextClass: "Wednesday, 2:00 PM", pendingAssignments: 1 },
+    { id: 3, title: "Physics Fundamentals", teacher: "Dr. Smith", nextClass: "Friday, 1:30 AM", pendingAssignments: 0 },
+    { id: 4, title: "History of Arts", teacher: "Mrs. Carter", nextClass: "Monday, 9:00 AM", pendingAssignments: 3 },
+    { id: 5, title: "Biology 101", teacher: "Dr. Greene", nextClass: "Thursday, 11:00 AM", pendingAssignments: 4 },
+    { id: 6, title: "Chemistry Basics", teacher: "Mr. Brown", nextClass: "Tuesday, 12:00 PM", pendingAssignments: 2 },
+    { id: 7, title: "English Literature", teacher: "Mrs. Davis", nextClass: "Friday, 3:00 PM", pendingAssignments: 1 },
+  ];
+
   const scrollAmount = 320 * classrooms.length;
 
   const scrollLeft = () => {
