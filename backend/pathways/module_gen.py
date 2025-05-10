@@ -12,7 +12,7 @@ from rest_framework import status
 from .models import Module, User, Content, Message
 from django.conf import settings
 from datetime import datetime, timedelta
-import json as pyjson
+import json
 import time
 from pathways.serializers import ModuleSerializer
 from django.shortcuts import get_object_or_404
@@ -389,7 +389,7 @@ def get_module(request):
         user = User.objects.get(pk=user_id)
         if module.content_list.count() == 0:
             # Trigger content generation
-            generate_url = "http://localhost:8000/generate-module/"
+            generate_url = "https://pathwaysbackend-856935426396.us-central1.run.app/generate-module/"
             response = requests.post(generate_url, json={
                 "module_id": module_id,
                 "user_id": user_id
