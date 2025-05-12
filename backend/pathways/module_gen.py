@@ -484,22 +484,22 @@ The slides should be simple yet informative.
 
         # Prompt for Script JSON
         script_prompt = f"""
-Given the following LaTeX Beamer slide content, generate a corresponding script to be read aloud per slide, use words to represent symbols when generating an output.
-
-LaTeX Slides:
-{latex_output}
-
-Format the response strictly as a JSON object like:
-{{
-  "scripts": {{
-    "1": "text for slide 1",
-    "2": "text for slide 2"
-  }}
-}}
-
-Do not include any commentary outside the JSON. The script should not just be reading off the slide, the idea is to subsidize and expand on what is being written on the slides. 
-
-"""
+            Given the following LaTeX Beamer slide content, generate a corresponding script to be read aloud per slide, use words to represent symbols when generating an output.
+            
+            LaTeX Slides:
+            {latex_output}
+            
+            Format the response strictly as a JSON object like:
+            {{
+              "scripts": {{
+                "1": "text for slide 1",
+                "2": "text for slide 2"
+              }}
+            }}
+            
+            Do not include any commentary outside the JSON. The script should not just be reading off the slide, the idea is to subsidize and expand on what is being written on the slides. 
+            
+            """
         script_response = client.models.generate_content(
             model='gemini-2.0-flash-lite-preview',
             contents=script_prompt,
