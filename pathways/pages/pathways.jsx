@@ -4,11 +4,42 @@ import Sidebar from "@/components/sidebar"
 import PathwayCard from "@/components/pathways/pathways-card"
 import { useRouter } from "next/navigation"
 import CreateRoadmapModal from "@/components/modals/CreateRoadmapModal"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import backendUrl from "@/backendUrl"
 
 export default function Pathways() {
   const router = useRouter()
-  const [showModal, setShowModal] = useState(false)
+  const [showRoadmapModal, setShowRoadmapModal] = useState(false);
+  const [user, setUser] = useState({});
+  const [pathways, setPathways] = useState([]);
+
+  useEffect(() => {
+    const usr = JSON.parse(localStorage.getItem("user"));
+    if (!usr){
+      router.push("/login");
+    }
+    setUser(usr);
+
+    fetchPathways(usr);
+
+  }, [])
+
+  const fetchPathways = async (usr) => {
+
+    try {
+      const res = await fetch(`${backendUrl}/get-user-roadmaps/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: usr.id }),
+      });
+      const ret = await res.json();
+      console.log("pathways", ret);
+      setPathways(ret);
+    } catch (error){
+      console.error("Failed to fetch pathways", error);
+    }
+
+  }
   const mockPathways = [
     {
       id: 1,
@@ -42,9 +73,24 @@ export default function Pathways() {
     },
   ]
 
-  const handleCreateNewPathway = () => {
-    setShowModal(true);
+  const createRoadmap = async (data) => {
+      try {
+          const res = await fetch(`${backendUrl}/generate-roadmap/`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(data),
+          });
+
+          const ret = await res.json();
+          console.log("ret", ret);
+
+          return ret?.roadmap;
+      } catch (error){
+          console.error("Failed to create roadmap", error);
+      }
   }
+
+  console.log("user", user);
 
   return (
     <div className="flex flex-col bg-gray-100 min-h-screen">
@@ -63,7 +109,9 @@ export default function Pathways() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Create Pathway Card FIRST */}
             <button
-              onClick={handleCreateNewPathway}
+              onClick={() => {
+                setShowRoadmapModal(true);
+            }}
               className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-4 text-center text-gray-500 hover:bg-amber-100 cursor-pointer transition"
             >
               <p className="text-sm md:text-base font-medium text-gray-600">
@@ -72,25 +120,24 @@ export default function Pathways() {
             </button>
 
             {/* Actual Pathway Cards */}
-            {mockPathways.map((pathway) => (
+            {pathways.map((pathway) => (
               <PathwayCard
-                key={pathway.id}
-                title={pathway.title}
-                progress={pathway.progress}
-                chapters={pathway.chapters}
-                onViewClick={() => router.push(`/pathways/${pathway.id}`)}
-              />
+              key={pathway.id}
+              title={pathway.title}
+              progress={pathway.progress}
+              chapters={Array.isArray(pathway.chapters) ? pathway.chapters.length : 0}
+              onViewClick={() => router.push(`/pathways/${pathway.id}`)}
+              user={user}
+              published={pathway.published}
+            />
             ))}
           </div>
           <CreateRoadmapModal
-            isOpen={showModal}
-            onClose={() => setShowModal(false)}
-            onCreate={(newRoadmap) => {
-                console.log("Created roadmap:", newRoadmap);
-                // You can optionally update state here to show new pathways live
-                setShowModal(false);
-            }}
-            />
+              isOpen={showRoadmapModal}
+              onClose={() => setShowRoadmapModal(false)}
+              onCreate={async (data) => await createRoadmap(data)}
+              user={user}
+          />
         </div>
       </div>
     </div>

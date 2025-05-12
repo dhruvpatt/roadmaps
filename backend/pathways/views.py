@@ -12,6 +12,12 @@ from .serializers import (UserSerializer, RoadmapSerializer, ChapterSerializer,
                           QuestionSerializer, QuizSerializer, ModuleSerializer,
                           ContentSerializer, MessageSerializer, ClassroomSerializer,
                           SubjectSerializer, ClassroomDetailSerializer)
+from django.db import transaction
+# from django.conf import settings
+# from google import genai
+# from google.genai import types
+# import json
+
 
 
 class StudentAnalyticsAPIView(APIView):
@@ -283,7 +289,8 @@ def login_with_email(request):
                     "first_name": user.first_name,
                     "last_name": user.last_name,
                     "email": user.email,
-                    "role": user.role
+                    "role": user.role,
+                    "preferences": user.preferences
                 }
             }, status=status.HTTP_200_OK)
         else:
@@ -338,6 +345,46 @@ def user_roadmaps(request, pk):
     return Response(serializer.data)
 
 
+
+# api_key = getattr(settings, 'LLM_API_KEY')
+# client = genai.Client(api_key=api_key)
+
+# def clean_response(response):
+#     splitted = response.split('```json')
+#     if len(splitted) < 2:
+#         raise ValueError("No JSON part found in the input string.")
+
+#     # Extract the JSON part and remove trailing backticks
+#     return splitted[1].split('```')[0].strip()
+
+# def create_lecture_materials(questions):
+#     prompt_items = "\n".join([
+#         f"Question: {q['question']}\nCorrect Answer: {q['solution']}\nStudent Answer: {q['answer']}" for q in questions
+#     ])
+#     prompt = f"""
+#     Evaluate the following student's answers to a quiz. For each item, respond with either 'correct' or 'incorrect' in order.
+
+#     {prompt_items}
+
+#     Format the result as a JSON list:
+#     ["correct", "incorrect", ...]
+#     """
+#     config = types.GenerateContentConfig(temperature=0.3)
+#     response = client.models.generate_content(
+#         model='gemini-2.0-flash-lite-preview',
+#         contents=prompt,
+#         config=config
+#     )
+#     try:
+#         print(response.text)
+#         print(clean_response(response.text))
+#         result = json.loads(clean_response(response.text))
+#         return result
+#     except Exception as e:
+#         print(e)
+#         raise ValueError(f"AI grading failed: {e}")
+
+
 @api_view(['GET'])
 def user_classrooms(request, pk):
     try:
@@ -378,6 +425,7 @@ def roadmap_detail(request, pk):
 
     if request.method == 'GET':
         serializer = RoadmapSerializer(roadmap)
+        print("roadmap get", serializer.data)
         return Response(serializer.data)
 
     elif request.method == 'PUT':
@@ -863,12 +911,31 @@ def get_user_classrooms(request):
 #     except Classroom.DoesNotExist:
 #         return Response({"error": "Classroom not found"}, status=status.HTTP_404_NOT_FOUND)
     
+# @api_view(['POST'])
+# def get_classroom(request):
+#     classroom_id = request.data.get('classroom_id')
+#     user_id = request.data.get("user_id")
+
+#     print("get classroom hit")
+
+#     if not classroom_id:
+#         return Response({"error": "classroom_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+#     if not user_id:
+#         return Response({"error": "user_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+#     try:
+#         classroom = Classroom.objects.get(id=classroom_id)
+#         serializer = ClassroomDetailSerializer(classroom)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
+#     except Classroom.DoesNotExist:
+#         return Response({"error": "Classroom not found"}, status=status.HTTP_404_NOT_FOUND)
 @api_view(['POST'])
 def get_classroom(request):
     classroom_id = request.data.get('classroom_id')
     user_id = request.data.get("user_id")
 
-    print("get classroom hit")
+    print("get classroom hit", classroom_id, user_id)
 
     if not classroom_id:
         return Response({"error": "classroom_id is required"}, status=status.HTTP_400_BAD_REQUEST)
@@ -878,9 +945,92 @@ def get_classroom(request):
 
     try:
         classroom = Classroom.objects.get(id=classroom_id)
-        serializer = ClassroomDetailSerializer(classroom)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+
+        # ✅ Get all roadmaps directly linked to the classroom
+        roadmaps = Roadmap.objects.filter(classroom=classroom)
+
+        # Serialize
+        classroom_serializer = ClassroomDetailSerializer(classroom)
+        roadmap_serializer = RoadmapSerializer(roadmaps, many=True)
+
+        return Response({
+            "classroom": classroom_serializer.data,
+            "roadmaps": roadmap_serializer.data
+        }, status=status.HTTP_200_OK)
+
     except Classroom.DoesNotExist:
         return Response({"error": "Classroom not found"}, status=status.HTTP_404_NOT_FOUND)
+    
+@api_view(['POST'])
+@transaction.atomic
+def assign_roadmap_to_user(request):
+    roadmap_id = request.data.get("roadmap_id")
 
+    try:
+        roadmap = Roadmap.objects.get(pk=roadmap_id)
+        roadmap.published = True
+        roadmap.save()
 
+        serialized = RoadmapSerializer(roadmap)
+        return Response({
+            "message": "Roadmap successfully marked as published.",
+            "roadmap": serialized.data
+        }, status=status.HTTP_200_OK)
+
+    except Roadmap.DoesNotExist:
+        return Response({"error": "Roadmap not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+def mark_module_completed(request):
+    module_id = request.data.get("module_id")
+    user_id = request.data.get("user_id")
+
+    if not module_id or not user_id:
+        return Response({"error": "module_id and user_id are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        module = Module.objects.get(id=module_id)
+
+        if module.owner.id != user_id:
+            return Response({"error": "You do not have permission to modify this module"}, status=status.HTTP_403_FORBIDDEN)
+
+        module.status = "completed"
+        module.save()
+
+        serialized = ModuleSerializer(module)
+
+        return Response({
+            "message": "Module marked as completed",
+            "module": serialized.data
+        }, status=status.HTTP_200_OK)
+
+    except Module.DoesNotExist:
+        return Response({"error": "Module not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+def update_preferences(request):
+    user_id = request.data.get("user_id")
+    preferences = request.data.get("preferences")
+
+    if not user_id:
+        return Response({"error": "user_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user = User.objects.get(id=user_id)
+        user.preferences = preferences
+        user.save()
+
+        serialized = UserSerializer(user)
+        return Response({
+            "message": "User preferences updated",
+            "user": serialized.data
+        }, status=status.HTTP_200_OK)
+
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

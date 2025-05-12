@@ -9,7 +9,6 @@ const mockpathwayID = {
 
 export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user, classroomCode }) {
   const router = useRouter();
-
   const [form, setForm] = useState({
     title: "",
     topic: "",
@@ -49,11 +48,11 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user, cl
   };
 
   const handleSubmit = async () => {
-    if (!form.title.trim() || !form.topic.trim() || !form.grade.trim()) {
-      setError("Title, Topic, and Grade are required.");
+    if (!form.title.trim() || !form.topic.trim() || !form.grade.trim() || !form.learningGoals.trim()) {
+      setError("Title, Topic, Grade and Learning Goals are required.");
       return;
     }
-
+    console.log("form", form);
     const roadmap = {
       ...form,
       chapters: JSON.stringify(form.chapters),
@@ -62,8 +61,9 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user, cl
         .map((g) => g.trim())
         .filter(Boolean),
       userid: user.id,
+      classroom: classroomCode || null,
     };
-
+    console.log("submit roadmap", roadmap);
     setLoading(true);
 
     try {
@@ -159,7 +159,7 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user, cl
                   <label className="text-sm font-medium text-gray-700">Classroom</label>
                   <input
                       name="classroom"
-                      value={classroomCode || ""}
+                      value={form.classroom}
                       onChange={handleChange}
                       placeholder="Optional"
                       className="w-full mt-1 border border-gray-300 rounded px-3 py-2"
@@ -182,7 +182,7 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user, cl
 
           {/* Learning Goals */}
           <div className="md:col-span-2">
-            <label className="text-sm font-medium text-gray-700">Learning Goals</label>
+            <label className="text-sm font-medium text-gray-700">Learning Goals *</label>
             <input
               name="learningGoals"
               value={form.learningGoals}

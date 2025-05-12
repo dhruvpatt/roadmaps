@@ -1,6 +1,5 @@
 import React from "react";
-import { useRouter } from "next/navigation";
-import PropTypes from "prop-types";
+import { useRouter } from "next/router";
 
 /**
  * Renders a pathway card with a title, subtitle, progress bar (for students),
@@ -63,12 +62,3 @@ export default function PathwayCard({ id, title, subtitle, progress, published, 
     </div>
   );
 }
-
-PathwayCard.propTypes = {
-  id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-  title: PropTypes.string.isRequired,
-  subtitle: PropTypes.string,
-  progress: PropTypes.number,
-  published: PropTypes.bool,
-  user: PropTypes.shape({ role: PropTypes.string }).isRequired,
-};

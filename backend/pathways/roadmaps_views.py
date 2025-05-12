@@ -1,3 +1,4 @@
+import json
 import os
 import django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.backend.settings')  # Replace 'your_project_name' with the actual project name
@@ -81,31 +82,16 @@ class GenerationAgent:
         ]
         MAKE SURE THERE ARE NO TRAILING COMMAS
         """
-        try:
-            generation_config = types.GenerateContentConfig(temperature=0.7)
-            response = client.models.generate_content(
-                model='gemini-2.0-flash-lite-preview',
-                contents=prompt,
-                config=generation_config
-            )
-            roadmap = clean_response(response.text)
-            print(f"roadmap gen: {roadmap}")
+        generation_config = types.GenerateContentConfig(temperature=0.7)
+        response = client.models.generate_content(
+            model='gemini-2.0-flash-lite-preview',
+            contents=prompt,
+            config=generation_config
+        )
+        roadmap = clean_response(response.text)
+        print(f"roadmap gen: {roadmap}")
+        return roadmap
 
-            # Assuming the response is a valid JSON format like:
-            # [{"name": "Module 1", "learning_goals": ["Goal 1", "Goal 2"], "module_description": "Description", "prerequisite_modules": ["Module 0"], "next_modules": ["Module 2"]}, ...]
-            # Try to parse it as a list of dictionaries.
-            import json
-            try:
-                module_list = json.loads(roadmap)
-            except json.JSONDecodeError:
-                raise ValueError("The response from the model is not a valid JSON list of dictionaries.")
-
-            # Return the parsed list of modules
-            return module_list
-
-        except Exception as e:
-            print(f"ERROR generating roadmap: {e}")
-            raise ValueError(f"Error generating roadmap: {e}")
 
 
 class EvaluationAgent:
@@ -151,7 +137,11 @@ class RoadmapGenerationAPIView(APIView):
             details = serializer.validated_data['details']
             mode = serializer.validated_data.get('mode', 'CASUAL')
             user_chapters = serializer.validated_data.get('chapters')
-
+            classroomCode = serializer.validated_data.get('classroom')
+            classroom = None
+            if classroomCode:
+                classroom = Classroom.objects.get(join_id=classroomCode)
+            print("CLASROOM:", classroom)
             user = User.objects.get(pk=user_id)
             # Create agent instances
             perception_agent = PerceptionAgent()
@@ -179,6 +169,7 @@ class RoadmapGenerationAPIView(APIView):
                     print("inside")
                     print("DEBUG:", title, user, details, mode, learning_goals, grade)
                     try:
+                        module_list = json.loads(module_list)
                         roadmap_object = Roadmap(
                             title=title,
                             owner=user,
@@ -187,7 +178,8 @@ class RoadmapGenerationAPIView(APIView):
                             learning_goals=learning_goals,
                             grade=grade,
                             published=False,
-                            progress=0
+                            progress=0,
+                            classroom=classroom
                         )
                         roadmap_object.save()
 
@@ -280,7 +272,8 @@ def publish_roadmap_to_classroom(request):
                 mode=roadmap.mode,
                 grade=roadmap.grade,
                 learning_goals=roadmap.learning_goals,
-                progress=0
+                progress=0,
+                classroom=classroom
             )
 
             chapter_map = {}
@@ -382,6 +375,99 @@ def update_roadmap(request, roadmap_id):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+# @api_view(['POST'])
+# @transaction.atomic
+# def publish_roadmap_to_classroom(request):
+#     roadmap_id = request.data.get("roadmap_id")
+#     classroom_id = request.data.get("classroom_id")
+#     topic = request.data.get("topic", "Untitled Topic")
+#     master_scaffold = request.data.get("master_scaffold", "")
+
+#     try:
+#         roadmap = Roadmap.objects.get(pk=roadmap_id)
+#         classroom = Classroom.objects.get(pk=classroom_id)
+#         students = classroom.students.all()
+
+#         for student in students:
+#             student_roadmap = Roadmap.objects.create(
+#                 owner=student,
+#                 title=roadmap.title,
+#                 details=roadmap.details,
+#                 mode=roadmap.mode,
+#                 grade=roadmap.grade,
+#                 learning_goals=roadmap.learning_goals,
+#                 progress=0,
+#                 published=True
+#             )
+
+#             chapter_map = {}
+#             for chapter in roadmap.chapters.all():
+#                 new_chapter = Chapter.objects.create(
+#                     name=chapter.name,
+#                     roadmap=student_roadmap,
+#                     status='not_started'
+#                 )
+#                 chapter_map[chapter.id] = new_chapter
+
+#             module_map = {}
+#             for chapter in roadmap.chapters.all():
+#                 for module in chapter.modules.all():
+#                     # Clone quiz
+#                     new_quiz = None
+#                     if module.practice:
+#                         new_quiz = Quiz.objects.create(user=student)
+#                         for q in module.practice.questions.all():
+#                             new_question = Question.objects.create(
+#                                 question=q.question,
+#                                 solution=q.solution,
+#                                 type=q.type
+#                             )
+#                             new_quiz.questions.add(new_question)
+
+#                     new_module = Module.objects.create(
+#                         name=module.name,
+#                         chapter=chapter_map[chapter.id],
+#                         owner=student,
+#                         yt_video=module.yt_video,
+#                         status='not_started',
+#                         learning_goals=module.learning_goals,
+#                         feedback="",
+#                         practice=new_quiz
+#                     )
+#                     for content in module.content_list.all():
+#                         Content.objects.create(
+#                             type=content.type,
+#                             content=content.content,
+#                             module=new_module
+#                         )
+#                     module_map[module.id] = new_module
+
+#             for module in roadmap.chapters.all().prefetch_related('modules'):
+#                 for original_module in module.modules.all():
+#                     new_module = module_map[original_module.id]
+#                     new_module.prerequisites.set([
+#                         module_map[prereq.id] for prereq in original_module.prerequisites.all()
+#                     ])
+#                     new_module.next_modules.set([
+#                         module_map[next.id] for next in original_module.next_modules.all()
+#                     ])
+
+#             Subject.objects.create(
+#                 classroom=classroom,
+#                 topic=topic,
+#                 master_scaffold=master_scaffold,
+#                 progress=0.0,
+#                 student_roadmap=student_roadmap
+#             )
+
+#         return Response({"message": "Roadmap and structure published to classroom successfully."}, status=status.HTTP_201_CREATED)
+
+#     except Roadmap.DoesNotExist:
+#         return Response({"error": "Roadmap not found"}, status=status.HTTP_404_NOT_FOUND)
+#     except Classroom.DoesNotExist:
+#         return Response({"error": "Classroom not found"}, status=status.HTTP_404_NOT_FOUND)
+#     except Exception as e:
+#         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 @api_view(['POST'])
 @transaction.atomic
 def publish_roadmap_to_classroom(request):
@@ -389,11 +475,13 @@ def publish_roadmap_to_classroom(request):
     classroom_id = request.data.get("classroom_id")
     topic = request.data.get("topic", "Untitled Topic")
     master_scaffold = request.data.get("master_scaffold", "")
-
+    print("classroomId", classroom_id)
     try:
         roadmap = Roadmap.objects.get(pk=roadmap_id)
         classroom = Classroom.objects.get(pk=classroom_id)
         students = classroom.students.all()
+
+        created_roadmaps = []
 
         for student in students:
             student_roadmap = Roadmap.objects.create(
@@ -403,7 +491,9 @@ def publish_roadmap_to_classroom(request):
                 mode=roadmap.mode,
                 grade=roadmap.grade,
                 learning_goals=roadmap.learning_goals,
-                progress=0
+                progress=0,
+                published=True,
+                classroom=classroom
             )
 
             chapter_map = {}
@@ -418,7 +508,6 @@ def publish_roadmap_to_classroom(request):
             module_map = {}
             for chapter in roadmap.chapters.all():
                 for module in chapter.modules.all():
-                    # Clone quiz
                     new_quiz = None
                     if module.practice:
                         new_quiz = Quiz.objects.create(user=student)
@@ -466,7 +555,14 @@ def publish_roadmap_to_classroom(request):
                 student_roadmap=student_roadmap
             )
 
-        return Response({"message": "Roadmap and structure published to classroom successfully."}, status=status.HTTP_201_CREATED)
+            created_roadmaps.append(student_roadmap)
+
+        serialized_roadmaps = RoadmapSerializer(created_roadmaps, many=True).data
+        serialized_roadmap = RoadmapSerializer(roadmap).data
+        return Response({
+            "message": "Roadmap and structure published to classroom successfully.",
+            "roadmap": serialized_roadmap
+        }, status=status.HTTP_201_CREATED)
 
     except Roadmap.DoesNotExist:
         return Response({"error": "Roadmap not found"}, status=status.HTTP_404_NOT_FOUND)

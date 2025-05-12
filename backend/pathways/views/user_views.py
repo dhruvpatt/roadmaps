@@ -153,3 +153,28 @@ def user_classrooms(request, pk):
 
     serializer = ClassroomSerializer(classrooms, many=True)
     return Response(serializer.data)
+
+
+@api_view(['POST'])
+def update_preferences(request):
+    user_id = request.data.get("user_id")
+    preferences = request.data.get("preferences")
+
+    if not user_id:
+        return Response({"error": "user_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user = User.objects.get(id=user_id)
+        user.preferences = preferences
+        user.save()
+
+        serialized = UserSerializer(user)
+        return Response({
+            "message": "User preferences updated",
+            "user": serialized.data
+        }, status=status.HTTP_200_OK)
+
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

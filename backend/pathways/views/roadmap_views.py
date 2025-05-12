@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
+from django.db import transaction
 from ..models import Roadmap
 from ..serializers import RoadmapSerializer, ChapterSerializer
 
@@ -75,3 +76,24 @@ def roadmap_chapters(request, pk):
     chapters = roadmap.chapters.all()
     serializer = ChapterSerializer(chapters, many=True)
     return Response(serializer.data)
+
+@api_view(['POST'])
+@transaction.atomic
+def assign_roadmap_to_user(request):
+    roadmap_id = request.data.get("roadmap_id")
+
+    try:
+        roadmap = Roadmap.objects.get(pk=roadmap_id)
+        roadmap.published = True
+        roadmap.save()
+
+        serialized = RoadmapSerializer(roadmap)
+        return Response({
+            "message": "Roadmap successfully marked as published.",
+            "roadmap": serialized.data
+        }, status=status.HTTP_200_OK)
+
+    except Roadmap.DoesNotExist:
+        return Response({"error": "Roadmap not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
