@@ -2,8 +2,11 @@ Django>=4.2,<5.0
 djangorestframework
 django-cors-headers
 
-# Google Gemini API
-google-genai==1.2.0
+openai
+pyjson
+
 psycopg2==2.9.10
 dotenv
 gunicorn
+
+

@@ -3,8 +3,6 @@ import django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.backend.settings')
 django.setup()
 
-from google import genai
-from google.genai import types
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -17,11 +15,12 @@ import time
 from pathways.serializers import ModuleSerializer
 from django.shortcuts import get_object_or_404
 import requests
+from .utils import get_llm_response
+from .schemas import *
 
-# Gemini API key setup
-api_key = getattr(settings, 'LLM_API_KEY')
-print(api_key)
-client = genai.Client(api_key=api_key)
+
+
+
 yt_key = getattr(settings, 'YT_API_KEY')
 def search_youtube_video(query):
     url = "https://www.googleapis.com/youtube/v3/search"
@@ -41,13 +40,6 @@ def search_youtube_video(query):
         return f"https://www.youtube.com/watch?v={video_id}"
 
     return None  # No valid video found
-def clean_response(response, mode="json"):
-    splitted = response.split(f'```{mode}')
-    if len(splitted) < 2:
-        raise ValueError(f"No {mode} part found in the input string.")
-
-    # Extract the JSON part and remove trailing backticks
-    return splitted[1].split('```')[0].strip()
 
 class PerceptionAgent:
     def analyze_context(self, module_name, learning_goals, prerequisites_feedback, user_preferences):
@@ -57,15 +49,9 @@ class PerceptionAgent:
         - Feedback from Prerequisite Modules: {prerequisites_feedback}
         - User Preferences: {user_preferences}
 
-        Provide a refined set of insights or themes that the content should focus on, ensuring alignment with prior knowledge, goals, and learner-specific preferences (e.g., learning disabilities, visual learning, need for breaks).
+        Provide a refined set of insights or themes that the content should focus on, ensuring alignment with prior knowledge, goals, and learner-specific preferences.
         """
-        generation_config = types.GenerateContentConfig(temperature=0.7)
-        response = client.models.generate_content(
-            model='gemini-2.0-flash-lite-preview',
-            contents=prompt,
-            config=generation_config
-        )
-        return response.text
+        return get_llm_response(prompt)
 
 class ContentGenerationAgent:
     def generate_content(self, module_name, learning_goals, insights, user_preferences):
@@ -73,82 +59,26 @@ class ContentGenerationAgent:
         Based on the insights: '{insights}' for the module '{module_name}' with learning goals {', '.join(learning_goals)}, generate educational content.
         The user has the following preferences: {user_preferences}.
 
-        The content should be personalized according to these preferences (e.g., visual emphasis, accessibility considerations, pacing recommendations).
+        The content should be personalized according to these preferences.
 
-        Return a JSON list of dictionaries. Each dictionary must include:
+        Return a list of content items, each with:
         - type: one of ['html', 'content', 'video']
         - content: the actual content or interactive structure
-
-        Guidelines:
-        - For 'html' components: Use clean, valid HTML with headings, lists, interactive visualizaitons, or callout boxes to support understanding . DO NOT use images.
-        - For 'content': Use plain text or markdown-formatted explanations. DO NOT include HTML tags.
-        - For 'video': DO NOT provide a YouTube URL directly
-            - INSTEAD, return a search query string describing the video needed (e.g., "Introduction to derivatives")
-            - This query will be used to fetch a real YouTube video via API
-
-        DO NOT include explanations outside of the JSON — the result will be shown directly to the user.
-        NO NOT HAVE ANY HTML IN IF THE TYPE IS CONTENT THIS IS THE MOST IMPORTANT PART!!!!
-        Example:
-        [
-          {{"type": "html", "content": "<h2>Understanding Functions</h2><ul><li>Inputs and outputs</li><li>Notation: f(x)</li></ul>"}},
-          {{"type": "content", "content": "A function relates each input to exactly one output. For example, f(x) = x + 1."}},
-          {{"type": "video", "content": "Introdiction "}},
-        ]
-
-        EVERYTHING YOU RETURN WILL BE RENDERED AS IS. DO NOT ADD META COMMENTARY. DO NOT ADD EXTRA EXPLANATIONS OUTSIDE THE JSON.
-        KEEP HTML SIMPLE, AND INTERACTIVE BLOCKS STRUCTURED. DO NOT HAVE *INSERT SOMETHING HERE* DO NOT MAKE CONTENT REFERENCING LINKS THAT 
-        THIS INCLUDES BUT IS NOT LIMITED SUGGESTIONS FOR LINKING TO TEXTBOOKS WEBSITES GRADING BREAKDOWNS OR LISTS OF MATERIALS DONT 
         """
-        generation_config = types.GenerateContentConfig(temperature=0.7)
-        response = client.models.generate_content(
-            model='gemini-2.0-flash-lite-preview',
-            contents=prompt,
-            config=generation_config
-        )
-        return clean_response(response.text)
+        return get_llm_response(prompt, response_model=ContentList)
 
 class EvaluationAgent:
     def evaluate(self, content_list):
         prompt = f"""
-        You are evaluating a generated educational module with the following content structure:
+        Evaluate the following educational content for structure and completeness:
 
         {content_list}
 
-        Your task is to validate this content based on the following criteria:
-
-        1. **JSON Validity**: Ensure the structure is a valid JSON list of dictionaries. Each dictionary must include:
-           - A "type" field (one of ['html', 'content', 'video'])
-           - A "content" field containing a valid value based on type
-
-        2. **Type-Content Consistency**:
-           - If "type" is "html": "content" must be a string of clean, valid HTML. It must render meaningfully and clearly in a learning environment. No scripts or broken tags.
-           - If "type" is "content": "content" must be plain text or markdown, not HTML.
-           - If "type" is "video": "content" must be a valid and working YouTube video URL. Do not allow placeholder text or fake links.
-
-        3. **HTML Validation**:
-           - All HTML must be syntactically correct (properly closed tags, valid nesting).
-           - HTML should enhance understanding — like headings, lists, tips — and must be simple enough to render properly in a web-based learning environment.
-           - No <script>, <style>, <iframe>, or <img> tags allowed.
-
-        5. **Completeness**:
-           - There should be at least one content block explaining the topic.
-           - Visual aids (html) and videos (if present) must support the topic and learning goals.
-           - All blocks should make sense together and follow a logical flow.
-
-        If all checks pass, respond exactly: **Valid**
-
-        If any issue is found, respond exactly: **Incomplete**, followed by a brief reason.
+        Respond with 'Valid' if the content meets all criteria, or 'Incomplete' with reasons.
         """
-
-        generation_config = types.GenerateContentConfig(temperature=0.7)
-        response = client.models.generate_content(
-            model='gemini-2.0-flash-lite-preview',
-            contents=prompt,
-            config=generation_config
-        )
-        evaluation = response.text.strip().lower()
-        return 'valid' in evaluation
-
+        response = get_llm_response(prompt)
+        return response.lower().startswith('valid')
+    
 class ModuleContentGenerationAPIView(APIView):
     def post(self, request):
         module_id = request.data.get('module_id')
@@ -237,10 +167,10 @@ class ModuleAssistantAPIView(APIView):
 
         try:
             module = Module.objects.get(pk=module_id)
-            # Save user message to history
-            user_msg = Message.objects.create(module=module, content=message, type='user')
+            # Save user message
+            Message.objects.create(module=module, content=message, type='user')
 
-            # Prepare conversation history
+            # Prepare full chat history
             history = Message.objects.filter(module=module).order_by("timestamp")
             chat_log = "\n".join([
                 f"User: {msg.content}" if msg.type == 'user' else f"AI: {msg.content}"
@@ -254,17 +184,9 @@ class ModuleAssistantAPIView(APIView):
 
             Respond helpfully and clearly to the last user message.
             """
+            assistant_reply = get_llm_response(prompt)  # Plain text response
 
-            config = types.GenerateContentConfig(temperature=0.7)
-            response = client.models.generate_content(
-                model='gemini-2.0-flash-lite-preview',
-                contents=prompt,
-                config=config
-            )
-
-            assistant_reply = response.text.strip()
-
-            # Save assistant message to history
+            # Save assistant reply
             Message.objects.create(module=module, content=assistant_reply, type='system')
 
             return Response({"reply": assistant_reply}, status=status.HTTP_200_OK)
@@ -273,7 +195,6 @@ class ModuleAssistantAPIView(APIView):
             return Response({"error": "Module not found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 class ModuleFeedbackAPIView(APIView):
     def post(self, request):
@@ -312,29 +233,16 @@ class ModuleFeedbackAPIView(APIView):
             {failed_block}
 
             Provide feedback about the student's learning progress in this module, including misunderstandings, learning style hints, or recommendations.
-            Then suggest updates to their learning preferences as a JSON list of recommendations.
-
-            Format:
-            {{
-              "feedback": "...",
-              "updated_preferences": ["Visual learner", "Needs slower pacing", ...]
-            }}
+            Then suggest updates to their learning preferences.
             """
 
-            config = types.GenerateContentConfig(temperature=0.7)
-            response = client.models.generate_content(
-                model='gemini-2.0-flash-lite-preview',
-                contents=prompt,
-                config=config
-            )
+            result = get_llm_response(prompt, response_model=FeedbackResponse)
 
-            result = pyjson.loads(clean_response(response.text))
-
-            module.feedback = result.get("feedback", "")
+            module.feedback = result.feedback
             module.save()
 
             existing_prefs = set(user.preferences or [])
-            updated_prefs = set(result.get("updated_preferences", []))
+            updated_prefs = set(result.updated_preferences)
             user.preferences = list(existing_prefs.union(updated_prefs))
             user.save()
 
@@ -435,7 +343,6 @@ def update_module_video(request):
 @api_view(["POST"])
 def create_lecture_materials(request):
     module_id = request.data.get("module_id")
-
     if not module_id:
         return Response({"error": "module_id is required"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -452,75 +359,51 @@ def create_lecture_materials(request):
         content_combined = "\n".join(content_texts)
         feedback = module.feedback or "No feedback provided."
 
-        # Prompt for LaTeX
+        # Get LaTeX slides
         latex_prompt = f"""
-You are a LaTeX slide generator. Write a Beamer presentation based on the following content.
+        You are a LaTeX slide generator. Write a Beamer presentation based on the following content.
 
-Module Title: {module.name}
-Learning Goals: {', '.join(module.learning_goals)}
-Feedback: {feedback}
+        Module Title: {module.name}
+        Learning Goals: {', '.join(module.learning_goals)}
+        Feedback: {feedback}
 
-Educational Content:
-{content_combined}
+        Educational Content:
+        {content_combined}
 
-Chat Interaction Summary:
-{chat_log}
+        Chat Interaction Summary:
+        {chat_log}
 
-Only return the LaTeX code, starting with \documentclass{{beamer}} and ending with \end{{document}} keep the latex simple and do not add any crazy imports.
-The slides should be simple yet informative.
-"""
-
-        config = types.GenerateContentConfig(temperature=0.7)
-        latex_response = client.models.generate_content(
-            model='gemini-2.0-flash-lite-preview',
-            contents=latex_prompt,
-            config=config
-        )
-        latex_output = clean_response(latex_response.text.strip(), mode="latex")
+        Only return the LaTeX code, starting with \\documentclass{{beamer}} and ending with \\end{{document}}.
+        Keep it simple and avoid any imports beyond Beamer defaults.
+        """
+        latex_output = get_llm_response(latex_prompt)  # String response
         print("LaTeX Output:", latex_output)
 
-        # Prompt for Script JSON
+        # Get slide narration script (structured)
         script_prompt = f"""
-Given the following LaTeX Beamer slide content, generate a corresponding script to be read aloud per slide, use words to represent symbols when generating an output.
+        Given the following LaTeX Beamer slide content, generate a corresponding script to be read aloud per slide.
 
-LaTeX Slides:
-{latex_output}
+        LaTeX Slides:
+        {latex_output}
 
-Format the response strictly as a JSON object like:
-{{
-  "scripts": {{
-    "1": "text for slide 1",
-    "2": "text for slide 2"
-  }}
-}}
+        Format the response as JSON:
+        {{
+          "scripts": {{
+            "1": "...",
+            "2": "..."
+          }}
+        }}
+        Do not add explanations outside the JSON.
+        """
+        script_result = get_llm_response(script_prompt, response_model=SlideScript)
 
-Do not include any commentary outside the JSON. The script should not just be reading off the slide, the idea is to subsidize and expand on what is being written on the slides. 
-
-"""
-        script_response = client.models.generate_content(
-            model='gemini-2.0-flash-lite-preview',
-            contents=script_prompt,
-            config=config
-        )
-        script_output = clean_response(script_response.text.strip())
-        print("Script Output:", script_output)
-
-        try:
-            json_start = script_output.index('{')
-            script_json = pyjson.loads(script_output[json_start:])
-        except Exception as e:
-            return Response({
-                "error": "Failed to parse script JSON",
-                "raw_response": script_output
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        # Return everything for the frontend to handle video generation
         return Response({
             "latex": latex_output,
-            "script": script_json
+            "script": script_result.scripts
         }, status=status.HTTP_200_OK)
 
     except Module.DoesNotExist:
         return Response({"error": "Module not found"}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    

@@ -3,8 +3,6 @@ import django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.backend.settings')
 django.setup()
 
-from google import genai
-from google.genai import types
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -13,18 +11,9 @@ from .models import Module, User, Quiz, Question
 from pathways.serializers import QuizSerializer
 from django.conf import settings
 import json
+from .utils import get_llm_response
+from .schemas import *
 
-# Gemini API key setup
-api_key = getattr(settings, 'LLM_API_KEY')
-client = genai.Client(api_key=api_key)
-
-def clean_response(response):
-    splitted = response.split('```json')
-    if len(splitted) < 2:
-        raise ValueError("No JSON part found in the input string.")
-
-    # Extract the JSON part and remove trailing backticks
-    return splitted[1].split('```')[0].strip()
 
 def bulk_ai_grade_text_answers(questions):
     prompt_items = "\n".join([
@@ -34,24 +23,14 @@ def bulk_ai_grade_text_answers(questions):
     Evaluate the following student's answers to a quiz. For each item, respond with either 'correct' or 'incorrect' in order.
 
     {prompt_items}
-
-    Format the result as a JSON list:
-    ["correct", "incorrect", ...]
     """
-    config = types.GenerateContentConfig(temperature=0.3)
-    response = client.models.generate_content(
-        model='gemini-2.0-flash-lite-preview',
-        contents=prompt,
-        config=config
-    )
+
     try:
-        print(response.text)
-        print(clean_response(response.text))
-        result = json.loads(clean_response(response.text))
+        result = get_llm_response(prompt, temperature=0.3, response_model=GradingResponse)
         return result
     except Exception as e:
         print(e)
-        raise ValueError(f"AI grading failed: {e}")
+        raise ValueError(f"AI grading failed: {e}")      
 
 class QuizEvaluationAPIView(APIView):
     def post(self, request):
@@ -125,9 +104,8 @@ class QuizGenerationAPIView(APIView):
 
         if not module_id or not user_id:
             return Response({"error": "module_id and user_id are required"}, status=status.HTTP_400_BAD_REQUEST)
-        i = 0
-        while i < 5:
-            i+=1
+
+        for _ in range(5):  # Max 5 retries
             try:
                 module = Module.objects.get(pk=module_id)
                 user = User.objects.get(pk=user_id)
@@ -135,7 +113,6 @@ class QuizGenerationAPIView(APIView):
 
                 failed_questions = Question.objects.filter(failed_in_quizzes__user=user).distinct()
                 failed_topics = [q.question for q in failed_questions[:5]]
-
                 focus_text = f" The student previously struggled with: {', '.join(failed_topics)}." if failed_topics else ""
 
                 prompt = f"""
@@ -148,7 +125,7 @@ class QuizGenerationAPIView(APIView):
                 - question (string)
                 - solution (string)
                 - type SHOULD ALWAYS BE text
-                MOST IMPORTANT THAT IT IS A JSON OBJECT WITH NO ERRORS
+                THIS MUST BE A WELL-FORMED JSON ARRAY WITH NO COMMENTS.
 
                 EX:
                 [
@@ -160,30 +137,21 @@ class QuizGenerationAPIView(APIView):
                   {{
                     "question": "Which of the following is a prime number?",
                     "solution": "The correct answer is 7",
-                    "type": "multiple_choice"
+                    "type": "text"
                   }}
                 ]
                 """
 
-                generation_config = types.GenerateContentConfig(temperature=0.7)
-                response = client.models.generate_content(
-                    model='gemini-2.0-flash-lite-preview',
-                    contents=prompt,
-                    config=generation_config
-                )
+                quiz_data = get_llm_response(prompt, temperature=0.7, response_model=QuizList)
 
-
-                print(response.text)
-                quiz_data = json.loads(clean_response(response.text))
                 quiz = Quiz.objects.create(user=user)
-
                 for q in quiz_data:
-                    if not all(k in q for k in ['question', 'solution', 'type']):
+                    if not all(k in q.dict() for k in ['question', 'solution', 'type']):
                         continue
                     question = Question.objects.create(
-                        question=q['question'],
-                        solution=q['solution'],
-                        type=q['type']
+                        question=q.question,
+                        solution=q.solution,
+                        type=q.type
                     )
                     quiz.questions.add(question)
 
@@ -197,8 +165,9 @@ class QuizGenerationAPIView(APIView):
                 }, status=status.HTTP_201_CREATED)
 
             except Exception as e:
-                print(e)
-        return Response({"Error Creating Quiz"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                print(f"Quiz generation attempt failed: {e}")
+
+        return Response({"error": "Failed to generate quiz after multiple attempts."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])

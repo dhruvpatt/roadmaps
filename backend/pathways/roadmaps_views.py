@@ -5,9 +5,6 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.backend.settings')  # R
 django.setup()
 
 import time
-from google import genai
-from google.genai import types  # Assuming Gemini text generation endpoint is like OpenAI's GPT-3
-
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -17,108 +14,89 @@ from .serializers import QueryRequestSerializer, ChapterSerializer, SubjectSeria
 from django.db import transaction
 from datetime import datetime, timedelta
 from django.conf import settings
+from .utils import get_llm_response
+from .schemas import *
 
-# Set the Gemini API key (adjust based on actual implementation)
-api_key = getattr(settings, 'LLM_API_KEY')
-client = genai.Client(api_key=api_key)
-
-
-# Agent Classes
 
 class PerceptionAgent:
-    def generate_insights(self, topic, learning_goals, grade, user_chpters):
-        prompt = f"Based on the topic '{topic}', learning goals '{learning_goals}', and grade level '{grade}', " \
-                 f"provide insights and high-level objectives for the lesson and format it using these chapters :{user_chpters}."
+    def generate_insights(self, topic, learning_goals, grade, user_chapters):
+        prompt = f"""
+        Based on the topic '{topic}', learning goals '{learning_goals}', and grade level '{grade}', 
+        provide insights and high-level objectives for the lesson and format it using these chapters: {user_chapters}.
+
+        Return a JSON object in the form:
+        {{
+            "insights": "Concise paragraph describing high-level goals and focus areas for the module."
+        }}
+        """
 
         try:
-            generation_config = types.GenerateContentConfig(temperature=0.7)
-
-            response = client.models.generate_content(
-                model='gemini-2.0-flash-lite-preview',
-                contents=prompt,
-                config=generation_config
-            )
-            print(response.text)
-            return response.text
+            result = get_llm_response(prompt, temperature=0.7, response_model=InsightResponse)
+            print(f"result: {result}")
+            return result
         except Exception as e:
+            print(e)
             raise ValueError(f"Error generating insights: {e}")
 
-def clean_response(response):
-    splitted = response.split('```json')
-    if len(splitted) < 2:
-        raise ValueError("No JSON part found in the input string.")
-
-    # Extract the JSON part and remove trailing backticks
-    return splitted[1].split('```')[0].strip()
 class GenerationAgent:
     def generate_roadmap(self, perception_data, topic, learning_goals, grade, mode, user_chapters):
         prompt = f"""
         Based on the following insights '{perception_data}', generate a detailed roadmap for teaching the topic '{topic}' to students in grade '{grade}', ensuring that the learning goals {', '.join([f"'{goal}'" for goal in learning_goals])} are effectively covered.
+
         The roadmap should be divided into modules that are aligned with the following:
-        - THESE ARE THE CHAPTERS INPUTTED BY THE USER TO SERVE AS A GUIDLINE: {user_chapters}
+        - THESE ARE THE CHAPTERS INPUTTED BY THE USER TO SERVE AS A GUIDELINE: {user_chapters}
         - The grade level ('{grade}') to ensure the content is age-appropriate.
         - The learning goals ({', '.join([f"'{goal}'" for goal in learning_goals])}) to ensure each module is directly tied to those goals.
         - The mode ('{mode}') will dictate the complexity of the content, where 'STRICT' means each module should have a well-defined structure, while 'CASUAL' means more flexible and exploratory content.
 
-        For each module, provide the following parameters:
-        - name: A concise title for the module.
-        - chapter: the corresponding chapter name it should be the exact name of the chapter 
-        - learning_goals: A list of objectives the students should achieve by the end of the module should have a high degree of exellency.
-        - module_description: A brief overview of the content and approach for this module.
-        - prerequisite_modules: A list of prior modules required for this one to make sense (if any) **IT SHOULD BE THE EXACT NAME OF THE MODULE**.
-        - next_modules: A list of modules that should logically follow this one in the learning path.
-        
-        For each Chapter, provide the following parameters:
-        - name: A consice name for the chapter that describes all the modules
-        - next: the next Chapter 
+        For each chapter:
+        - name: A concise name for the chapter
+        - next: the name of the next chapter (or null)
 
-        The output should be a list of dictionary objects where the keys are the parameter names (name, learning_goals, module_description, prerequisite_modules, next_modules).
-        It should also have a list of Chapters that comes before the list of modules where the chapters encapsulate a set of modules try to make it so there are mutliple modules for a chapter
-        Each module should be a dictionary that contains the details for that module. It should only be teh list THERE SHOULD BE NO WORDS BEFORE OR AFTER THE LISTS
-        EX: 
-        [
-        [{{"name": "Chapter 1: NAME FOR CHAPTER ONE, "next": "Chapter 2"}}, {{"name: Chapter 2", "next": None}}]
-        [{{"name": "Module 1", "learning_goals": ["Goal 1", "Goal 2"], "module_description": "Description", "prerequisite_modules": ["Module 0"], "next_modules": ["Module 2"], "chapter":"Chapter 1: NAME FOR CHAPTER ONE"}}, ...]
-        ]
-        MAKE SURE THERE ARE NO TRAILING COMMAS
+        For each module:
+        - name: the module title
+        - chapter: the exact name of the chapter this module belongs to
+        - learning_goals: a list of learning objectives
+        - module_description: a brief description of the module
+        - prerequisite_modules: a list of module names that must be completed first
+        - next_modules: a list of modules that follow this one
+
+        Return a **JSON list** of two elements:
+        - The first is a list of chapter dictionaries
+        - The second is a list of module dictionaries
+
+        Do not include any explanation before or after the list.
         """
-        generation_config = types.GenerateContentConfig(temperature=0.7)
-        response = client.models.generate_content(
-            model='gemini-2.0-flash-lite-preview',
-            contents=prompt,
-            config=generation_config
-        )
-        roadmap = clean_response(response.text)
-        print(f"roadmap gen: {roadmap}")
-        return roadmap
 
+        try:
+            roadmap = get_llm_response(prompt, temperature=0.6, response_model=RoadmapStructure, mode="parsed")
+            print("roadmap:", roadmap)
+            return roadmap
+        except Exception as e:
+            print("Error generating roadmap:", e)
+            raise ValueError("Unable to generate roadmap")
 
 
 class EvaluationAgent:
     def evaluate(self, roadmap, learning_goals):
         prompt = f"""
-            Evaluate the roadmap '{roadmap}' based on the learning goals '{learning_goals}'. 
-            Is the roadmap valid and complete?
-            Return in the output Valid or Incomplete return incomplete if there are trailing commas or other syntax errors that would make a json.load() call fail
-            If it is incomplete or there are prequisites missing or missmatches between prerequiste names and the module names give constructive
-            feedback and return do not have valid anywhere in the string
-            """
-        try:
-            generation_config = types.GenerateContentConfig(temperature=0.7)
+        Evaluate the roadmap '{roadmap}' based on the learning goals '{learning_goals}'. 
+        Return a JSON object like this:
 
-            response = client.models.generate_content(
-                model='gemini-2.0-flash-lite-preview',
-                contents=prompt,
-                config=generation_config
-            )
-            evaluation_result = response.text
-            print(f"EVALUATION: {evaluation_result}")
-            if 'valid' in evaluation_result.lower():
-                return True
-            return False
+        {{
+            "evaluation": "Valid" // or "Incomplete: reason"
+        }}
+
+        Return 'Valid' if the roadmap meets all criteria. Return 'Incomplete: <reason>' if there are JSON issues, missing prerequisites, or mismatched names.
+        DO NOT return any other explanation outside this JSON format.
+        """
+
+        try:
+            result = get_llm_response(prompt, temperature=0.6, response_model=EvaluationFeedback)
+            print(f"result: {result}")
+            return result["evaluation"].strip().lower().startswith("valid")
         except Exception as e:
             raise ValueError(f"Error evaluating roadmap: {e}")
-
 
 class RoadmapGenerationAPIView(APIView):
     serializer_class = QueryRequestSerializer
@@ -152,7 +130,8 @@ class RoadmapGenerationAPIView(APIView):
             timeout_duration = timedelta(seconds=60 * 5)  # 1-minute timeout
             start_time = datetime.now()
 
-            while True:
+            while True: #TODO: add cap
+
                 # Step 1: Perception Agent generates insights
                 print("PERCEPTION")
                 print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
@@ -166,10 +145,8 @@ class RoadmapGenerationAPIView(APIView):
                 print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
                 if evaluation_agent.evaluate(module_list, learning_goals):
-                    print("inside")
                     print("DEBUG:", title, user, details, mode, learning_goals, grade)
                     try:
-                        module_list = json.loads(module_list)
                         roadmap_object = Roadmap(
                             title=title,
                             owner=user,
@@ -184,50 +161,53 @@ class RoadmapGenerationAPIView(APIView):
                         roadmap_object.save()
 
                         print("CREATED ROADMAP")
+                        print("MODULE LIST:", module_list)
                         chapters = dict()
-                        for chapter in module_list[0]:
-                            chapters[chapter['name']] = Chapter.objects.create(
-                                name=chapter['name'], roadmap=roadmap_object
+                        for chapter in module_list.chapters:
+                            chapters[chapter.name] = Chapter.objects.create(
+                                name=chapter.name, roadmap=roadmap_object
                             )
-                        for chapter in module_list[0]:
-                            if chapter['next']:
-                                chapters[chapter['name']].next = chapters.get(chapter['next'])
-                                chapters[chapter['name']].save()
+                        for chapter in module_list.chapters:
+                            if chapter.next:
+                                chapters[chapter.name].next = chapters.get(chapter.next)
+                                chapters[chapter.name].save()
 
-                        roadmap_object.chapter_count = len(module_list[0])
+                        roadmap_object.chapter_count = len(module_list.chapters)
                         roadmap_object.save()
 
                         print("CREATED CHAPTERS")
                         modules = {}
 
                         # Step 1: Create all modules without setting "next_modules" or "prerequisite_modules" yet
-                        for module_data in module_list[1]:
-                            modules[module_data['name']] = Module.objects.create(
-                                name=module_data['name'],
+                        for module_data in module_list.modules:
+                            modules[module_data.name] = Module.objects.create(
+                                name=module_data.name,
                                 owner=user,
-                                chapter=chapters[module_data['chapter']],  # Assign the correct chapter
-                                learning_goals=module_data['learning_goals'],  # Use module-specific goals
+                                chapter=chapters[module_data.chapter],  # Assign the correct chapter
+                                learning_goals=module_data.learning_goals,  # Use module-specific goals
                             )
 
                         # Step 2: Update "prerequisite_modules" and "next_modules"
-                        for module_data in module_list[1]:
-                            module_instance = modules[module_data['name']]
+                        for module_data in module_list.modules:
+                            module_instance = modules[module_data.name]
 
                             module_instance.prerequisites.set(
-                                [modules[prerequisite] for prerequisite in module_data['prerequisite_modules'] if
+                                [modules[prerequisite] for prerequisite in module_data.prerequisite_modules if
                                  prerequisite in modules]
                             )
 
                             module_instance.next_modules.set(
-                                [modules[next_module] for next_module in module_data['next_modules'] if
+                                [modules[next_module] for next_module in module_data.next_modules if
                                  next_module in modules]
                             )
 
                         print("CREATED MODULES")
                         return Response({"roadmap": roadmap_object.id}, status=status.HTTP_201_CREATED)
                     except Exception as e:
-                        print(e)
-
+                        import traceback
+                        print("Error creating roadmap:")
+                        traceback.print_exc()
+                        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                 # Timeout check
                 if datetime.now() - start_time > timeout_duration:
                     return Response({"error": "Timeout reached, roadmap generation failed."},
