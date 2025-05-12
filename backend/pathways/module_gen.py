@@ -378,7 +378,8 @@ def roadmap_chapter_count(request, roadmap_id):
 def get_module(request):
     module_id = request.data.get('module_id')
     user_id = request.data.get('user_id')
-
+    print(request.data.get('module_id'))
+    print(request.data.get('user_id'))
     if not module_id or not user_id:
         return Response({"error": "module_id and user_id are required"}, status=status.HTTP_400_BAD_REQUEST)
 
