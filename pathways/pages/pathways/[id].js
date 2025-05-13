@@ -46,7 +46,6 @@ const ViewPathwayPage = () => {
 
   useEffect(() => {
     if (!id) return;
-
     const fetchData = async () => {
       try {
         const res = await fetch(`${backendUrl}/api/roadmaps/${id}/`);

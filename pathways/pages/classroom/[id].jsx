@@ -61,7 +61,7 @@ const Classroom = () => {
       console.log("Fetched classroom:", ret);
 
       setClassroomCode(ret.join_id);
-      setClassroom(ret.classroom);
+      setClassroom(ret);
       return ret;
     } catch (error) {
       console.error("Failed to fetch classroom", error);

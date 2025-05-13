@@ -17,6 +17,7 @@ import time
 from pathways.serializers import ModuleSerializer
 from django.shortcuts import get_object_or_404
 import requests
+import pyjson
 
 # Gemini API key setup
 api_key = getattr(settings, 'LLM_API_KEY')
@@ -190,7 +191,7 @@ class ModuleContentGenerationAPIView(APIView):
                     if evaluation_agent.evaluate(content_list):
                         print("EVALUATE: TRUE")
                         content_objects = []
-                        content_data = pyjson.loads(content_list)
+                        content_data = json.loads(content_list)
 
                         for item in content_data:
                             if item['type'] == 'video':
@@ -328,7 +329,7 @@ class ModuleFeedbackAPIView(APIView):
                 config=config
             )
 
-            result = pyjson.loads(clean_response(response.text))
+            result = json.loads(clean_response(response.text))
 
             module.feedback = result.get("feedback", "")
             module.save()
@@ -380,7 +381,8 @@ def roadmap_chapter_count(request, roadmap_id):
 def get_module(request):
     module_id = request.data.get('module_id')
     user_id = request.data.get('user_id')
-
+    print(request.data.get('module_id'))
+    print(request.data.get('user_id'))
     if not module_id or not user_id:
         return Response({"error": "module_id and user_id are required"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -389,7 +391,8 @@ def get_module(request):
         user = User.objects.get(pk=user_id)
         if module.content_list.count() == 0:
             # Trigger content generation
-            generate_url = "https://pathwaysbackend-856935426396.us-central1.run.app/generate-module/"
+            # generate_url = "https://pathwaysbackend-856935426396.us-central1.run.app/generate-module/"
+            generate_url = 'http://127.0.0.1:8000/generate-module/'
             response = requests.post(generate_url, json={
                 "module_id": module_id,
                 "user_id": user_id
@@ -481,22 +484,22 @@ The slides should be simple yet informative.
 
         # Prompt for Script JSON
         script_prompt = f"""
-Given the following LaTeX Beamer slide content, generate a corresponding script to be read aloud per slide, use words to represent symbols when generating an output.
-
-LaTeX Slides:
-{latex_output}
-
-Format the response strictly as a JSON object like:
-{{
-  "scripts": {{
-    "1": "text for slide 1",
-    "2": "text for slide 2"
-  }}
-}}
-
-Do not include any commentary outside the JSON. The script should not just be reading off the slide, the idea is to subsidize and expand on what is being written on the slides. 
-
-"""
+            Given the following LaTeX Beamer slide content, generate a corresponding script to be read aloud per slide, use words to represent symbols when generating an output.
+            
+            LaTeX Slides:
+            {latex_output}
+            
+            Format the response strictly as a JSON object like:
+            {{
+              "scripts": {{
+                "1": "text for slide 1",
+                "2": "text for slide 2"
+              }}
+            }}
+            
+            Do not include any commentary outside the JSON. The script should not just be reading off the slide, the idea is to subsidize and expand on what is being written on the slides. 
+            
+            """
         script_response = client.models.generate_content(
             model='gemini-2.0-flash-lite-preview',
             contents=script_prompt,
@@ -507,7 +510,7 @@ Do not include any commentary outside the JSON. The script should not just be re
 
         try:
             json_start = script_output.index('{')
-            script_json = pyjson.loads(script_output[json_start:])
+            script_json = json.loads(script_output[json_start:])
         except Exception as e:
             return Response({
                 "error": "Failed to parse script JSON",
