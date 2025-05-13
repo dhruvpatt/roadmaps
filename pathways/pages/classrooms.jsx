@@ -105,6 +105,7 @@ export default function Classrooms() {
               subtitle={classroom.join_id}
               students={classroom.students.length}
               onViewClick={() => router.push(`/classroom/${classroom.id}`)}
+              onDelete={() => {}}
             />
           ))}
         </div>
