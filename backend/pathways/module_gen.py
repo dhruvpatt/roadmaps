@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Module, User, Content, Message
+from .models import Module, User, Content, Message, Quiz
 from django.conf import settings
 from datetime import datetime, timedelta
 import json
@@ -17,7 +17,6 @@ import time
 from pathways.serializers import ModuleSerializer
 from django.shortcuts import get_object_or_404
 import requests
-import pyjson
 
 # Gemini API key setup
 api_key = getattr(settings, 'LLM_API_KEY')
@@ -210,7 +209,7 @@ class ModuleContentGenerationAPIView(APIView):
                             )
                             content_objects.append(content)
                         # Now add these to the ManyToMany field manually
-                        module.content_list.set(content_objects)  # this sets content_list with ordering
+                        
                         return Response({"message": f"Content generated and saved in {iteration} iterations."}, status=status.HTTP_201_CREATED)
 
                     if datetime.now() - start_time > timeout:

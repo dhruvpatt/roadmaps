@@ -1,8 +1,24 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Home, BookOpen, Users } from "lucide-react";
+import { useRouter } from "next/router";
+import { Home, BookOpen, Users, LogOut } from "lucide-react";
 
 export default function Sidebar() {
+
+  // const [user, setUser] = useState(null);
+
+  // useEffect(() => {
+  //   const usr = JSON.parse(localStorage.getItem("user"));
+  //   setUser(usr);
+  // }, []);
+  const router = useRouter();
+  const handleLogout = () => {
+    // Clear any stored user/session data
+    localStorage.removeItem("user");
+    // Redirect to login page
+    router.push("/");
+  };
+
   return (
     <aside className="hidden sm:flex flex-col w-64 border-r bg-white">
       {/* Sidebar Navigation Links */}
@@ -28,6 +44,15 @@ export default function Sidebar() {
           <Users className="w-5 h-5 text-gray-600" />
           <span className="text-gray-700">Classrooms</span>
         </Link>
+        {/* Logout Button */}
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="flex items-center space-x-2 w-full p-2 rounded-md hover:bg-amber-50 text-left"
+        >
+          <LogOut className="w-5 h-5 text-gray-600" />
+          <span className="text-gray-700">Logout</span>
+        </button>
       </nav>
 
       {/* Mission Statement */}

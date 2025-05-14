@@ -134,7 +134,6 @@ class Module(models.Model):
     feedback = models.TextField(blank=True, null=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='Module')
     content_list = models.ManyToManyField('Content', blank=True, related_name='modules')
-
     def __str__(self):
         return self.name
 

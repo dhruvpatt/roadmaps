@@ -228,7 +228,7 @@ const ModulePage = () => {
                   onClick={() => router.push(`/quiz/${id}`)}
                   className="bg-emerald-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-emerald-700 transition-all duration-200"
                 >
-                  Go to Quiz
+                  Practice
                 </button>
                 <button
                   onClick={handleLectureCreate}

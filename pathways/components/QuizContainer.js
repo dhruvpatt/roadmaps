@@ -74,7 +74,7 @@ const QuizContainer = ({ questions, quizId, moduleId }) => {
   const progress = ((currentStep + 1) / questionList.length) * 100;
 
   return (
-    <div className="w-full max-w-xl mx-auto p-4">
+    <div className="w-full max-w-4xl mx-auto p-4 h-full max-h-4xl">
       <AnimatePresence mode="wait">
         <motion.div
           key={currentStep}
@@ -83,7 +83,7 @@ const QuizContainer = ({ questions, quizId, moduleId }) => {
           exit={{ x: -300, opacity: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="bg-white p-8 rounded-lg shadow-md text-amber-900 space-y-6">
+          <div className="bg-white p-8 rounded-lg shadow-md text-amber-900 space-y-6 w-full">
             <QuestionCard
               data={questionList[currentStep]}
               onAnswer={handleAnswer}

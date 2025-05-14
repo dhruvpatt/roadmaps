@@ -12,12 +12,15 @@ export default function Classrooms() {
   const [user, setUser] = useState(null)
   const [classrooms, setClassrooms] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isTeacher, setIsTeacher] = useState(false);
   useEffect(() =>{
     const usr = JSON.parse(localStorage.getItem("user"))
     if (!usr){
       router.push("/login")
     }
     setUser(usr);
+    console.log(usr);
+    setIsTeacher(usr.role === "teacher");
 
     fetchClassrooms(usr)
     
@@ -86,7 +89,9 @@ export default function Classrooms() {
           {/* Responsive Grid of Classroom Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Create new classroom card FIRST */}
-          <button
+
+          {isTeacher ? (
+            <button
             onClick={handleCreateNewClassroom}
             className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-4 text-center text-gray-500 hover:bg-gray-50 cursor-pointer"
           >
@@ -96,6 +101,15 @@ export default function Classrooms() {
               </p>
             </div>
           </button>
+          ):(
+            <button
+            onClick={() => router.push("/join-classroom")}
+            className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-4 text-center text-gray-500 hover:bg-gray-50 cursor-pointer"
+            >
+              Join a Classroom
+            </button>
+          )}
+          
 
           {/* Render existing classrooms AFTER */}
           {classrooms.map((classroom) => (

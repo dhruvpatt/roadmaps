@@ -38,6 +38,8 @@ def bulk_ai_grade_text_answers(questions):
     Format the result as a JSON list:
     ["correct", "incorrect", ...]
     """
+    
+    print("Prompt for AI grading:", prompt)
     config = types.GenerateContentConfig(temperature=0.3)
     response = client.models.generate_content(
         model='gemini-2.0-flash-lite-preview',
@@ -55,8 +57,10 @@ def bulk_ai_grade_text_answers(questions):
 
 class QuizEvaluationAPIView(APIView):
     def post(self, request):
+        print("Request data:", request.data)
         quiz_id = request.data.get("quiz_id")
         user_answers = request.data.get("answers")  # { question_id: answer }
+        user_answers = user_answers.values() if isinstance(user_answers, dict) else user_answers
 
         if not quiz_id or not user_answers:
             return Response({"error": "quiz_id and answers are required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -71,8 +75,8 @@ class QuizEvaluationAPIView(APIView):
             text_index_map = {}
 
 
-
             for question in quiz.questions.all():
+                print("Question ID:", question.id)
                 submitted = user_answers.get(str(question.id), "").strip()
                 question.answer = submitted
                 question.save()
@@ -84,6 +88,9 @@ class QuizEvaluationAPIView(APIView):
                         "solution": question.solution,
                         "answer": submitted
                     })
+            
+            print("Text questions for AI grading:", text_questions)
+            
             ai_results = bulk_ai_grade_text_answers(text_questions) if text_questions else []
             print("HERE")
 
