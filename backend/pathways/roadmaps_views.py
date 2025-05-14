@@ -89,33 +89,6 @@ class PerceptionAgent:
         grade: str,
         user_chapters: Optional[List[str]],
     ):
-        # 1. Define granular guidance per level
-        complexity_map = {
-            "LOW": """
-            • Provide a high-level overview only.
-            • Expand the initial goals into 4–6 SMART objectives.
-            • Recommend 2–3 major subtopic areas.
-            """,
-            "MEDIUM": """
-            • Expand goals into 6–8 objectives.
-            • Suggest 4–5 major subtopic areas.
-            • Provide moderate depth: 1–2 modules per area.
-            """,
-            "HIGH": """
-            • Expand goals into 8–10 objectives.
-            • Suggest 6–8 major subtopic areas.
-            • Provide substantial depth: 2–3 modules per area.
-            • Highlight key scaffolding concepts.
-            """,
-            "VERY HIGH": """
-            • Expand goals into 10–12 objectives.
-            • Suggest 8–10 major subtopic areas.
-            • Provide deep coverage: 3–4 modules per area.
-            • Detail interdependencies and progressive difficulty.
-            • Flag potential advanced challenges and mitigation strategies.
-            """,
-        }
-        complexity_guidance = complexity_map[complexity_level]
 
         # 2. Build the full prompt
         prompt = f"""
@@ -158,7 +131,7 @@ class PerceptionAgent:
             prompt,
             temperature=0.7,
             response_model=EnhancedInsightResponse,
-            mode="parsed"
+            mode="dumps"
         )
         return result
 
@@ -174,9 +147,12 @@ class GenerationAgent:
             """
 
         prompt = f"""
-        Based on the following insights '{perception_data}', generate a list of chapter names for teaching the topic '{topic}' to students in grade '{grade}', ensuring that the learning goals {', '.join([f"'{goal}'" for goal in learning_goals])} are effectively covered.
+        Based on the following insights '{perception_data}', generate a list of chapter names for teaching the topic '{topic}' to students in grade '{grade}', 
+        ensuring that the learning goals {', '.join([f"'{goal}'" for goal in learning_goals])} are effectively covered.
+        
+        USER SUGGESTED CHAPTERS: {user_chapters}
 
-        {complexity_guidance}
+        COMPLEXITY: {complexity_guidance}
 
         Return a JSON array of chapter objects:
         [
