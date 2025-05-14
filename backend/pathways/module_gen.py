@@ -79,6 +79,7 @@ class ContentGenerationAgent:
            - Include concrete examples that relate to real-world applications
            - Incorporate interactive elements to maintain engagement
            - Ensure technical accuracy and currency of all information
+           - Make sure all the learning goals are addressed
 
         Return a list of content items in valid JSON format, each with:
         - type: one of ['html', 'content', 'video']
