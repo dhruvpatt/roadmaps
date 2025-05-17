@@ -335,46 +335,8 @@ class ModuleContentGenerationAPIView(APIView):
                             content_objects.append(content)
 
                         # Now add these to the ManyToMany field manually
-                        module.content_list.set(content_objects)
-
-                        # Save evaluation metrics to the module for future reference
-                        module.content_evaluation_scores = evaluation_result["scores"]
-                        module.save()
-
-                        return Response({
-                            "message": f"Content generated and saved in {iteration} iterations.",
-                            "evaluation": {
-                                "verdict": evaluation_result['overall_verdict'],
-                                "scores": evaluation_result["scores"],
-                                "suggestions": evaluation_result["improvement_suggestions"]
-                            }
-                        }, status=status.HTTP_201_CREATED)
-                    else:
-                        # Store feedback for next iteration
-                        previous_feedback = evaluation_result
-                        print("EVALUATION FAILED - Attempting revision")
-                        print("Improvement suggestions:")
-                        for suggestion in evaluation_result.improvement_suggestions:
-                            print(f"- {suggestion}")
-
-                        # If we're on the last iteration and still not valid, apply final revisions
-                        if iteration == max_iterations - 1:
-                            print("Last chance revision attempt...")
-                            revised_content = evaluation_agent.apply_revisions(content_list, evaluation_result)
-                            content_list = revised_content
-                            is_valid, evaluation_result = evaluation_agent.evaluate(content_list)
-                            if is_valid:
-                                # Process and save the revised content
-                                print("FINAL REVISION SUCCESSFUL")
-                                # Similar processing as the valid case above
-                                # (Code omitted for brevity - would be same as the valid case)
-                                return Response({
-                                    "message": f"Content generated after revision in {iteration} iterations.",
-                                    "evaluation": {
-                                        "verdict": evaluation_result.overall_verdict,
-                                        "average_score": evaluation_result.average_score
-                                    }
-                                }, status=status.HTTP_201_CREATED)
+                        module.content_list.set(content_objects)  # this sets content_list with ordering
+                        return Response({"message": f"Content generated and saved in {iteration} iterations."}, status=status.HTTP_201_CREATED)
 
                     if datetime.now() - start_time > timeout:
                         return Response({
