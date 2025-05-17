@@ -18,69 +18,6 @@ from .utils import get_llm_response
 from .schemas import *
 
 
-# class PerceptionAgent:
-#     def generate_insights(self, topic, learning_goals, grade, user_chapters):
-#         # Build a more detailed prompt based on topic complexity
-#         is_complex = any(word in topic.lower() for word in [
-#             "advanced", "complex", "comprehensive", "in-depth", "quantum", "analysis",
-#             "systems", "theory", "engineering", "calculus", "philosophy"
-#         ])
-#
-#         prompt = f"""
-#         You are a curriculum design expert helping to plan a comprehensive learning roadmap.
-#
-#         TOPIC: '{topic}'
-#         GRADE LEVEL: '{grade}'
-#         USER-SUGGESTED CHAPTERS: {user_chapters or "None provided"}
-#
-#         HIGH-LEVEL LEARNING GOALS: {', '.join([f"'{g}'" for g in learning_goals])}
-#
-#         {"This appears to be a complex, advanced topic that will require comprehensive coverage.\n"
-#          "Your insights should address:\n"
-#          "0. Expand and refine the initial learning goals into 8–12 SMART objectives.\n"
-#          "1. The breadth of subtopics needed (suggest at least 5–8 major areas).\n"
-#          "2. The depth required for each subtopic (multiple modules per area).\n"
-#          "3. Necessary scaffolding concepts that must be covered.\n"
-#          "4. Potential interdependencies between concepts.\n"
-#          "5. How to structure progressive difficulty across the curriculum.\n"
-#         if is_complex else ""
-#         }
-#
-#         Next:
-#
-#         Analyze this information deeply and provide strategic insights covering:
-#         1. The full scope of what should be covered to master this topic
-#         2. The logical sequence for introducing concepts (scaffolding)
-#         3. Key focus areas to emphasize based on the learning goals
-#         4. Appropriate depth and breadth given the grade level
-#         5. How complex or multifaceted the topic is and how many distinct chapters/modules would be appropriate
-#         6. Potential challenges students might face and how to address them
-#
-#         Return a JSON object in this form:
-#         {{
-#           "expanded_learning_goals": [
-#             "Goal 1 (SMART-formatted)",
-#             "Goal 2",
-#             … up to 12 …
-#           ],
-#           "insights": "Detailed paragraph with curriculum planning insights",
-#           "estimated_complexity": "LOW|MEDIUM|HIGH|VERY HIGH",
-#           "recommended_structure": {{
-#             "chapters_needed": <number>,
-#             "approximate_modules_needed": <number>,
-#             "key_areas": ["area1", "area2", …]
-#           }}
-#         }}
-#         """
-#
-#         try:
-#             result = get_llm_response(prompt, temperature=0.7, response_model=EnhancedInsightResponse)
-#             print(f"Perception insights: {result}")
-#             return result
-#         except Exception as e:
-#             print(e)
-#             raise ValueError(f"Error generating insights: {e}")
-
 class PerceptionAgent:
     def generate_insights(
         self,
@@ -92,46 +29,55 @@ class PerceptionAgent:
 
         # 2. Build the full prompt
         prompt = f"""
-        You are a curriculum design expert planning a roadmap for '{topic}' (grade {grade}).
-        
+        You are a curriculum design expert planning a roadmap for the topic '{topic}' at grade level {grade}.
+
         USER-SUGGESTED CHAPTERS: {user_chapters or "None provided"}
-        
-        HIGH-LEVEL LEARNING GOALS USER SUBBMITTED: {', '.join(learning_goals)}
-        
-        Expand goals into 10–12 objectives.
-        Suggest major subtopic areas.
-        Provide deep coverage: 3–4 modules per area.
-        Detail interdependencies and progressive difficulty.
-        Flag potential advanced challenges and mitigation strategies.
-        
-        If you believe that the number of learning goals is not enough to cover the content, increase them and add any intermediary learning goals the user may not have thought of.
-        
-        Analyze this information and provide strategic insights covering:
-        1. Full scope of coverage to master this topic  
-        2. Logical sequencing (scaffolding)  
-        3. Key focus areas from the learning goals  
-        4. Appropriate depth & breadth for grade {grade}  
-        5. How multifaceted the topic is & recommended chapter/module counts  
-        6. Potential student challenges and how to address them
-        
-        Return **one** JSON object:
+
+        HIGH-LEVEL LEARNING GOALS USER SUBMITTED: {', '.join(learning_goals)}
+
+        Follow this step-by-step reasoning process:
+
+        **Step 1: Identify Subdomains and Subskills**
+        - Break down the topic into major conceptual areas (e.g., multivariable limits, partial derivatives, vector calculus).
+        - Within each area, identify key subskills that should be taught at increasing levels of depth.
+
+        **Step 2: Expand Learning Goals**
+        - For each subdomain, expand the learning goals into **50–80 specific, measurable objectives**.
+        - These should include foundational knowledge (definitions, basic calculations), procedural skills (methods, problem-solving), and conceptual understanding (why something works).
+        - If existing goals are too broad or few, generate intermediary goals to fill logical gaps.
+
+        **Step 3: Scaffold the Learning Progression**
+        - Organize objectives in logical order, from introductory to advanced.
+        - Highlight dependencies (e.g., directional derivatives require gradients).
+        - Suggest which goals are best taught together in the same module.
+
+        **Step 4: Anticipate Challenges**
+        - Identify 3–5 common student difficulties at this grade level.
+        - Suggest ways to address them through curriculum design, pacing, or tool use.
+
+        **Step 5: Summarize as a JSON Structure**
+        Return exactly one JSON object in the following format:
         {{
-          "expanded_learning_goals": [ /* objectives */ ],
-          "insights": "…",
-          "estimated_complexity": "LOW|MEDIUM|HIGH|VERY HIGH",
-          "recommended_structure": {{
+        "expanded_learning_goals": [ /* 50–80 granular, measurable goals */ ],
+        "insights": "Summarize scope, challenges, and sequencing strategy.",
+        "estimated_complexity": "LOW | MEDIUM | HIGH | VERY HIGH",
+        "recommended_structure": {{
             "chapters_needed": <int>,
             "approximate_modules_needed": <int>,
-            "key_areas": [<str>, …]
-          }}
+            "key_areas": [<str>, ...]
         }}
+        }}
+
+        Use clear academic language. Avoid vague or duplicate goals. Think step-by-step.
         """
+
         # 3. Call the LLM
         result: EnhancedInsightResponse = get_llm_response(
             prompt,
             temperature=0.7,
             response_model=EnhancedInsightResponse,
-            mode="dumps"
+            mode="dumps",
+            max_tokens=3000
         )
         return result
 
@@ -272,7 +218,7 @@ class EvaluationAgent:
         """
 
         try:
-            result = get_llm_response(prompt, temperature=0.6, response_model=EnhancedEvaluationFeedback)
+            result = get_llm_response(prompt, temperature=0.6, response_model=EnhancedEvaluationFeedback, max_tokens=2000)
             print(f"Evaluation result: {result}")
 
             # Check if it meets our minimum requirements
@@ -352,6 +298,8 @@ class RoadmapGenerationAPIView(APIView):
                 print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
                 module_list = generation_agent.generate_roadmap(perception_data, topic, learning_goals, grade, mode,
                                                                 user_chapters, perception_data['estimated_complexity'])
+                print(f"Generated Chapters: {module_list.chapters}")
+                print(f"Generated Modules: {module_list.modules}")
                 print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
                 # Step 3: Enhanced evaluation
@@ -414,6 +362,7 @@ class RoadmapGenerationAPIView(APIView):
                                 [modules[next_module] for next_module in module_data.next_modules if
                                  next_module in modules]
                             )
+                            module_instance.save()
 
                         print("CREATED MODULES")
                         return Response({
