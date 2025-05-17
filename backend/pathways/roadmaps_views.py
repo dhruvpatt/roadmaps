@@ -254,6 +254,9 @@ class GenerationAgent:
             all_modules.extend(chapter_modules)
 
         return RoadmapStructure(chapters=chapters, modules=all_modules)
+    
+    def generate_mandatory_quizzes(self, chapter_name, topic, learning_goals, grade):
+        pass
 
 
 class EvaluationAgent:
