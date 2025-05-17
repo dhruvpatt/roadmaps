@@ -126,3 +126,6 @@ class ModuleListStructure(BaseModel):
     modules: List[ModuleStructure]
 class ChapterListStructure(BaseModel):
     chapters: List[ChapterStructure]
+
+
+    
