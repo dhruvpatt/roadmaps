@@ -2,13 +2,13 @@ import React from "react"
 
 import PathwayCard from "@/components/pathways/pathways-card"
 import { useRouter } from "next/navigation"
-import CreateRoadmapModal from "@/components/modals/CreateRoadmapModal"
+import CreatePathwayModal from "@/components/modals/CreatePathwayModal"
 import { useState, useEffect } from "react"
 import backendUrl from "@/backendUrl"
 
 export default function Pathways() {
   const router = useRouter()
-  const [showRoadmapModal, setShowRoadmapModal] = useState(false);
+  const [showPathwayModal, setShowPathwayModal] = useState(false);
   const [user, setUser] = useState({});
   const [pathways, setPathways] = useState([]);
 
@@ -26,7 +26,7 @@ export default function Pathways() {
   const fetchPathways = async (usr) => {
 
     try {
-      const res = await fetch(`${backendUrl}/get-user-roadmaps/`, {
+      const res = await fetch(`${backendUrl}/get-user-pathways/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: usr.id }),
@@ -72,9 +72,9 @@ export default function Pathways() {
     },
   ]
 
-  const createRoadmap = async (data) => {
+  const createPathway = async (data) => {
     try {
-      const res = await fetch(`${backendUrl}/generate-roadmap/`, {
+      const res = await fetch(`${backendUrl}/generate-pathway/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -83,9 +83,9 @@ export default function Pathways() {
       const ret = await res.json();
       console.log("ret", ret);
 
-      return ret?.roadmap;
+      return ret?.pathway;
     } catch (error) {
-      console.error("Failed to create roadmap", error);
+      console.error("Failed to create pathway", error);
     }
   }
 
@@ -98,7 +98,7 @@ export default function Pathways() {
           Your Pathways
         </h1>
         <p className="text-gray-600 text-lg md:text-2xl mb-8">
-          View and manage your personalized learning roadmaps
+          View and manage your personalized learning pathways
         </p>
 
         {/* Grid with "Create" first */}
@@ -106,7 +106,7 @@ export default function Pathways() {
           {/* Create Pathway Card FIRST */}
           <button
             onClick={() => {
-              setShowRoadmapModal(true);
+              setShowPathwayModal(true);
             }}
             className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-4 text-center text-gray-500 hover:bg-amber-100 cursor-pointer transition"
           >
@@ -128,10 +128,10 @@ export default function Pathways() {
             />
           ))}
         </div>
-        <CreateRoadmapModal
-          isOpen={showRoadmapModal}
-          onClose={() => setShowRoadmapModal(false)}
-          onCreate={async (data) => await createRoadmap(data)}
+        <CreatePathwayModal
+          isOpen={showPathwayModal}
+          onClose={() => setShowPathwayModal(false)}
+          onCreate={async (data) => await createPathway(data)}
           user={user}
         />
       </div>

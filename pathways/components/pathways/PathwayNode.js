@@ -2,7 +2,7 @@ import { Handle } from "reactflow";
 import { useRouter } from "next/router";
 
 
-function RoadmapNode({ data }) {
+function PathwayNode({ data }) {
   const router = useRouter();
   
   
@@ -49,8 +49,8 @@ function RoadmapNode({ data }) {
   );
 }
 
-export default RoadmapNode;
+export default PathwayNode;
 
 export const nodeTypes = {
-  roadmapNode: RoadmapNode,
+  pathwayNode: PathwayNode,
 };

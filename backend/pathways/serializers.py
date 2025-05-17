@@ -1,7 +1,7 @@
 # serializers.py
 
 from rest_framework import serializers
-from pathways.models import User, Roadmap, Chapter, Question, Quiz, Module, Content, Message, Classroom, Subject
+from pathways.models import User, Pathway, Chapter, Question, Quiz, Module, Content, Message, Classroom, Subject
 
 
 class QueryRequestSerializer(serializers.Serializer):
@@ -114,13 +114,13 @@ class ChapterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Chapter
-        fields = ['id', 'name', 'roadmap', 'status', 'next_chapters', 'modules']
+        fields = ['id', 'name', 'pathway', 'status', 'next_chapters', 'modules']
 
-class RoadmapSerializer(serializers.ModelSerializer):
+class PathwaySerializer(serializers.ModelSerializer):
     chapters = ChapterSerializer(many=True, read_only=True)
 
     class Meta:
-        model = Roadmap
+        model = Pathway
         fields = [
             'id', 'owner', 'title', 'details', 'mode', 'grade',
             'learning_goals', 'progress', 'chapters', 'published', "classroom"
@@ -129,7 +129,7 @@ class RoadmapSerializer(serializers.ModelSerializer):
 class SubjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subject
-        fields = ['id', 'classroom', 'topic', 'master_scaffold', 'progress', 'student_roadmap']
+        fields = ['id', 'classroom', 'topic', 'master_scaffold', 'progress', 'student_pathway']
 
 class ClassroomSerializer(serializers.ModelSerializer):
     subjects = SubjectSerializer(many=True, read_only=True)
@@ -147,7 +147,7 @@ class StudentSerializer(serializers.ModelSerializer):
 class SubjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subject
-        fields = ['id', 'topic', 'master_scaffold', 'progress', 'student_roadmap']
+        fields = ['id', 'topic', 'master_scaffold', 'progress', 'student_pathway']
 
 class ClassroomDetailSerializer(serializers.ModelSerializer):
     students = StudentSerializer(many=True, read_only=True)

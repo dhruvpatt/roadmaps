@@ -5,9 +5,9 @@ import {useState, useEffect, useRef} from 'react'
 import backendUrl from '../../backendUrl'
 export default function StudentStats() {
   const [analytics, setAnalytics] = useState({
-      active_roadmaps: 0,
-      completed_roadmaps: 0,
-      total_roadmaps: 0,
+      active_pathways: 0,
+      completed_pathways: 0,
+      total_pathways: 0,
     });
 
   const [user, setUser] = useState({})
@@ -50,17 +50,17 @@ export default function StudentStats() {
     <div className="grid grid-cols-3 gap-8">
       <StudentStatCard
         title="Pathways in progress"
-        value={analytics.active_roadmaps}
+        value={analytics.active_pathways}
         Icon={BookOpen}
       />
       <StudentStatCard
         title="Completed Pathways"
-        value={analytics.completed_roadmaps}
+        value={analytics.completed_pathways}
         Icon={BookOpen}
       />
       <StudentStatCard
         title="Total Pathways"
-        value={analytics.total_roadmaps}
+        value={analytics.total_pathways}
         Icon={BookOpen}
       />
     </div>

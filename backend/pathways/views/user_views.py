@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from django.shortcuts import get_object_or_404
 from ..models import User
-from ..serializers import UserSerializer, RoadmapSerializer, ClassroomSerializer
+from ..serializers import UserSerializer, PathwaySerializer, ClassroomSerializer
 
 
 class UserViewSet(ModelViewSet):
@@ -15,10 +15,10 @@ class UserViewSet(ModelViewSet):
     serializer_class = UserSerializer
 
     @action(detail=True, methods=['get'])
-    def roadmaps(self, request, pk=None):
+    def pathways(self, request, pk=None):
         user = self.get_object()
-        roadmaps = user.roadmaps.all()
-        serializer = RoadmapSerializer(roadmaps, many=True)
+        pathways = user.pathways.all()
+        serializer = PathwaySerializer(pathways, many=True)
         return Response(serializer.data)
 
     @action(detail=True, methods=['get'])
@@ -65,6 +65,7 @@ def update_user(request, pk):
 
 @api_view(['POST'])
 def login_with_email(request):
+    print("HERE AT LOGIN")
     email = request.data.get("email")
     password = request.data.get("password")
 
@@ -128,14 +129,14 @@ def user_detail(request, pk):
 
 
 @api_view(['GET'])
-def user_roadmaps(request, pk):
+def user_pathways(request, pk):
     try:
         user = User.objects.get(pk=pk)
     except User.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    roadmaps = user.roadmaps.all()
-    serializer = RoadmapSerializer(roadmaps, many=True)
+    pathways = user.pathways.all()
+    serializer = PathwaySerializer(pathways, many=True)
     return Response(serializer.data)
 
 

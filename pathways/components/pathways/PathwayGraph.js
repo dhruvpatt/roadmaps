@@ -9,8 +9,8 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 
 // Custom node types
-import { nodeTypes as studentNodeTypes } from "@/components/pathways/RoadmapNode";
-import { nodeTypes as teacherNodeTypes } from "@/components/pathways/RoadmapNodeTeacher";
+import { nodeTypes as studentNodeTypes } from "@/components/pathways/PathwayNode";
+import { nodeTypes as teacherNodeTypes } from "@/components/pathways/PathwayNodeTeacher";
 
 const isModuleUnlocked = (module, moduleMap) => {
   return (module.prereq || []).every(
@@ -93,7 +93,7 @@ const InnerGraph = ({ data, viewMode = "student", moduleStatusMap }) => {
 
           nodes.push({
             id: mod.id.toString(),
-            type: "roadmapNode",
+            type: "pathwayNode",
             position: { x, y },
             data: {
               label: mod.name,
@@ -159,7 +159,7 @@ const InnerGraph = ({ data, viewMode = "student", moduleStatusMap }) => {
   );
 };
 
-const RoadmapGraph = (props) => {
+const PathwayGraph = (props) => {
   return (
     <div className="w-full min-h-[400px] h-[400px] rounded-xl overflow-hidden border">
       <ReactFlowProvider>
@@ -169,4 +169,4 @@ const RoadmapGraph = (props) => {
   );
 };
 
-export default RoadmapGraph;
+export default PathwayGraph;

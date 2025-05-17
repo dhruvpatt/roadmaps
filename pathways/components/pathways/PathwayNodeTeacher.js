@@ -1,6 +1,6 @@
 import { Handle } from "reactflow";
 
-function RoadmapNodeTeacher({ data }) {
+function PathwayNodeTeacher({ data }) {
   const handleClick = () => {
     console.log("Clicked:", data.label);
   };
@@ -20,9 +20,9 @@ function RoadmapNodeTeacher({ data }) {
   );
 }
 
-export default RoadmapNodeTeacher;
+export default PathwayNodeTeacher;
 
 // ✅ This is the part that React Flow is expecting
 export const nodeTypes = {
-  roadmapNode: RoadmapNodeTeacher
+  pathwayNode: PathwayNodeTeacher
 };

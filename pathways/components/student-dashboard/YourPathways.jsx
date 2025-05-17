@@ -33,22 +33,22 @@ export default function YourPathways() {
     }
     setUser(usr);
 
-    const fetchRoadmaps = async () => {
+    const fetchPathways = async () => {
       try {
-        const res = await fetch(`${backendUrl}/get-user-roadmaps/`, {
+        const res = await fetch(`${backendUrl}/get-user-pathways/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ user_id: usr.id }),
         });
         const data = await res.json();
-        console.log("roadmaps", data);
+        console.log("pathways", data);
         setCourses(data || []);
       } catch (error) {
-        console.error("Failed to fetch roadmaps:", error);
+        console.error("Failed to fetch pathways:", error);
       }
     };
 
-    fetchRoadmaps();
+    fetchPathways();
   }, []);
 
   return (
@@ -62,7 +62,7 @@ export default function YourPathways() {
       </div>
 
       {courses.length === 0 ? (
-        <p className="text-gray-500 italic mt-4">You don't have any roadmaps yet.</p>
+        <p className="text-gray-500 italic mt-4">You don't have any pathways yet.</p>
       ) : (
         <div className="relative mt-4">
           {/* Left Chevron */}

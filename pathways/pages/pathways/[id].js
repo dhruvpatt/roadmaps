@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { ArrowLeft } from "lucide-react";
 import backendUrl from "@/backendUrl";
-import RoadmapGraph from "@/components/pathways/RoadmapGraph";
+import PathwayGraph from "@/components/pathways/PathwayGraph";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRef } from "react";
 
@@ -10,8 +10,7 @@ const ViewPathwayPage = () => {
   const router = useRouter();
   const { id } = router.query;
 
-  const [pathway, setPathway] = useState();
-  const [roadmap, setRoadmap] = useState({});
+  const [pathway, setPathway] = useState({});
   const [modulesData, setModulesData] = useState([]);
   const [moduleList, setModuleList] = useState([]);
   const [moduleMap, setModuleMap] = useState(new Map());
@@ -38,11 +37,11 @@ const ViewPathwayPage = () => {
     );
   };
 
-  const getOrderedModules = (roadmap) => {
+  const getOrderedModules = (pathway) => {
     const list = [];
     const moduleMap = new Map();
 
-    roadmap.chapters.forEach((chapter, chapterIndex) => {
+    pathway.chapters.forEach((chapter, chapterIndex) => {
       chapter.modules.forEach((mod, modIndex) => {
         const key = `${chapterIndex}.${modIndex}`;
         moduleMap.set(mod.id, mod);
@@ -66,7 +65,7 @@ const ViewPathwayPage = () => {
     if (!id) return;
     const fetchData = async () => {
       try {
-        const res = await fetch(`${backendUrl}/api/roadmaps/${id}/`);
+        const res = await fetch(`${backendUrl}/api/pathways/${id}/`);
         if (!res.ok) throw new Error("Network response was not ok");
         const data = await res.json();
 
@@ -77,7 +76,7 @@ const ViewPathwayPage = () => {
         setViewMode(isTeacher ? "teacher" : "student");
 
         console.log("data", data);
-        setRoadmap(data);
+        setPathway(data);
 
         if (isTeacher) {
           const flattenedModules = data.chapters.flatMap((chapter, chapterIndex) =>
@@ -99,7 +98,7 @@ const ViewPathwayPage = () => {
           setModulesData(flattenedModules);
         } else {
           const transformed = {
-            id: `roadmap-${data.id}`,
+            id: `pathway-${data.id}`,
             title: data.title,
             owner: `user-${data.owner}`,
             mode: data.mode.toLowerCase(),
@@ -164,38 +163,38 @@ const ViewPathwayPage = () => {
 
   const handlePublish = async () => {
     try {
-      console.log("roadmap", roadmap)
-      if (roadmap.classroom !== null) {
-        const res = await fetch(`${backendUrl}/publish-roadmap-to-classroom/`, {
+      console.log("pathway", pathway)
+      if (pathway.classroom !== null) {
+        const res = await fetch(`${backendUrl}/publish-pathway-to-classroom/`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            roadmap_id: roadmap.id,
-            user_id: roadmap.owner,
-            classroom_id: roadmap.classroom,
+            pathway_id: pathway.id,
+            user_id: pathway.owner,
+            classroom_id: pathway.classroom,
           }),
         })
 
         const ret = await res.json();
         console.log("published", ret)
-        setRoadmap(ret.roadmap);
+        setPathway(ret.pathway);
       } else {
-        const res = await fetch(`${backendUrl}/publish-roadmap/`, {
+        const res = await fetch(`${backendUrl}/publish-pathway/`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            roadmap_id: roadmap.id,
-            user_id: roadmap.owner,
+            pathway_id: pathway.id,
+            user_id: pathway.owner,
           }),
         })
 
         const ret = await res.json();
         console.log("published", ret)
-        setRoadmap(ret.roadmap);
+        setPathway(ret.pathway);
       }
     } catch (error) {
       console.error("Something went wrong", error);
@@ -213,9 +212,9 @@ const ViewPathwayPage = () => {
 
       <div>
         <div className="flex space-x-2 justify-between">
-          <h1 className="text-5xl font-bold text-gray-900">{roadmap?.title || "Pathway"}</h1>
+          <h1 className="text-5xl font-bold text-gray-900">{pathway?.title || "Pathway"}</h1>
 
-          {(viewMode === "teacher" && !roadmap.published) && (
+          {(viewMode === "teacher" && !pathway.published) && (
             <div>
               <button
                 onClick={async () => await handlePublish()}
@@ -243,7 +242,7 @@ const ViewPathwayPage = () => {
           </div>
         )}
       </div>
-      {roadmap?.chapters?.length > 0 && (
+      {pathway?.chapters?.length > 0 && (
         <div className="relative w-full my-4">
           {/* Left Arrow */}
           <button
@@ -259,7 +258,7 @@ const ViewPathwayPage = () => {
             className="overflow-x-auto scrollbar-hide scroll-smooth"
           >
             <div className="flex space-x-3 px-6">
-              {roadmap.chapters.map((chapter, idx) => (
+              {pathway.chapters.map((chapter, idx) => (
                 <button
                   key={idx}
                   onClick={() => setCurrentChapterIndex(idx)}
@@ -289,7 +288,7 @@ const ViewPathwayPage = () => {
             Visual representation of your learning journey
           </p>
           <div className="relative flex-1">
-            <RoadmapGraph
+            <PathwayGraph
               data={viewMode === "student" ? filteredPathway : filteredModules}
               viewMode={viewMode}
             />
@@ -315,7 +314,7 @@ const ViewPathwayPage = () => {
                       <span className="text-orange-500">▶</span>
                       <p className="text-lg font-bold">{mod.name}</p>
                     </div>
-                    {(viewMode === "teacher" && !roadmap.published) && (
+                    {(viewMode === "teacher" && !pathway.published) && (
                       <div className="w-1/8">
                         {!isEditing ? (
                           <button

@@ -5,7 +5,7 @@ import YourPathways from "@/components/student-dashboard/YourPathways";
 import YourClassrooms from "@/components/student-dashboard/YourClassrooms";
 import JoinClassroomCard from "@/components/student-dashboard/join-classroom-card";
 import CreateClassroomModal from "@/components/modals/CreateClassroomModal";
-import CreateRoadmapModal from "@/components/modals/CreateRoadmapModal";
+import CreatePathwayModal from "@/components/modals/CreatePathwayModal";
 import { Plus, BookOpenText, Map } from "lucide-react";
 import { useRouter } from "next/navigation"
 import TeacherStats from "@/components/teacher-dashboard/teacher-stats";
@@ -16,11 +16,11 @@ import emitter from "@/mitt";
 const Dashboard = () => {
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [showClassroomModal, setShowClassroomModal] = useState(false);
-    const [showRoadmapModal, setShowRoadmapModal] = useState(false);
+    const [showPathwayModal, setShowPathwayModal] = useState(false);
     const [analytics, setAnalytics] = useState({})
     const router = useRouter();
     const [user, setUser] = useState({});
-    const [loadingRoadmaps, setLoadingRoadmaps] = useState(false);
+    const [loadingPathways, setLoadingPathways] = useState(false);
     useEffect(() => {
         const usr = JSON.parse(localStorage.getItem("user"));
         console.log("user", usr);
@@ -31,10 +31,10 @@ const Dashboard = () => {
         setUser(usr);
     }, []);
 
-    const createRoadmap = async (data) => {
+    const createPathway = async (data) => {
         console.log("DATA R:", data)
         try {
-            const res = await fetch(`${backendUrl}/generate-roadmap/`, {
+            const res = await fetch(`${backendUrl}/generate-pathway/`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data),
@@ -43,9 +43,9 @@ const Dashboard = () => {
             const ret = await res.json();
             console.log("ret", ret);
 
-            return ret?.roadmap;
+            return ret?.pathway;
         } catch (error) {
-            console.error("Failed to create roadmap", error);
+            console.error("Failed to create pathway", error);
         }
     }
 
@@ -156,11 +156,11 @@ const Dashboard = () => {
                             )}
 
 
-                            {/* Create Roadmap */}
+                            {/* Create Pathway */}
                             <div
                                 onClick={() => {
                                     setDrawerOpen(false);
-                                    setShowRoadmapModal(true);
+                                    setShowPathwayModal(true);
                                 }}
                                 className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-amber-50 transition"
                             >
@@ -185,10 +185,10 @@ const Dashboard = () => {
                 user={user}
             />
 
-            <CreateRoadmapModal
-                isOpen={showRoadmapModal}
-                onClose={() => setShowRoadmapModal(false)}
-                onCreate={async (data) => await createRoadmap(data)}
+            <CreatePathwayModal
+                isOpen={showPathwayModal}
+                onClose={() => setShowPathwayModal(false)}
+                onCreate={async (data) => await createPathway(data)}
                 user={user}
             />
         </>

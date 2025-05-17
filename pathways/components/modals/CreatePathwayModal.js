@@ -11,7 +11,7 @@ const mockpathwayID = {
   id: 1,
 };
 
-export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user, classroomCode }) {
+export default function CreatePathwayModal({ isOpen, onClose, onCreate, user, classroomCode }) {
   const router = useRouter();
   const [form, setForm] = useState({
     title: "",
@@ -70,7 +70,7 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user, cl
       return;
     }
     console.log("form", form);
-    const roadmap = {
+    const pathway = {
       ...form,
       chapters: JSON.stringify(form.chapters),
       learning_goals: form.learningGoals
@@ -80,12 +80,12 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user, cl
       userid: user.id,
       classroom: classroomCode || null,
     };
-    console.log("submit roadmap", roadmap);
+    console.log("submit pathway", pathway);
     setLoading(true);
 
     try {
 
-      const roadmap_id = await onCreate(roadmap);
+      const pathway_id = await onCreate(pathway);
 
       onClose();
       setForm({
@@ -101,7 +101,7 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user, cl
       setShowChapters(false);
       setError("");
 
-      router.push(`/pathways/${roadmap_id}`);
+      router.push(`/pathways/${pathway_id}`);
     } catch (error) {
       console.error("Failed to create pathway", error);
       setError("Failed to create pathway, Please try again.");
@@ -217,7 +217,7 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user, cl
               value={form.details}
               onChange={handleChange}
               rows={3}
-              placeholder="Roadmap description, notes, learning outcomes..."
+              placeholder="Pathway description, notes, learning outcomes..."
               className="w-full mt-1 border border-gray-300 rounded px-3 py-2"
             />
           </div>
