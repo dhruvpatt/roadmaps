@@ -1,5 +1,11 @@
-import React from "react";
-import ReactFlow, { Background, Controls } from "reactflow";
+import React, { useEffect } from "react";
+import ReactFlow, {
+  Background,
+  Controls,
+  useReactFlow,
+  ReactFlowProvider,
+} from "reactflow";
+
 import "reactflow/dist/style.css";
 
 // Custom node types
@@ -12,67 +18,107 @@ const isModuleUnlocked = (module, moduleMap) => {
   );
 };
 
-const RoadmapGraph = ({ data, viewMode = "student", moduleStatusMap }) => {
+const InnerGraph = ({ data, viewMode = "student", moduleStatusMap }) => {
+  const { fitView } = useReactFlow();
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      fitView({ padding: 0.2, duration: 400 });
+    }, 50);
+    return () => clearTimeout(timeout);
+  }, [data]);
+
   const isTeacher = viewMode === "teacher";
-
-  console.log(isTeacher)
-
   const nodes = [];
   const edges = [];
   const moduleMap = new Map();
 
-  // Constants
   const baseX = 280;
   const baseY = isTeacher ? 140 : 400;
-  const diagramHeight = 600;
 
   if (!data || (!data.chapters && !Array.isArray(data))) return null;
 
   if (!isTeacher) {
-    // === STUDENT MODE ===
     data.chapters.forEach((chapter, chapterIndex) => {
-      const x = chapterIndex > 0 ? chapterIndex * baseX : baseX - 200;
-    
-      const numModules = chapter.modules.length;
-      const totalHeight = (numModules - 1) * baseY;
-      const yOffset = (diagramHeight - totalHeight) / 2;
-    
-      chapter.modules.forEach((module, moduleIndex) => {
-        const y = moduleIndex * baseY + yOffset;
-        const hue = (chapterIndex * 60) % 360;
-        const lightness = module.prereq?.length === 0 ? "85%" : "65%";
-    
-        moduleMap.set(module.id, module); // ⬅ store module first so it's accessible in the map
-    
-        const unlocked = isModuleUnlocked(module, moduleMap);
-        nodes.push({
-          id: module.id,
-          type: "roadmapNode",
-          position: { x, y },
-          data: {
-            label: module.name,
-            status: module.status ?? 0,
-            description: module.learningGoals?.[0] || "",
-            id: module.id,
-            unlocked,
-          },
-          style: {
-            backgroundColor: `hsl(${hue}, 70%, ${lightness})`,
-            borderRadius: 8,
-            padding: 10,
-          },
+      const modules = chapter.modules;
+      const moduleMapLocal = new Map(modules.map((m) => [m.id, m]));
+
+      // ✅ Step 1: Assign levels based on prerequisites
+      const moduleLevels = new Map();
+
+      const computeLevel = (mod) => {
+        if (moduleLevels.has(mod.id)) return moduleLevels.get(mod.id);
+        if (!mod.prereq || mod.prereq.length === 0) {
+          moduleLevels.set(mod.id, 0);
+          return 0;
+        }
+
+        const prereqLevels = mod.prereq
+          .map((pid) => moduleMapLocal.get(pid))
+          .filter(Boolean) // ✅ skip missing
+          .map((prereqMod) => computeLevel(prereqMod));
+
+        const level = prereqLevels.length > 0 ? Math.max(...prereqLevels) + 1 : 0;
+        moduleLevels.set(mod.id, level);
+        return level;
+      };
+
+      modules.forEach((mod) => {
+        computeLevel(mod);
+      });
+
+      // ✅ Step 2: Group by levels
+      const levels = {};
+      modules.forEach((m) => {
+        const lvl = moduleLevels.get(m.id) ?? 0;
+        if (!levels[lvl]) levels[lvl] = [];
+        levels[lvl].push(m);
+      });
+
+      console.log("Levels", levels)
+
+      // ✅ Step 3: Build graph layout
+      const xSpacing = 440;
+      const ySpacing = 120;
+      Object.entries(levels).forEach(([lvlStr, mods], level) => {
+        mods.forEach((mod, idx) => {
+          console.log(mod.id, level)
+          const x = level * xSpacing;
+          const y = ySpacing;
+          const hue = (mod.id * 60) % 360;
+          const lightness = 85 - level * 60;
+
+          moduleMap.set(mod.id, mod);
+          const unlocked = isModuleUnlocked(mod, moduleMap);
+
+          nodes.push({
+            id: mod.id.toString(),
+            type: "roadmapNode",
+            position: { x, y },
+            data: {
+              label: mod.name,
+              status: mod.status ?? 0,
+              description: mod.learningGoals?.[0] || "",
+              id: mod.id,
+              unlocked,
+            },
+            style: {
+              backgroundColor: `hsl(${hue}, 70%, ${lightness}%)`,
+              borderRadius: 8,
+              padding: 10,
+            },
+          });
         });
       });
-    });
 
-    data.chapters.forEach((chapter) => {
-      chapter.modules.forEach((module) => {
-        module.next?.forEach((targetId) => {
+      // ✅ Step 4: Add edges
+      modules.forEach((mod) => {
+        mod.next?.forEach((targetId) => {
           if (moduleMap.has(targetId)) {
             edges.push({
-              id: `e-${module.id}-${targetId}`,
-              source: module.id,
-              target: targetId,
+              id: `e-${mod.id}-${targetId}`,
+              source: mod.id.toString(),
+              target: targetId.toString(),
               type: "straight",
               animated: true,
               style: { stroke: "#999", width: 2 },
@@ -82,116 +128,43 @@ const RoadmapGraph = ({ data, viewMode = "student", moduleStatusMap }) => {
                 height: 12,
                 color: "#555",
               },
-              
             });
           }
         });
       });
-    });
-  } else {
-    // === TEACHER MODE ===
-
-    // Group by chapter number
-    const chapterMap = new Map();
-    data.forEach((mod) => {
-      if (!chapterMap.has(mod.chapter)) {
-        chapterMap.set(mod.chapter, []);
-      }
-      chapterMap.get(mod.chapter).push(mod);
-    });
-
-    const chaptersArray = Array.from(chapterMap.entries()).sort((a, b) => a[0] - b[0]);
-
-    let globalModuleCounter = 1;
-
-    // First pass: assign IDs
-    chaptersArray.forEach(([_, mods]) => {
-      mods.forEach((mod) => {
-        moduleMap.set(mod.name, String(globalModuleCounter++));
-      });
-    });
-
-    // Second pass: nodes
-    chaptersArray.forEach(([chapterNum, mods], chapterIndex) => {
-      const x = chapterIndex * baseX;
-      const numModules = mods.length;
-      const totalHeight = (numModules - 1) * baseY;
-      const yOffset = (diagramHeight - totalHeight) / 2;
-
-      mods.forEach((mod, modIndex) => {
-        const modId = moduleMap.get(mod.name);
-        const y = modIndex * baseY + yOffset;
-        const hue = (chapterIndex * 60) % 360;
-        const lightness = mod.prerequisite_modules?.length === 0 ? "85%" : "65%";
-
-        nodes.push({
-          id: modId,
-          type: "roadmapNode",
-          position: { x, y },
-          data: {
-            label: mod.name,
-            status: 0,
-            description: mod.learning_goals?.[0] || "",
-          },
-          style: {
-            backgroundColor: `hsl(${hue}, 70%, ${lightness})`,
-            borderRadius: 8,
-            padding: 10,
-          },
-        });
-      });
-    });
-
-    // Third pass: edges
-    data.forEach((mod) => {
-      const sourceId = moduleMap.get(mod.name);
-
-      if (mod.next_modules) {
-        mod.next_modules.forEach((targetName) => {
-          const targetId = moduleMap.get(targetName);
-          if (targetId) {
-            edges.push({
-              id: `e-${source}-${target}`,
-              source,
-              target,
-              type: "straight",
-              animated: true,
-              style: { stroke: "#555", strokeWidth: 5 },
-              markerEnd: {
-                type: "arrowclosed",
-                width: 12,
-                height: 12,
-                color: "#555",
-              },
-            });
-          }
-        });
-      }
     });
   }
 
   return (
-    <div className="w-full min-h-[600px] h-[600px] rounded-xl overflow-hidden border">
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={isTeacher ? teacherNodeTypes : studentNodeTypes}
-        fitView
-        defaultEdgeOptions={{
-          type: "straight",
-          animated: true,
-          style: { stroke: "#555", strokeWidth: 2 },
-          markerEnd: {
-            type: "arrowclosed",
-            width: 12,
-            height: 12,
-            color: "#555",
-          },
-        }}
-      >
-        <Background />
-        <Controls />
-      </ReactFlow>
+    <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      nodeTypes={isTeacher ? teacherNodeTypes : studentNodeTypes}
+      fitView
+      defaultEdgeOptions={{
+        type: "straight",
+        animated: true,
+        style: { stroke: "#555", strokeWidth: 2 },
+        markerEnd: {
+          type: "arrowclosed",
+          width: 12,
+          height: 12,
+          color: "#555",
+        },
+      }}
+    >
+      <Background />
+      <Controls />
+    </ReactFlow>
+  );
+};
+
+const RoadmapGraph = (props) => {
+  return (
+    <div className="w-full min-h-[400px] h-[400px] rounded-xl overflow-hidden border">
+      <ReactFlowProvider>
+        <InnerGraph {...props} />
+      </ReactFlowProvider>
     </div>
   );
 };

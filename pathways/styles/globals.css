@@ -61,7 +61,7 @@ body {
 .bg-animated-gradient {
   background: linear-gradient(270deg, #ffe48d, #ffbc92, #ffffff);
   background-size: 600% 600%;
-  animation: gradientShift 20s ease infinite;
+  animation: gradientShift 40s ease infinite;
 }
 
 @keyframes fadeIn {
