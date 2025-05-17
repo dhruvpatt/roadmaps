@@ -1,5 +1,12 @@
 from pydantic import BaseModel, Field, validator
 from typing import Dict, List, Optional, Union
+
+##########################################
+# Schemas are for LLM responses, 1-1 for the most part to models but not always. 
+# This is for LLM to understand what format to return data in.# 
+###########################################
+
+
 class GradingResponse(BaseModel):
     items: List[str]
 
@@ -94,6 +101,7 @@ class InsightResponse(BaseModel):
 
 class ChapterStructure(BaseModel):
     name: str
+    learning_goals: List[str]
     next: Optional[str] = None
 
 class ModuleStructure(BaseModel):

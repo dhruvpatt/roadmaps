@@ -90,6 +90,7 @@ class Chapter(models.Model):
     roadmap = models.ForeignKey(Roadmap, on_delete=models.CASCADE, related_name='chapters')
     status = models.CharField(max_length=50, default='not_started')
     next_chapters = models.ManyToManyField('self', blank=True, symmetrical=False, related_name='previous_chapters')
+    chapter_learning_goals = models.JSONField(blank=True, default=list)  # Use JSONField for SQLite
 
     def __str__(self):
         return self.name

@@ -174,13 +174,16 @@ class GenerationAgent:
             """
 
         prompt = f"""
-        Based on the following insights '{perception_data}', generate a list of chapter names for teaching the topic '{topic}' to students in grade '{grade}', ensuring that the learning goals {', '.join([f"'{goal}'" for goal in learning_goals])} are effectively covered.
-
+        You are a curriculum design expert helping to plan a comprehensive learning roadmap.
+        Based on the following insights '{perception_data}', generate a list of chapter objects for teaching '{topic}' to grade '{grade}', making sure the high-level learning goals ({', '.join([f"'{g}'" for g in learning_goals])}) are each addressed in one or more chapter-level goals.
         {complexity_guidance}
 
         Return a JSON array of chapter objects:
         [
-          {{ "name": "Chapter 1 name", "next": "Chapter 2 name" }},
+          {{
+            "name": "Chapter 1 name",
+            "learning_goals": ["Goal 1 of this chapter", "Goal 2 of this chapter"],
+            "next": "Chapter 2 name" }},
           ...
         ]
         Do not include any additional explanation.
@@ -238,7 +241,7 @@ class GenerationAgent:
     def generate_roadmap(self, perception_data, topic, learning_goals, grade, mode, user_chapters, complexity_level="MEDIUM"):
         # Step 1: Generate chapters
         chapters = self.generate_chapters(perception_data, topic, learning_goals, grade, mode, user_chapters)
-
+        print(f"Generated chapters: {chapters}")
         # Step 2: Generate modules per chapter, one at a time
         all_modules = []
         for chapter in chapters:
