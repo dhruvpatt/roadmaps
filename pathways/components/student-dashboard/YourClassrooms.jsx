@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import  backendUrl  from '@/backendUrl';
+import backendUrl from '@/backendUrl';
 import emitter from "@/mitt";
 
 export default function YourClassrooms() {
@@ -38,7 +38,7 @@ export default function YourClassrooms() {
 
 
   useEffect(() => {
-    
+
     const usr = JSON.parse(localStorage.getItem("user"));
     if (!usr) {
       router.push("/login");
@@ -103,24 +103,29 @@ export default function YourClassrooms() {
           {/* Scrollable classroom cards */}
           <div
             ref={scrollRef}
-            className="w-full overflow-x-auto flex space-x-4 py-2 scroll-smooth"
+            className="w-full overflow-x-auto scroll-smooth"
           >
-            {classrooms.map((classroom) => (
-              <div
-                key={classroom.id}
-                className="w-[280px] flex-shrink-0 bg-white shadow-md rounded-xl p-4 border border-gray-200"
-              >
-                <h3 className="font-bold text-lg text-black">{classroom.name}</h3>
-                <p className="text-gray-600 text-sm">Classroom ID: {classroom.join_id}</p>
-                <button
-                  className="mt-3 w-full bg-black text-white py-2 rounded-lg text-sm hover:bg-amber-600 hover:border-amber-600 transition-colors"
-                  onClick={() => router.push(`/classroom/${classroom.id}`)}
+            <div className="flex space-x-4 pb-2">
+
+              {classrooms.map((classroom) => (
+                <div
+                  key={classroom.id}
+                  className="w-[280px] flex-shrink-0 bg-white shadow-md rounded-xl p-4 border border-gray-200"
                 >
-                  View Classroom
-                </button>
-              </div>
-            ))}
+                  <h3 className="font-bold text-lg text-black">{classroom.name}</h3>
+                  <p className="text-gray-600 text-sm">Classroom ID: {classroom.join_id}</p>
+                  <button
+                    className="mt-3 w-full bg-black text-white py-2 rounded-lg text-sm hover:bg-amber-600 hover:border-amber-600 transition-colors"
+                    onClick={() => router.push(`/classroom/${classroom.id}`)}
+                  >
+                    View Classroom
+                  </button>
+                </div>
+              ))}
+
+            </div>
           </div>
+
 
           {/* Right Arrow */}
           <button

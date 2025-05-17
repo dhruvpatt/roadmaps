@@ -4,7 +4,7 @@ import CourseCard from "./pathway-card";
 import { useRouter } from "next/navigation";
 import backendUrl from "@/backendUrl";
 
-export default function ContinueLearning() {
+export default function YourPathways() {
   const scrollRef = useRef(null);
   const router = useRouter();
 
@@ -52,7 +52,7 @@ export default function ContinueLearning() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-screen-7xl w-full px-4">
+    <div className="mx-auto max-w-screen-6xl w-full px-4">
       <div className="flex items-center justify-between mt-6 md:mt-8">
         {user && user.role === "student" ? (
           <h2 className="text-black text-2xl md:text-3xl font-black">Your Pathways</h2>
@@ -71,19 +71,24 @@ export default function ContinueLearning() {
             className="hidden md:block absolute -left-12 top-1/2 -translate-y-1/2 z-10
               bg-white p-2 rounded-full shadow hover:bg-gray-100 focus:outline-none"
           >
-            <ChevronLeft className="text-black"/>
+            <ChevronLeft className="text-black" />
           </button>
 
           {/* Scrollable course row */}
           <div
             ref={scrollRef}
-            className="w-full overflow-x-auto flex space-x-4 py-2 scroll-smooth"
+            className="w-full overflow-x-auto scroll-smooth"
           >
-            {courses.map((course) => (
-              <div key={course.id} className="w-[280px] flex-shrink-0">
-                <CourseCard {...course} user={user} />
-              </div>
-            ))}
+            <div className="flex space-x-4 pb-2">
+
+
+              {courses.map((course) => (
+                <div key={course.id} className="w-[280px] flex-shrink-0">
+                  <CourseCard {...course} user={user} />
+                </div>
+              ))}
+              
+            </div>
           </div>
 
           {/* Right Chevron */}

@@ -3,7 +3,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from pathways.views.analytics_views import StudentAnalyticsAPIView, TeacherAnalyticsAPIView
-from pathways.views.user_views import user_list, user_classrooms, create_user, update_user, user_detail, user_roadmaps, login_with_email, student_list, update_preferences
+from pathways.views.user_views import user_list, user_classrooms, create_user, update_user, user_detail, user_roadmaps, login_with_email, student_list, update_user_preferences
 from pathways.views.roadmap_views import roadmap_list, roadmap_detail, roadmap_chapters
 from pathways.views.classroom_views import get_user_classrooms, get_classroom
 from pathways.roadmaps_views import RoadmapGenerationAPIView, get_all_roadmaps, get_roadmap_by_id, update_roadmap, \
@@ -40,6 +40,7 @@ urlpatterns = [
     path('api/users/', user_list, name='user-list'),
     path('api/create-user/', create_user, name='create-user'),
     path('api/update-user/<int:pk>', update_user, name='update-user'),
+    path("api/update-user-preferences/", update_user_preferences, name="update-user-preferences"),
     path('api/users/<int:pk>/', user_detail, name='user-detail'),
     path('api/users/<int:pk>/roadmaps/', user_roadmaps, name='user-roadmaps'),
     path('api/users/<int:pk>/classrooms/', user_classrooms, name='user-classrooms'),
@@ -50,6 +51,7 @@ urlpatterns = [
     path('api/roadmaps/', roadmap_list, name='roadmap-list'),
     path('api/roadmaps/<int:pk>/', roadmap_detail, name='roadmap-detail'),
     path('api/roadmaps/<int:pk>/chapters/', roadmap_chapters, name='roadmap-chapters'),
+
     path('get-user-roadmaps/', get_user_roadmaps),
     path("publish-roadmap-to-classroom/", publish_roadmap_to_classroom),
     path("publish-roadmap/", assign_roadmap_to_user, name="publish-roadmap"),
@@ -81,6 +83,5 @@ urlpatterns = [
     path("get-user-classrooms/", get_user_classrooms, name="get-user-classrooms"),
     path("get-classroom/", get_classroom, name="get-classroom"),
 
-    path("update-preferences/", update_preferences, name="update-preferences"),
 
 ]
