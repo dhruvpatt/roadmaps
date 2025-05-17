@@ -92,46 +92,55 @@ class PerceptionAgent:
 
         # 2. Build the full prompt
         prompt = f"""
-        You are a curriculum design expert planning a pathway for '{topic}' (grade {grade}).
-        
+        You are a curriculum design expert planning a roadmap for the topic '{topic}' at grade level {grade}.
+
         USER-SUGGESTED CHAPTERS: {user_chapters or "None provided"}
-        
-        HIGH-LEVEL LEARNING GOALS USER SUBBMITTED: {', '.join(learning_goals)}
-        
-        Expand goals into 10–12 objectives.
-        Suggest major subtopic areas.
-        Provide deep coverage: 3–4 modules per area.
-        Detail interdependencies and progressive difficulty.
-        Flag potential advanced challenges and mitigation strategies.
-        
-        If you believe that the number of learning goals is not enough to cover the content, increase them and add any intermediary learning goals the user may not have thought of.
-        
-        Analyze this information and provide strategic insights covering:
-        1. Full scope of coverage to master this topic  
-        2. Logical sequencing (scaffolding)  
-        3. Key focus areas from the learning goals  
-        4. Appropriate depth & breadth for grade {grade}  
-        5. How multifaceted the topic is & recommended chapter/module counts  
-        6. Potential student challenges and how to address them
-        
-        Return **one** JSON object:
+
+        HIGH-LEVEL LEARNING GOALS USER SUBMITTED: {', '.join(learning_goals)}
+
+        Follow this step-by-step reasoning process:
+
+        **Step 1: Identify Subdomains and Subskills**
+        - Break down the topic into major conceptual areas (e.g., multivariable limits, partial derivatives, vector calculus).
+        - Within each area, identify key subskills that should be taught at increasing levels of depth.
+
+        **Step 2: Expand Learning Goals**
+        - For each subdomain, expand the learning goals into **50–80 specific, measurable objectives**.
+        - These should include foundational knowledge (definitions, basic calculations), procedural skills (methods, problem-solving), and conceptual understanding (why something works).
+        - If existing goals are too broad or few, generate intermediary goals to fill logical gaps.
+
+        **Step 3: Scaffold the Learning Progression**
+        - Organize objectives in logical order, from introductory to advanced.
+        - Highlight dependencies (e.g., directional derivatives require gradients).
+        - Suggest which goals are best taught together in the same module.
+
+        **Step 4: Anticipate Challenges**
+        - Identify 3–5 common student difficulties at this grade level.
+        - Suggest ways to address them through curriculum design, pacing, or tool use.
+
+        **Step 5: Summarize as a JSON Structure**
+        Return exactly one JSON object in the following format:
         {{
-          "expanded_learning_goals": [ /* objectives */ ],
-          "insights": "…",
-          "estimated_complexity": "LOW|MEDIUM|HIGH|VERY HIGH",
-          "recommended_structure": {{
+        "expanded_learning_goals": [ /* 50–80 granular, measurable goals */ ],
+        "insights": "Summarize scope, challenges, and sequencing strategy.",
+        "estimated_complexity": "LOW | MEDIUM | HIGH | VERY HIGH",
+        "recommended_structure": {{
             "chapters_needed": <int>,
             "approximate_modules_needed": <int>,
-            "key_areas": [<str>, …]
-          }}
+            "key_areas": [<str>, ...]
         }}
+        }}
+
+        Use clear academic language. Avoid vague or duplicate goals. Think step-by-step.
         """
+
         # 3. Call the LLM
         result: EnhancedInsightResponse = get_llm_response(
             prompt,
             temperature=0.7,
             response_model=EnhancedInsightResponse,
-            mode="dumps"
+            mode="dumps",
+            max_tokens=3000
         )
         return result
 
@@ -272,7 +281,7 @@ class EvaluationAgent:
         """
 
         try:
-            result = get_llm_response(prompt, temperature=0.6, response_model=EnhancedEvaluationFeedback)
+            result = get_llm_response(prompt, temperature=0.6, response_model=EnhancedEvaluationFeedback, max_tokens=2000)
             print(f"Evaluation result: {result}")
 
             # Check if it meets our minimum requirements
@@ -352,6 +361,8 @@ class PathwayGenerationAPIView(APIView):
                 print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
                 module_list = generation_agent.generate_pathway(perception_data, topic, learning_goals, grade, mode,
                                                                 user_chapters, perception_data['estimated_complexity'])
+                print(f"Generated Chapters: {module_list.chapters}")
+                print(f"Generated Modules: {module_list.modules}")
                 print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
                 # Step 3: Enhanced evaluation
@@ -414,6 +425,7 @@ class PathwayGenerationAPIView(APIView):
                                 [modules[next_module] for next_module in module_data.next_modules if
                                  next_module in modules]
                             )
+                            module_instance.save()
 
                         print("CREATED MODULES")
                         return Response({

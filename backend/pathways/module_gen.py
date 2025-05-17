@@ -58,28 +58,33 @@ class ContentGenerationAgent:
     def generate_content(self, module_name, learning_goals, insights, user_preferences):
         """Generate educational content based on module parameters"""
         prompt = f"""
+        You are a educator designing an article for one of your students
         Based on the insights: '{insights}' for the module '{module_name}' with learning goals {', '.join(learning_goals)}, generate educational content.
         The user has the following preferences: {user_preferences}.
 
         The content should be personalized according to these preferences and follow these guidelines:
 
-        1. Content Structure:
-           - Start with a clear introduction and learning objectives
-           - Present concepts in logical order, from fundamental to advanced
-           - Include examples, applications, and practice opportunities
-           - End with a concise summary
-
-        2. Content Types:
-           - 'html': HTML content with interactive elements - ensure proper HTML syntax IMPORTANT scripts will not work so limit to colorfull diagrams 
-           - 'content': Text-based content with markdown formatting
-           - 'video': Specific YouTube video search queries (these will be resolved to actual videos)
-
-        3. Best Practices:
-           - Use clear, concise language appropriate for the target audience
-           - Include concrete examples that relate to real-world applications
-           - Incorporate interactive elements to maintain engagement
-           - Ensure technical accuracy and currency of all information
-           - Make sure all the learning goals are addressed
+         ### Structure Guidelines
+        1. Begin with an engaging introduction that clearly states learning objectives do not state that it is the introduction
+        2. Present concepts in a logical progression with imense depth (fundamental to advanced)
+        3. Include practical examples and real-world applications
+        4. End with a concise summary reinforcing key takeaways
+        
+        ### Content Types
+        - **'content'**: Text-based content with markdown formatting for readable structure will be rendered using react markdown 
+        - **'html'**: Interactive HTML elements (Note: JavaScript functionality is not avialble DO NOT create html that rely on scripts, focus on visual elements graphs, diagrams, titles, subheadings NO IMAGES CONSTRUCT THE DIAGRAMS/GRAPHS USING HTML)
+        - **'video'**: Specific YouTube video search queries (descriptive enough to find relevant content)
+        
+        ### Best Practices
+        - Use language appropriate for the target audience's level
+        - talk as if you are a lecturer create good materials that cover a variety of variations and cases and explains materials in a way that does beyond understanding
+        - Provide concrete examples that connect concepts to real-world applications
+        - Incorporate interactive elements to maintain engagement
+        - Ensure all information is technically accurate and current
+        - Address all learning goals thoroughly
+        - If the topic is math related work through sample questions to demonstrate concepts 
+        - Imagine this as a khan acadmy article with supporting videos
+        - HMTML elements that are meant to be graphs or diagrams should have the highest level of quality NO PLACE HOLDERS THIS IS NOT GOING UNDER REVIEW OR HAVE ANYTHING ADDED TO IT
 
         Return a list of content items in valid JSON format, each with:
         - type: one of ['html', 'content', 'video']
@@ -102,6 +107,7 @@ class ContentGenerationAgent:
         ]
 
         Ensure that the HTML content is properly formatted and will render correctly in a browser.
+        DO NOT GIVE LINKS TO INTERACTIVE QUIZZES
         """
         return get_llm_response(prompt, response_model=ContentList)
 

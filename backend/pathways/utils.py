@@ -10,7 +10,7 @@ def get_llm_response(
     temperature: float = 0.7,
     response_model: Optional[Type[BaseModel]] = None,
     mode: str = "dumps",
-    max_tokens: int = 15000
+    max_tokens: int = 10000
 ):
     try:
         if response_model:
