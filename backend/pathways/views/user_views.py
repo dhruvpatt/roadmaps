@@ -155,8 +155,8 @@ def user_classrooms(request, pk):
     return Response(serializer.data)
 
 
-@api_view(['POST'])
-def update_preferences(request):
+@api_view(['PATCH'])
+def update_user_preferences(request):
     user_id = request.data.get("user_id")
     preferences = request.data.get("preferences")
 

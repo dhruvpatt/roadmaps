@@ -2,6 +2,10 @@ import { useState } from "react";
 import { X, Plus, Minus } from "lucide-react";
 import { useRouter } from "next/router";
 
+import { useEffect } from "react";
+
+
+
 // 🔹 Mock user (can be dynamic later)
 const mockpathwayID = {
   id: 1,
@@ -19,6 +23,19 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user, cl
     details: "",
     chapters: [],
   });
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -96,8 +113,8 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user, cl
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
-      <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-3xl relative overflow-y-auto max-h-[90vh] animate-slide-up text-gray-800">
+    <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
+      <div className="p-6 w-full max-w-full min-h-screen text-gray-800">
         <button
           onClick={onClose}
           className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
@@ -155,16 +172,16 @@ export default function CreateRoadmapModal({ isOpen, onClose, onCreate, user, cl
           </div>
 
           {user.role === "teacher" && (
-              <div>
-                  <label className="text-sm font-medium text-gray-700">Classroom</label>
-                  <input
-                      name="classroom"
-                      value={form.classroom}
-                      onChange={handleChange}
-                      placeholder="Optional"
-                      className="w-full mt-1 border border-gray-300 rounded px-3 py-2"
-                  />
-              </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700">Classroom</label>
+              <input
+                name="classroom"
+                value={form.classroom}
+                onChange={handleChange}
+                placeholder="Optional"
+                className="w-full mt-1 border border-gray-300 rounded px-3 py-2"
+              />
+            </div>
           )}
 
           {/* Grade */}

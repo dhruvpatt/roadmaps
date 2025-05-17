@@ -3,8 +3,7 @@ import { useRouter } from "next/router";
 import { ArrowLeft } from "lucide-react";
 import backendUrl from "@/backendUrl";
 import RoadmapGraph from "@/components/pathways/RoadmapGraph";
-import Sidebar from "../../components/sidebar";
-import Navbar from "../../components/navbar";
+
 
 
 const isModuleUnlocked = (module, moduleMap) => {
@@ -185,10 +184,6 @@ const ViewPathwayPage = () => {
   }
 
   return (
-    <div className="flex flex-col bg-gray-100 w-full min-h-screen">
-      <Navbar />
-      <div className="flex flex-1 flex-col md:flex-row">
-          <Sidebar className="hidden md:block w-64" />
     <div className="min-h-screen bg-white p-6 space-y-6 text-gray-800 w-full">
       <div className="flex items-center text-sm text-gray-500 cursor-pointer hover:underline" onClick={() => router.push("/pathways")}>
         <ArrowLeft size={16} className="mr-1" />
@@ -392,8 +387,6 @@ const ViewPathwayPage = () => {
         </div>
       </div>
     </div>
-  </div>
-</div>
   );
 };
 

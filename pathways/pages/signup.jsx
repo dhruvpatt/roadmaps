@@ -71,7 +71,7 @@ export default function SignupPage() {
         router.push("/dashboard");
         return;
       } else {
-        router.push("/ProfilePage");
+        router.push("/settings");
       }
     } catch (err) {
       console.error("Signup error:", err);

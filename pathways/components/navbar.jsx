@@ -7,7 +7,7 @@ export default function Navbar() {
   const router = useRouter();
 
   const handleClick = () => {
-    router.push("../ProfilePage");
+    router.push("../settings");
   };
 
   const handlelogoClick = () => {
@@ -16,7 +16,7 @@ export default function Navbar() {
 
 
   return (
-    <nav className="flex items-center justify-between w-full border-b bg-white px-4 py-2">
+    <nav className="fixed top-0 left-0 right-0 h-16 z-50 flex items-center justify-between border-b bg-white px-4 shadow">
       {/* Left: Brand */}
       <div className="flex items-center">
       <button type="button" onClick={handlelogoClick}>
