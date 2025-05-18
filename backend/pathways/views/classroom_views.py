@@ -7,6 +7,13 @@ from rest_framework.viewsets import ModelViewSet
 from ..models import Classroom, User
 from ..serializers import ClassroomSerializer, SubjectSerializer, ClassroomDetailSerializer
 
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from django.core.paginator import Paginator
+from django.db.models import Q
+
+
 
 class ClassroomViewSet(ModelViewSet):
     queryset = Classroom.objects.all()
@@ -114,6 +121,8 @@ def classroom_subjects(request, pk):
 @api_view(['POST'])
 def get_user_classrooms(request):
     user_id = request.data.get('user_id')
+    search_query = request.GET.get('search', '').strip().lower()
+    page = int(request.GET.get('page', 1))
 
     if not user_id:
         return Response({"error": "user_id is required"}, status=status.HTTP_400_BAD_REQUEST)
@@ -128,8 +137,19 @@ def get_user_classrooms(request):
     else:
         classrooms = user.enrolled_classrooms.all()
 
-    serializer = ClassroomSerializer(classrooms, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    if search_query:
+        classrooms = classrooms.filter(Q(name__icontains=search_query) | Q(join_id__icontains=search_query))
+
+    paginator = Paginator(classrooms, 15)
+    page_obj = paginator.get_page(page)
+
+    serializer = ClassroomSerializer(page_obj.object_list, many=True)
+
+    return Response({
+        "count": paginator.count,
+        "total_pages": paginator.num_pages,
+        "results": serializer.data
+    }, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])

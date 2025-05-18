@@ -80,3 +80,24 @@ body {
 }
 
 
+.edge-hover path {
+  transition: stroke 0.2s ease, stroke-width 0.2s ease;
+}
+
+.edge-hover:hover path {
+  stroke: #0070f3 !important;
+  stroke-width: 3 !important;
+}
+
+.edge-connected path {
+  stroke: #0070f3 !important;
+  stroke-width: 3 !important;
+}
+
+.node-hovered {
+  filter: brightness(1.05);
+  transform: scale(1.03);
+  transition: transform 0.2s ease;
+}
+
+

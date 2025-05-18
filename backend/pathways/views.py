@@ -870,66 +870,6 @@ def message_detail(request, pk):
         message.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
-@api_view(['POST'])
-def get_user_classrooms(request):
-    user_id = request.data.get('user_id')
-
-    if not user_id:
-        return Response({"error": "user_id is required"}, status=status.HTTP_400_BAD_REQUEST)
-
-    try:
-        user = User.objects.get(id=user_id)
-    except User.DoesNotExist:
-        return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-
-    if user.role == User.TEACHER:
-        classrooms = user.teaching_classrooms.all()
-    else:
-        classrooms = user.enrolled_classrooms.all()
-
-    serializer = ClassroomSerializer(classrooms, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-# @api_view(['POST'])
-# def get_classroom(request):
-    
-#     classroom_id = request.data.get('classroom_id')
-#     user_id = request.data.get("user_id")
-#     print("get classroom hit")
-#     if not classroom_id:
-#         return Response({"error": "classroom_id is required"}, status=status.HTTP_400_BAD_REQUEST)
-    
-#     if not user_id:
-#         return Response({"error": "user_id is required"}, status=status.HTTP_400_BAD_REQUEST)
-    
-#     try: 
-#         classroom = Classroom.objects.get(id=classroom_id)
-#         serializer = ClassroomSerializer(classroom)
-#         return Response(serializer.data, status=status.HTTP_200_OK)
-#     except Classroom.DoesNotExist:
-#         return Response({"error": "Classroom not found"}, status=status.HTTP_404_NOT_FOUND)
-    
-# @api_view(['POST'])
-# def get_classroom(request):
-#     classroom_id = request.data.get('classroom_id')
-#     user_id = request.data.get("user_id")
-
-#     print("get classroom hit")
-
-#     if not classroom_id:
-#         return Response({"error": "classroom_id is required"}, status=status.HTTP_400_BAD_REQUEST)
-
-#     if not user_id:
-#         return Response({"error": "user_id is required"}, status=status.HTTP_400_BAD_REQUEST)
-
-#     try:
-#         classroom = Classroom.objects.get(id=classroom_id)
-#         serializer = ClassroomDetailSerializer(classroom)
-#         return Response(serializer.data, status=status.HTTP_200_OK)
-#     except Classroom.DoesNotExist:
-#         return Response({"error": "Classroom not found"}, status=status.HTTP_404_NOT_FOUND)
 @api_view(['POST'])
 def get_classroom(request):
     classroom_id = request.data.get('classroom_id')

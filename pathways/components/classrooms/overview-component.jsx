@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Users, BookOpen, BarChart2 } from "lucide-react";
-import PathwayCard from "@/components/pathways/pathways-card";
+import PathwayCard from "@/components/pathways/PathwaysCard";
 import CreatePathwayModal from "@/components/modals/CreatePathwayModal";
 import { useRouter } from "next/navigation";
 import backendUrl from "@/backendUrl";

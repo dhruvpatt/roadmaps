@@ -17,6 +17,11 @@ from django.conf import settings
 from .utils import get_llm_response
 from .schemas import *
 
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+
 
 # class PerceptionAgent:
 #     def generate_insights(self, topic, learning_goals, grade, user_chapters):
@@ -568,12 +573,19 @@ def get_pathway_by_id(request, pathway_id):
 @api_view(['POST'])
 def get_user_pathways(request):
     user_id = request.data.get("user_id")
-    print("user_id", user_id)
+    search_query = request.GET.get("search", "")
+
     try:
         user = User.objects.get(pk=user_id)
-        pathways = Pathway.objects.filter(owner=user)
-        serializer = PathwaySerializer(pathways, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        pathways = Pathway.objects.filter(owner=user, title__icontains=search_query).order_by("id")
+
+        paginator = PageNumberPagination()
+        paginator.page_size = 15
+        result_page = paginator.paginate_queryset(pathways, request)
+        serializer = PathwaySerializer(result_page, many=True)
+
+        return paginator.get_paginated_response(serializer.data)
+
     except User.DoesNotExist:
         return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
