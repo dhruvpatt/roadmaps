@@ -147,15 +147,14 @@ class GenerationAgent:
             """
 
         prompt = f"""
+        You are a cirriculum design expert helping to plan a comprehensive learning roadmap.
         Based on the following insights '{perception_data}', generate a list of chapter names for teaching the topic '{topic}' to students in grade '{grade}', 
-        ensuring that the learning goals {', '.join([f"'{goal}'" for goal in learning_goals])} are effectively covered.
+        ensuring that the learning goals {', '.join([f"'{goal}'" for goal in learning_goals])} are effectively covered. For each chapter also include a set of learning goals
+        for that specific chapter.
         
         USER SUGGESTED CHAPTERS: {user_chapters}
 
         COMPLEXITY: {complexity_guidance}
-        You are a curriculum design expert helping to plan a comprehensive learning roadmap.
-        Based on the following insights '{perception_data}', generate a list of chapter objects for teaching '{topic}' to grade '{grade}', making sure the high-level learning goals ({', '.join([f"'{g}'" for g in learning_goals])}) are each addressed in one or more chapter-level goals.
-        {complexity_guidance}
 
         Return a JSON array of chapter objects:
         [
