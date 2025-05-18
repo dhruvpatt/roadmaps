@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, Roadmap, Chapter, Question, Quiz, Module, Content, Message, Classroom, Subject
+from .models import User, Pathway, Chapter, Question, Quiz, Module, Content, Message, Classroom, Subject
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 # Register User model with the custom admin interface
@@ -24,20 +24,20 @@ class UserAdmin(BaseUserAdmin):
     search_fields = ('email',)
 
 
-# Register Roadmap model with custom admin interface
-class RoadmapAdmin(admin.ModelAdmin):
+# Register Pathway model with custom admin interface
+class PathwayAdmin(admin.ModelAdmin):
     list_display = ('title', 'owner', 'mode', 'grade', 'classroom', "id")
     search_fields = ('title', 'owner__username')
     list_filter = ('mode',)
     ordering = ('title',)
 
-admin.site.register(Roadmap, RoadmapAdmin)
+admin.site.register(Pathway, PathwayAdmin)
 
 
 # Register Chapter model with custom admin interface
 class ChapterAdmin(admin.ModelAdmin):
-    list_display = ('name', 'roadmap', 'status')
-    search_fields = ('name', 'roadmap__title')
+    list_display = ('name', 'pathway', 'status')
+    search_fields = ('name', 'pathway__title')
     list_filter = ('status',)
     ordering = ('name',)
 

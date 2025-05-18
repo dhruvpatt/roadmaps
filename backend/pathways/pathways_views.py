@@ -9,13 +9,18 @@ from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Roadmap, User, Chapter, Module, Subject, Classroom
-from .serializers import QueryRequestSerializer, ChapterSerializer, SubjectSerializer, RoadmapSerializer
+from .models import Pathway, User, Chapter, Module, Subject, Classroom
+from .serializers import QueryRequestSerializer, ChapterSerializer, SubjectSerializer, PathwaySerializer
 from django.db import transaction
 from datetime import datetime, timedelta
 from django.conf import settings
 from .utils import get_llm_response
 from .schemas import *
+
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
 
 
 # class PerceptionAgent:
@@ -27,7 +32,7 @@ from .schemas import *
 #         ])
 #
 #         prompt = f"""
-#         You are a curriculum design expert helping to plan a comprehensive learning roadmap.
+#         You are a curriculum design expert helping to plan a comprehensive learning pathway.
 #
 #         TOPIC: '{topic}'
 #         GRADE LEVEL: '{grade}'
@@ -92,46 +97,55 @@ class PerceptionAgent:
 
         # 2. Build the full prompt
         prompt = f"""
-        You are a curriculum design expert planning a roadmap for '{topic}' (grade {grade}).
-        
+        You are a curriculum design expert planning a roadmap for the topic '{topic}' at grade level {grade}.
+
         USER-SUGGESTED CHAPTERS: {user_chapters or "None provided"}
-        
-        HIGH-LEVEL LEARNING GOALS USER SUBBMITTED: {', '.join(learning_goals)}
-        
-        Expand goals into 10–12 objectives.
-        Suggest major subtopic areas.
-        Provide deep coverage: 3–4 modules per area.
-        Detail interdependencies and progressive difficulty.
-        Flag potential advanced challenges and mitigation strategies.
-        
-        If you believe that the number of learning goals is not enough to cover the content, increase them and add any intermediary learning goals the user may not have thought of.
-        
-        Analyze this information and provide strategic insights covering:
-        1. Full scope of coverage to master this topic  
-        2. Logical sequencing (scaffolding)  
-        3. Key focus areas from the learning goals  
-        4. Appropriate depth & breadth for grade {grade}  
-        5. How multifaceted the topic is & recommended chapter/module counts  
-        6. Potential student challenges and how to address them
-        
-        Return **one** JSON object:
+
+        HIGH-LEVEL LEARNING GOALS USER SUBMITTED: {', '.join(learning_goals)}
+
+        Follow this step-by-step reasoning process:
+
+        **Step 1: Identify Subdomains and Subskills**
+        - Break down the topic into major conceptual areas (e.g., multivariable limits, partial derivatives, vector calculus).
+        - Within each area, identify key subskills that should be taught at increasing levels of depth.
+
+        **Step 2: Expand Learning Goals**
+        - For each subdomain, expand the learning goals into **50–80 specific, measurable objectives**.
+        - These should include foundational knowledge (definitions, basic calculations), procedural skills (methods, problem-solving), and conceptual understanding (why something works).
+        - If existing goals are too broad or few, generate intermediary goals to fill logical gaps.
+
+        **Step 3: Scaffold the Learning Progression**
+        - Organize objectives in logical order, from introductory to advanced.
+        - Highlight dependencies (e.g., directional derivatives require gradients).
+        - Suggest which goals are best taught together in the same module.
+
+        **Step 4: Anticipate Challenges**
+        - Identify 3–5 common student difficulties at this grade level.
+        - Suggest ways to address them through curriculum design, pacing, or tool use.
+
+        **Step 5: Summarize as a JSON Structure**
+        Return exactly one JSON object in the following format:
         {{
-          "expanded_learning_goals": [ /* objectives */ ],
-          "insights": "…",
-          "estimated_complexity": "LOW|MEDIUM|HIGH|VERY HIGH",
-          "recommended_structure": {{
+        "expanded_learning_goals": [ /* 50–80 granular, measurable goals */ ],
+        "insights": "Summarize scope, challenges, and sequencing strategy.",
+        "estimated_complexity": "LOW | MEDIUM | HIGH | VERY HIGH",
+        "recommended_structure": {{
             "chapters_needed": <int>,
             "approximate_modules_needed": <int>,
-            "key_areas": [<str>, …]
-          }}
+            "key_areas": [<str>, ...]
         }}
+        }}
+
+        Use clear academic language. Avoid vague or duplicate goals. Think step-by-step.
         """
+
         # 3. Call the LLM
         result: EnhancedInsightResponse = get_llm_response(
             prompt,
             temperature=0.7,
             response_model=EnhancedInsightResponse,
-            mode="dumps"
+            mode="dumps",
+            max_tokens=3000
         )
         return result
 
@@ -217,7 +231,7 @@ class GenerationAgent:
         )
         return result.modules
 
-    def generate_roadmap(self, perception_data, topic, learning_goals, grade, mode, user_chapters, complexity_level="MEDIUM"):
+    def generate_pathway(self, perception_data, topic, learning_goals, grade, mode, user_chapters, complexity_level="MEDIUM"):
         # Step 1: Generate chapters
         chapters = self.generate_chapters(perception_data, topic, learning_goals, grade, mode, user_chapters)
         print(f"Generated chapters: {chapters}")
@@ -235,11 +249,11 @@ class GenerationAgent:
             )
             all_modules.extend(chapter_modules)
 
-        return RoadmapStructure(chapters=chapters, modules=all_modules)
+        return PathwayStructure(chapters=chapters, modules=all_modules)
 
 
 class EvaluationAgent:
-    def evaluate(self, roadmap, learning_goals, topic):
+    def evaluate(self, pathway, learning_goals, topic):
         # Determine minimum complexity requirements based on topic
         is_complex_topic = any(word in topic.lower() for word in [
             "advanced", "complex", "comprehensive", "in-depth", "quantum", "analysis",
@@ -252,7 +266,7 @@ class EvaluationAgent:
         min_modules_per_chapter = 3 if is_complex_topic else 2
 
         prompt = f"""
-        Evaluate the roadmap '{roadmap}' based on learning goals '{learning_goals}' for topic '{topic}'.
+        Evaluate the pathway '{pathway}' based on learning goals '{learning_goals}' for topic '{topic}'.
 
         Requirements:
         1. Valid JSON structure
@@ -274,20 +288,20 @@ class EvaluationAgent:
             "coverage_score": [1-10 score measuring how well learning goals are covered]
         }}
 
-        If the roadmap meets all criteria, mark as "Valid". Otherwise, provide specific improvement suggestions.
+        If the pathway meets all criteria, mark as "Valid". Otherwise, provide specific improvement suggestions.
         """
 
         try:
-            result = get_llm_response(prompt, temperature=0.6, response_model=EnhancedEvaluationFeedback)
+            result = get_llm_response(prompt, temperature=0.6, response_model=EnhancedEvaluationFeedback, max_tokens=2000)
             print(f"Evaluation result: {result}")
 
             # Check if it meets our minimum requirements
-            has_min_modules = len(roadmap.modules) >= min_modules
-            has_min_chapters = len(roadmap.chapters) >= min_chapters
+            has_min_modules = len(pathway.modules) >= min_modules
+            has_min_chapters = len(pathway.chapters) >= min_chapters
 
             # Simple heuristic to count learning goal coverage
             covered_goals = set()
-            for module in roadmap.modules:
+            for module in pathway.modules:
                 for goal in module.learning_goals:
                     covered_goals.add(goal.lower())
 
@@ -301,16 +315,16 @@ class EvaluationAgent:
                 "is_valid": result["evaluation"].strip().lower().startswith("valid"),
                 "suggestions": result.get("suggested_improvements", ""),
                 "stats": {
-                    "chapters": len(roadmap.chapters),
-                    "modules": len(roadmap.modules),
+                    "chapters": len(pathway.chapters),
+                    "modules": len(pathway.modules),
                     "coverage": result.get("coverage_score", 0)
                 }
             }
         except Exception as e:
-            raise ValueError(f"Error evaluating roadmap: {e}")
+            raise ValueError(f"Error evaluating pathway: {e}")
 
 
-class RoadmapGenerationAPIView(APIView):
+class PathwayGenerationAPIView(APIView):
     serializer_class = QueryRequestSerializer
 
     def post(self, request):
@@ -353,11 +367,13 @@ class RoadmapGenerationAPIView(APIView):
                 learning_goals = perception_data["expanded_learning_goals"]
                 print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
-                # Step 2: Generation Agent creates the roadmap with prerequisite and next module mapping
+                # Step 2: Generation Agent creates the pathway with prerequisite and next module mapping
                 print(f"GENERATION - Attempt {attempt + 1}/{max_attempts}")
                 print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-                module_list = generation_agent.generate_roadmap(perception_data, topic, learning_goals, grade, mode,
+                module_list = generation_agent.generate_pathway(perception_data, topic, learning_goals, grade, mode,
                                                                 user_chapters, perception_data['estimated_complexity'])
+                print(f"Generated Chapters: {module_list.chapters}")
+                print(f"Generated Modules: {module_list.modules}")
                 print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
                 # Step 3: Enhanced evaluation
@@ -369,9 +385,9 @@ class RoadmapGenerationAPIView(APIView):
                       f"Coverage={evaluation_result['stats']['coverage']}")
 
                 if  evaluation_result['is_valid']:
-                    print("Roadmap evaluation passed!")
+                    print("Pathway evaluation passed!")
                     try:
-                        roadmap_object = Roadmap(
+                        pathway_object = Pathway(
                             title=title,
                             owner=user,
                             details=details,
@@ -382,13 +398,13 @@ class RoadmapGenerationAPIView(APIView):
                             progress=0,
                             classroom=classroom
                         )
-                        roadmap_object.save()
+                        pathway_object.save()
 
-                        print("CREATED ROADMAP")
+                        print("CREATED PATHWAY")
                         chapters = dict()
                         for chapter in module_list.chapters:
                             chapters[chapter.name] = Chapter.objects.create(
-                                name=chapter.name, roadmap=roadmap_object
+                                name=chapter.name, pathway=pathway_object
                             )
                         for chapter in module_list.chapters:
                             if chapter.next:
@@ -420,10 +436,11 @@ class RoadmapGenerationAPIView(APIView):
                                 [modules[next_module] for next_module in module_data.next_modules if
                                  next_module in modules]
                             )
+                            module_instance.save()
 
                         print("CREATED MODULES")
                         return Response({
-                            "roadmap": roadmap_object.id,
+                            "pathway": pathway_object.id,
                             "stats": {
                                 "chapters": len(module_list.chapters),
                                 "modules": len(module_list.modules),
@@ -432,16 +449,16 @@ class RoadmapGenerationAPIView(APIView):
                         }, status=status.HTTP_201_CREATED)
                     except Exception as e:
                         import traceback
-                        print("Error creating roadmap:")
+                        print("Error creating pathway:")
                         traceback.print_exc()
                         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                 else:
-                    print(f"Roadmap evaluation failed. Suggestions: {evaluation_result['suggestions']}")
+                    print(f"Pathway evaluation failed. Suggestions: {evaluation_result['suggestions']}")
                     # Continue to next attempt with different temperature/parameters
 
                 # Timeout check
                 if datetime.now() - start_time > timeout_duration:
-                    return Response({"error": "Timeout reached, roadmap generation failed."},
+                    return Response({"error": "Timeout reached, pathway generation failed."},
                                     status=status.HTTP_408_REQUEST_TIMEOUT)
 
                 # Small delay between attempts
@@ -449,7 +466,7 @@ class RoadmapGenerationAPIView(APIView):
 
             # If we reach here, all attempts failed
             return Response({
-                "error": "Failed to generate a comprehensive roadmap after multiple attempts.",
+                "error": "Failed to generate a comprehensive pathway after multiple attempts.",
                 "suggestions": evaluation_result.get('suggestions',
                                                      "Try providing more specific learning goals or chapter structure.")
             }, status=status.HTTP_400_BAD_REQUEST)
@@ -459,52 +476,52 @@ class RoadmapGenerationAPIView(APIView):
 
 
 @api_view(['GET'])
-def get_all_roadmaps(request):
+def get_all_pathways(request):
     user_id = request.GET.get("user_id")
     try:
         user = User.objects.get(pk=user_id)
-        roadmaps = Roadmap.objects.filter(owner=user)
-        serializer = RoadmapSerializer(roadmaps, many=True)
+        pathways = Pathway.objects.filter(owner=user)
+        serializer = PathwaySerializer(pathways, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     except User.DoesNotExist:
         return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
 @api_view(['POST'])
 @transaction.atomic
-def publish_roadmap_to_classroom(request):
-    roadmap_id = request.data.get("roadmap_id")
+def publish_pathway_to_classroom(request):
+    pathway_id = request.data.get("pathway_id")
     classroom_id = request.data.get("classroom_id")
     topic = request.data.get("topic", "Untitled Topic")
     master_scaffold = request.data.get("master_scaffold", "")
 
     try:
-        roadmap = Roadmap.objects.get(pk=roadmap_id)
+        pathway = Pathway.objects.get(pk=pathway_id)
         classroom = Classroom.objects.get(pk=classroom_id)
         students = classroom.students.all()
 
         for student in students:
-            student_roadmap = Roadmap.objects.create(
+            student_pathway = Pathway.objects.create(
                 owner=student,
-                title=roadmap.title,
-                details=roadmap.details,
-                mode=roadmap.mode,
-                grade=roadmap.grade,
-                learning_goals=roadmap.learning_goals,
+                title=pathway.title,
+                details=pathway.details,
+                mode=pathway.mode,
+                grade=pathway.grade,
+                learning_goals=pathway.learning_goals,
                 progress=0,
                 classroom=classroom
             )
 
             chapter_map = {}
-            for chapter in roadmap.chapters.all():
+            for chapter in pathway.chapters.all():
                 new_chapter = Chapter.objects.create(
                     name=chapter.name,
-                    roadmap=student_roadmap,
+                    pathway=student_pathway,
                     status='not_started'
                 )
                 chapter_map[chapter.id] = new_chapter
 
             module_map = {}
-            for chapter in roadmap.chapters.all():
+            for chapter in pathway.chapters.all():
                 for module in chapter.modules.all():
                     new_module = Module.objects.create(
                         name=module.name,
@@ -523,7 +540,7 @@ def publish_roadmap_to_classroom(request):
                         )
                     module_map[module.id] = new_module
 
-            for module in roadmap.chapters.all().prefetch_related('modules'):
+            for module in pathway.chapters.all().prefetch_related('modules'):
                 for original_module in module.modules.all():
                     new_module = module_map[original_module.id]
                     new_module.prerequisites.set([
@@ -538,97 +555,104 @@ def publish_roadmap_to_classroom(request):
                 topic=topic,
                 master_scaffold=master_scaffold,
                 progress=0.0,
-                student_roadmap=student_roadmap
+                student_pathway=student_pathway
             )
 
-        return Response({"message": "Roadmap and structure published to classroom successfully."}, status=status.HTTP_201_CREATED)
+        return Response({"message": "Pathway and structure published to classroom successfully."}, status=status.HTTP_201_CREATED)
 
-    except Roadmap.DoesNotExist:
-        return Response({"error": "Roadmap not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Pathway.DoesNotExist:
+        return Response({"error": "Pathway not found"}, status=status.HTTP_404_NOT_FOUND)
     except Classroom.DoesNotExist:
         return Response({"error": "Classroom not found"}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
-def get_roadmap_by_id(request, roadmap_id):
+def get_pathway_by_id(request, pathway_id):
     try:
-        roadmap = Roadmap.objects.get(pk=roadmap_id)
-        serializer = RoadmapSerializer(roadmap)
+        pathway = Pathway.objects.get(pk=pathway_id)
+        serializer = PathwaySerializer(pathway)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    except Roadmap.DoesNotExist:
-        return Response({"error": "Roadmap not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Pathway.DoesNotExist:
+        return Response({"error": "Pathway not found"}, status=status.HTTP_404_NOT_FOUND)
 
 @api_view(['POST'])
-def get_user_roadmaps(request):
+def get_user_pathways(request):
     user_id = request.data.get("user_id")
-    print("user_id", user_id)
+    search_query = request.GET.get("search", "")
+
     try:
         user = User.objects.get(pk=user_id)
-        roadmaps = Roadmap.objects.filter(owner=user)
-        serializer = RoadmapSerializer(roadmaps, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        pathways = Pathway.objects.filter(owner=user, title__icontains=search_query).order_by("id")
+
+        paginator = PageNumberPagination()
+        paginator.page_size = 15
+        result_page = paginator.paginate_queryset(pathways, request)
+        serializer = PathwaySerializer(result_page, many=True)
+
+        return paginator.get_paginated_response(serializer.data)
+
     except User.DoesNotExist:
         return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
 @api_view(['PUT'])
-def update_roadmap(request, roadmap_id):
+def update_pathway(request, pathway_id):
     try:
-        roadmap = Roadmap.objects.get(pk=roadmap_id)
+        pathway = Pathway.objects.get(pk=pathway_id)
 
-        roadmap.title = request.data.get("title", roadmap.title)
-        roadmap.details = request.data.get("details", roadmap.details)
-        roadmap.mode = request.data.get("mode", roadmap.mode)
-        roadmap.grade = request.data.get("grade", roadmap.grade)
-        roadmap.learning_goals = request.data.get("learning_goals", roadmap.learning_goals)
-        roadmap.progress = request.data.get("progress", roadmap.progress)
+        pathway.title = request.data.get("title", pathway.title)
+        pathway.details = request.data.get("details", pathway.details)
+        pathway.mode = request.data.get("mode", pathway.mode)
+        pathway.grade = request.data.get("grade", pathway.grade)
+        pathway.learning_goals = request.data.get("learning_goals", pathway.learning_goals)
+        pathway.progress = request.data.get("progress", pathway.progress)
 
-        roadmap.save()
+        pathway.save()
 
-        serializer = RoadmapSerializer(roadmap)
+        serializer = PathwaySerializer(pathway)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    except Roadmap.DoesNotExist:
-        return Response({"error": "Roadmap not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Pathway.DoesNotExist:
+        return Response({"error": "Pathway not found"}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # @api_view(['POST'])
 # @transaction.atomic
-# def publish_roadmap_to_classroom(request):
-#     roadmap_id = request.data.get("roadmap_id")
+# def publish_pathway_to_classroom(request):
+#     pathway_id = request.data.get("pathway_id")
 #     classroom_id = request.data.get("classroom_id")
 #     topic = request.data.get("topic", "Untitled Topic")
 #     master_scaffold = request.data.get("master_scaffold", "")
 
 #     try:
-#         roadmap = Roadmap.objects.get(pk=roadmap_id)
+#         pathway = Pathway.objects.get(pk=pathway_id)
 #         classroom = Classroom.objects.get(pk=classroom_id)
 #         students = classroom.students.all()
 
 #         for student in students:
-#             student_roadmap = Roadmap.objects.create(
+#             student_pathway = Pathway.objects.create(
 #                 owner=student,
-#                 title=roadmap.title,
-#                 details=roadmap.details,
-#                 mode=roadmap.mode,
-#                 grade=roadmap.grade,
-#                 learning_goals=roadmap.learning_goals,
+#                 title=pathway.title,
+#                 details=pathway.details,
+#                 mode=pathway.mode,
+#                 grade=pathway.grade,
+#                 learning_goals=pathway.learning_goals,
 #                 progress=0,
 #                 published=True
 #             )
 
 #             chapter_map = {}
-#             for chapter in roadmap.chapters.all():
+#             for chapter in pathway.chapters.all():
 #                 new_chapter = Chapter.objects.create(
 #                     name=chapter.name,
-#                     roadmap=student_roadmap,
+#                     pathway=student_pathway,
 #                     status='not_started'
 #                 )
 #                 chapter_map[chapter.id] = new_chapter
 
 #             module_map = {}
-#             for chapter in roadmap.chapters.all():
+#             for chapter in pathway.chapters.all():
 #                 for module in chapter.modules.all():
 #                     # Clone quiz
 #                     new_quiz = None
@@ -660,7 +684,7 @@ def update_roadmap(request, roadmap_id):
 #                         )
 #                     module_map[module.id] = new_module
 
-#             for module in roadmap.chapters.all().prefetch_related('modules'):
+#             for module in pathway.chapters.all().prefetch_related('modules'):
 #                 for original_module in module.modules.all():
 #                     new_module = module_map[original_module.id]
 #                     new_module.prerequisites.set([
@@ -675,56 +699,56 @@ def update_roadmap(request, roadmap_id):
 #                 topic=topic,
 #                 master_scaffold=master_scaffold,
 #                 progress=0.0,
-#                 student_roadmap=student_roadmap
+#                 student_pathway=student_pathway
 #             )
 
-#         return Response({"message": "Roadmap and structure published to classroom successfully."}, status=status.HTTP_201_CREATED)
+#         return Response({"message": "Pathway and structure published to classroom successfully."}, status=status.HTTP_201_CREATED)
 
-#     except Roadmap.DoesNotExist:
-#         return Response({"error": "Roadmap not found"}, status=status.HTTP_404_NOT_FOUND)
+#     except Pathway.DoesNotExist:
+#         return Response({"error": "Pathway not found"}, status=status.HTTP_404_NOT_FOUND)
 #     except Classroom.DoesNotExist:
 #         return Response({"error": "Classroom not found"}, status=status.HTTP_404_NOT_FOUND)
 #     except Exception as e:
 #         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 @api_view(['POST'])
 @transaction.atomic
-def publish_roadmap_to_classroom(request):
-    roadmap_id = request.data.get("roadmap_id")
+def publish_pathway_to_classroom(request):
+    pathway_id = request.data.get("pathway_id")
     classroom_id = request.data.get("classroom_id")
     topic = request.data.get("topic", "Untitled Topic")
     master_scaffold = request.data.get("master_scaffold", "")
     print("classroomId", classroom_id)
     try:
-        roadmap = Roadmap.objects.get(pk=roadmap_id)
+        pathway = Pathway.objects.get(pk=pathway_id)
         classroom = Classroom.objects.get(pk=classroom_id)
         students = classroom.students.all()
 
-        created_roadmaps = []
+        created_pathways = []
 
         for student in students:
-            student_roadmap = Roadmap.objects.create(
+            student_pathway = Pathway.objects.create(
                 owner=student,
-                title=roadmap.title,
-                details=roadmap.details,
-                mode=roadmap.mode,
-                grade=roadmap.grade,
-                learning_goals=roadmap.learning_goals,
+                title=pathway.title,
+                details=pathway.details,
+                mode=pathway.mode,
+                grade=pathway.grade,
+                learning_goals=pathway.learning_goals,
                 progress=0,
                 published=True,
                 classroom=classroom
             )
 
             chapter_map = {}
-            for chapter in roadmap.chapters.all():
+            for chapter in pathway.chapters.all():
                 new_chapter = Chapter.objects.create(
                     name=chapter.name,
-                    roadmap=student_roadmap,
+                    pathway=student_pathway,
                     status='not_started'
                 )
                 chapter_map[chapter.id] = new_chapter
 
             module_map = {}
-            for chapter in roadmap.chapters.all():
+            for chapter in pathway.chapters.all():
                 for module in chapter.modules.all():
                     new_quiz = None
                     if module.practice:
@@ -755,7 +779,7 @@ def publish_roadmap_to_classroom(request):
                         )
                     module_map[module.id] = new_module
 
-            for module in roadmap.chapters.all().prefetch_related('modules'):
+            for module in pathway.chapters.all().prefetch_related('modules'):
                 for original_module in module.modules.all():
                     new_module = module_map[original_module.id]
                     new_module.prerequisites.set([
@@ -770,20 +794,20 @@ def publish_roadmap_to_classroom(request):
                 topic=topic,
                 master_scaffold=master_scaffold,
                 progress=0.0,
-                student_roadmap=student_roadmap
+                student_pathway=student_pathway
             )
 
-            created_roadmaps.append(student_roadmap)
+            created_pathways.append(student_pathway)
 
-        serialized_roadmaps = RoadmapSerializer(created_roadmaps, many=True).data
-        serialized_roadmap = RoadmapSerializer(roadmap).data
+        serialized_pathways = PathwaySerializer(created_pathways, many=True).data
+        serialized_pathway = PathwaySerializer(pathway).data
         return Response({
-            "message": "Roadmap and structure published to classroom successfully.",
-            "roadmap": serialized_roadmap
+            "message": "Pathway and structure published to classroom successfully.",
+            "pathway": serialized_pathway
         }, status=status.HTTP_201_CREATED)
 
-    except Roadmap.DoesNotExist:
-        return Response({"error": "Roadmap not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Pathway.DoesNotExist:
+        return Response({"error": "Pathway not found"}, status=status.HTTP_404_NOT_FOUND)
     except Classroom.DoesNotExist:
         return Response({"error": "Classroom not found"}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
@@ -791,13 +815,13 @@ def publish_roadmap_to_classroom(request):
 
 
 @api_view(['DELETE'])
-def delete_roadmap(request, roadmap_id):
+def delete_pathway(request, pathway_id):
     try:
-        roadmap = Roadmap.objects.get(pk=roadmap_id)
-        roadmap.delete()
-        return Response({"message": "Roadmap deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
-    except Roadmap.DoesNotExist:
-        return Response({"error": "Roadmap not found"}, status=status.HTTP_404_NOT_FOUND)
+        pathway = Pathway.objects.get(pk=pathway_id)
+        pathway.delete()
+        return Response({"message": "Pathway deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+    except Pathway.DoesNotExist:
+        return Response({"error": "Pathway not found"}, status=status.HTTP_404_NOT_FOUND)
 
 # -------------------- SUBJECT CRUD --------------------
 

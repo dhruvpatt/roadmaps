@@ -8,7 +8,7 @@ django.setup()
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Module, User, Content, Roadmap, Classroom, Quiz, Question, Message, Chapter, Subject
+from .models import Module, User, Content, Pathway, Classroom, Quiz, Question, Message, Chapter, Subject
 from django.conf import settings
 from datetime import datetime, timedelta
 import json
@@ -25,14 +25,14 @@ def classroom_analytics(request, classroom_id):
         classroom = Classroom.objects.get(pk=classroom_id)
         students = classroom.students.all()
 
-        total_pathways = Subject.objects.filter(classroom=classroom).values('student_roadmap').distinct().count()
+        total_pathways = Subject.objects.filter(classroom=classroom).values('student_pathway').distinct().count()
 
         quiz_scores = []
         for student in students:
-            subjects = Subject.objects.filter(classroom=classroom, student_roadmap__owner=student)
+            subjects = Subject.objects.filter(classroom=classroom, student_pathway__owner=student)
             for subject in subjects:
-                roadmap = subject.student_roadmap
-                for chapter in roadmap.chapters.all():
+                pathway = subject.student_pathway
+                for chapter in pathway.chapters.all():
                     for module in chapter.modules.all():
                         quiz = module.practice
                         if quiz and quiz.user == student and quiz.scores:
@@ -65,18 +65,18 @@ def classroom_student_details(request, classroom_id):
 
         for student in students:
             quiz_scores = []
-            roadmap_progress = []
+            pathway_progress = []
             feedback_notes = []
 
-            subjects = Subject.objects.filter(classroom=classroom, student_roadmap__owner=student)
+            subjects = Subject.objects.filter(classroom=classroom, student_pathway__owner=student)
             for subject in subjects:
-                roadmap = subject.student_roadmap
-                chapters = roadmap.chapters.all()
+                pathway = subject.student_pathway
+                chapters = pathway.chapters.all()
                 total_modules = sum(ch.modules.count() for ch in chapters)
                 completed_modules = sum(ch.modules.filter(status='completed').count() for ch in chapters)
 
                 if total_modules > 0:
-                    roadmap_progress.append((completed_modules / total_modules) * 100)
+                    pathway_progress.append((completed_modules / total_modules) * 100)
 
                 for chapter in chapters:
                     for module in chapter.modules.all():
@@ -94,7 +94,7 @@ def classroom_student_details(request, classroom_id):
                             feedback_notes.append(module.feedback)
 
             avg_quiz_score = round(sum(quiz_scores) / len(quiz_scores), 2) if quiz_scores else 0
-            avg_progress = round(sum(roadmap_progress) / len(roadmap_progress), 2) if roadmap_progress else 0
+            avg_progress = round(sum(pathway_progress) / len(pathway_progress), 2) if pathway_progress else 0
 
             student_data.append({
                 "name": f"{student.first_name} {student.last_name}",
@@ -183,17 +183,17 @@ def student_classroom_analytics(request):
         student = User.objects.get(pk=student_id)
         classroom = Classroom.objects.get(pk=classroom_id)
 
-        subjects = Subject.objects.filter(classroom=classroom, student_roadmap__owner=student)
+        subjects = Subject.objects.filter(classroom=classroom, student_pathway__owner=student)
         quiz_scores = []
-        roadmap_progress = []
+        pathway_progress = []
 
         for subject in subjects:
-            roadmap = subject.student_roadmap
-            chapters = roadmap.chapters.all()
+            pathway = subject.student_pathway
+            chapters = pathway.chapters.all()
             total_modules = sum(ch.modules.count() for ch in chapters)
             completed_modules = sum(ch.modules.filter(status='completed').count() for ch in chapters)
             if total_modules > 0:
-                roadmap_progress.append((completed_modules / total_modules) * 100)
+                pathway_progress.append((completed_modules / total_modules) * 100)
 
             for chapter in chapters:
                 for module in chapter.modules.all():
@@ -206,13 +206,13 @@ def student_classroom_analytics(request):
                             quiz_scores.append((score / total) * 100)
 
         avg_quiz_score = round(sum(quiz_scores) / len(quiz_scores), 2) if quiz_scores else 0
-        avg_progress = round(sum(roadmap_progress) / len(roadmap_progress), 2) if roadmap_progress else 0
+        avg_progress = round(sum(pathway_progress) / len(pathway_progress), 2) if pathway_progress else 0
 
         return Response({
             "student": f"{student.first_name} {student.last_name}",
             "classroom": classroom.name,
             "average_quiz_score_percent": avg_quiz_score,
-            "total_roadmaps": subjects.count(),
+            "total_pathways": subjects.count(),
             "average_pathway_progress_percent": avg_progress
         }, status=status.HTTP_200_OK)
 

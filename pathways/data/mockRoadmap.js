@@ -1,11 +1,11 @@
-const mockRoadmap = {
-    id: "roadmap-001",
+const mockPathway = {
+    id: "pathway-001",
     title: "Intro to Math",
     owner: "Tina Trent",
     mode: "casual",
     grade: "6-8",
     learningGoals: ["Understand basic algebra", "Solve simple equations"],
-    details: "A roadmap to build foundational math skills.",
+    details: "A pathway to build foundational math skills.",
     chapters: [
         {
             id: "chapter-0",
@@ -145,4 +145,4 @@ const mockRoadmap = {
     ]
 };
 
-export default mockRoadmap;
+export default mockPathway;

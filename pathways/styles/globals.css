@@ -61,7 +61,7 @@ body {
 .bg-animated-gradient {
   background: linear-gradient(270deg, #ffe48d, #ffbc92, #ffffff);
   background-size: 600% 600%;
-  animation: gradientShift 20s ease infinite;
+  animation: gradientShift 40s ease infinite;
 }
 
 @keyframes fadeIn {
@@ -77,6 +77,27 @@ body {
 
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out forwards;
+}
+
+
+.edge-hover path {
+  transition: stroke 0.2s ease, stroke-width 0.2s ease;
+}
+
+.edge-hover:hover path {
+  stroke: #0070f3 !important;
+  stroke-width: 3 !important;
+}
+
+.edge-connected path {
+  stroke: #0070f3 !important;
+  stroke-width: 3 !important;
+}
+
+.node-hovered {
+  filter: brightness(1.05);
+  transform: scale(1.03);
+  transition: transform 0.2s ease;
 }
 
 

@@ -2,7 +2,7 @@ import requests
 import json
 
 # Define the URL of your API endpoint
-# API_URL = 'http://localhost:8000/generate-roadmap/'  # Adjust this with the actual endpoint
+# API_URL = 'http://localhost:8000/generate-pathway/'  # Adjust this with the actual endpoint
 
 # # Prepare the data to send with the request (in the same format your API expects)
 # data = {
@@ -21,7 +21,7 @@ import json
 
 # # Check the response from the API
 # if response.status_code == 200:
-#     print("Roadmap generated successfully:")
+#     print("Pathway generated successfully:")
 #     print(json.dumps(response.json(), indent=4))
 # else:
 #     print(f"Error {response.status_code}: {response.text}")
@@ -67,10 +67,10 @@ import json
 
 import requests
 
-url = "http://localhost:8000/publish-roadmap-to-classroom/"  # Replace with actual URL
+url = "http://localhost:8000/publish-pathway-to-classroom/"  # Replace with actual URL
 payload = {
     "classroom_id": 1,
-    "roadmap_id": 1,
+    "pathway_id": 1,
     "topic": "Algebra",
     "master_scaffold": ""
 }

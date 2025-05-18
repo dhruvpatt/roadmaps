@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { BookOpen, BarChart2, CircleCheck } from "lucide-react";
-import PathwayCard from "@/components/pathways/pathways-card";
+import PathwayCard from "@/components/pathways/PathwaysCard";
 import { useRouter } from "next/navigation";
 
 export default function OverviewComponentStudent() {

@@ -1,16 +1,21 @@
 import React from "react"
 
-import PathwayCard from "@/components/pathways/pathways-card"
+import PathwayCard from "@/components/pathways/PathwaysCard"
 import { useRouter } from "next/navigation"
-import CreateRoadmapModal from "@/components/modals/CreateRoadmapModal"
+import CreatePathwayModal from "@/components/modals/CreatePathwayModal"
 import { useState, useEffect } from "react"
 import backendUrl from "@/backendUrl"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 
 export default function Pathways() {
   const router = useRouter()
-  const [showRoadmapModal, setShowRoadmapModal] = useState(false);
+  const [showPathwayModal, setShowPathwayModal] = useState(false);
   const [user, setUser] = useState({});
   const [pathways, setPathways] = useState([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const usr = JSON.parse(localStorage.getItem("user"));
@@ -19,62 +24,35 @@ export default function Pathways() {
     }
     setUser(usr);
 
-    fetchPathways(usr);
+    const savedQuery = localStorage.getItem("searchQuery") || "";
+    setSearchQuery(savedQuery);
+    fetchPathways(usr, 1, savedQuery);
+  }, []);
 
-  }, [])
-
-  const fetchPathways = async (usr) => {
-
+  const fetchPathways = async (usr, pageNum = 1, query = "") => {
+    if (pageNum < 1 || pageNum > totalPages) return;
+    setLoading(true);
     try {
-      const res = await fetch(`${backendUrl}/get-user-roadmaps/`, {
+      const res = await fetch(`${backendUrl}/get-user-pathways/?page=${pageNum}&search=${query}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: usr.id }),
       });
-      const ret = await res.json();
-      console.log("pathways", ret);
-      setPathways(ret);
+      if (!res.ok) return;
+      const data = await res.json();
+      setPathways(data.results);
+      setTotalPages(Math.max(1, Math.ceil(data.count / 15)));
+      setPage(pageNum);
     } catch (error) {
       console.error("Failed to fetch pathways", error);
+    } finally {
+      setLoading(false);
     }
-
   }
-  const mockPathways = [
-    {
-      id: 1,
-      title: "Algebra Fundamentals",
-      progress: 75,
-      chapters: 10,
-    },
-    {
-      id: 2,
-      title: "Introduction to Programming",
-      progress: 45,
-      chapters: 8,
-    },
-    {
-      id: 3,
-      title: "Physics Mechanics",
-      progress: 20,
-      chapters: 12,
-    },
-    {
-      id: 4,
-      title: "Chemistry Basics",
-      progress: 60,
-      chapters: 9,
-    },
-    {
-      id: 5,
-      title: "Biology Essentials",
-      progress: 50,
-      chapters: 7,
-    },
-  ]
 
-  const createRoadmap = async (data) => {
+  const createPathway = async (data) => {
     try {
-      const res = await fetch(`${backendUrl}/generate-roadmap/`, {
+      const res = await fetch(`${backendUrl}/generate-pathway/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -82,41 +60,53 @@ export default function Pathways() {
 
       const ret = await res.json();
       console.log("ret", ret);
-
-      return ret?.roadmap;
+      fetchPathways(user, 1, searchQuery);
+      return ret?.pathway;
     } catch (error) {
-      console.error("Failed to create roadmap", error);
+      console.error("Failed to create pathway", error);
     }
   }
 
-  console.log("user", user);
+  const handleSearch = (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    localStorage.setItem("searchQuery", query);
+    fetchPathways(user, 1, query);
+  }
 
   return (
-    <>
-      <div className="flex-1 p-6">
-        <h1 className="text-black text-3xl md:text-4xl font-bold mb-2">
-          Your Pathways
-        </h1>
-        <p className="text-gray-600 text-lg md:text-2xl mb-8">
-          View and manage your personalized learning roadmaps
-        </p>
+    <div className="flex-1 p-6 text-gray-800">
+      <h1 className="text-black text-3xl md:text-4xl font-bold mb-2">
+        Your Pathways
+      </h1>
+      <p className="text-gray-600 text-lg md:text-2xl mb-8">
+        View and manage your personalized learning pathways
+      </p>
 
-        {/* Grid with "Create" first */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Create Pathway Card FIRST */}
-          <button
-            onClick={() => {
-              setShowRoadmapModal(true);
-            }}
-            className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-4 text-center text-gray-500 hover:bg-amber-100 cursor-pointer transition"
-          >
-            <p className="text-sm md:text-base font-medium text-gray-600">
-              + Create a new learning pathway
-            </p>
-          </button>
+      <input
+        type="text"
+        placeholder="Search pathways..."
+        value={searchQuery}
+        onChange={handleSearch}
+        className="w-full p-2 mb-4 border border-gray-300 rounded text-gray-800"
+      />
 
-          {/* Actual Pathway Cards */}
-          {pathways.map((pathway) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <button
+          onClick={() => setShowPathwayModal(true)}
+          className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-4 text-center text-gray-500 hover:bg-amber-100 cursor-pointer transition"
+        >
+          <p className="text-sm md:text-base font-medium text-gray-600">
+            + Create a new learning pathway
+          </p>
+        </button>
+
+        {loading ? (
+          <div className="col-span-full text-center py-10">Loading...</div>
+        ) : pathways.length === 0 ? (
+          <div className="col-span-full text-center text-gray-500 italic py-10">No pathways found.</div>
+        ) : (
+          pathways.map((pathway) => (
             <PathwayCard
               key={pathway.id}
               title={pathway.title}
@@ -126,15 +116,34 @@ export default function Pathways() {
               user={user}
               published={pathway.published}
             />
-          ))}
-        </div>
-        <CreateRoadmapModal
-          isOpen={showRoadmapModal}
-          onClose={() => setShowRoadmapModal(false)}
-          onCreate={async (data) => await createRoadmap(data)}
-          user={user}
-        />
+          ))
+        )}
       </div>
-    </>
-    )
+
+      <div className="mt-6 flex justify-center space-x-4 text-gray-800">
+        <button
+          onClick={() => fetchPathways(user, page - 1, searchQuery)}
+          disabled={page <= 1}
+          className="p-2 rounded bg-gray-200 disabled:opacity-50"
+        >
+          <ChevronLeft />
+        </button>
+        <span className="self-center">Page {page} of {totalPages}</span>
+        <button
+          onClick={() => fetchPathways(user, page + 1, searchQuery)}
+          disabled={page >= totalPages}
+          className="p-2 rounded bg-gray-200 disabled:opacity-50"
+        >
+          <ChevronRight />
+        </button>
+      </div>
+
+      <CreatePathwayModal
+        isOpen={showPathwayModal}
+        onClose={() => setShowPathwayModal(false)}
+        onCreate={async (data) => await createPathway(data)}
+        user={user}
+      />
+    </div>
+  )
 }

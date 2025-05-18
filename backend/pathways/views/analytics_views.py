@@ -3,29 +3,29 @@
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from ..models import User, Roadmap
+from ..models import User, Pathway
 
 
 class StudentAnalyticsAPIView(APIView):
     def get(self, request, user_id):
         try:
             user = User.objects.get(pk=user_id)
-            all_roadmaps = user.roadmaps.all()
-            total = all_roadmaps.count()
+            all_pathways = user.pathways.all()
+            total = all_pathways.count()
             completed = 0
-            active_roadmaps = 0
+            active_pathways = 0
 
-            for roadmap in all_roadmaps:
-                if all(ch.status == 'completed' for ch in roadmap.chapters.all()):
+            for pathway in all_pathways:
+                if all(ch.status == 'completed' for ch in pathway.chapters.all()):
                     completed += 1
                 else:
-                    active_roadmaps += 1
+                    active_pathways += 1
 
             return Response({
                 "user": user.username,
-                "total_roadmaps": total,
-                "completed_roadmaps": completed,
-                "active_roadmaps": active_roadmaps
+                "total_pathways": total,
+                "completed_pathways": completed,
+                "active_pathways": active_pathways
             })
         except User.DoesNotExist:
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -51,16 +51,16 @@ class TeacherAnalyticsAPIView(APIView):
                     student_ids.add(student.id)
             total_students = len(student_ids)
 
-            # Get only teacher's own roadmaps
-            teacher_roadmaps = Roadmap.objects.filter(owner=user)
-            total_roadmaps = teacher_roadmaps.count()
-            active_pathways = teacher_roadmaps.exclude(chapters__status='completed').distinct().count()
+            # Get only teacher's own pathways
+            teacher_pathways = Pathway.objects.filter(owner=user)
+            total_pathways = teacher_pathways.count()
+            active_pathways = teacher_pathways.exclude(chapters__status='completed').distinct().count()
 
             return Response({
                 "user": user.username,
                 "classrooms": classroom_count,
                 "total_students": total_students,
-                "total_roadmaps": total_roadmaps,
+                "total_pathways": total_pathways,
                 "active_pathways": active_pathways
             })
 

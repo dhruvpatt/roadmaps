@@ -112,7 +112,7 @@ class ModuleStructure(BaseModel):
     prerequisite_modules: List[str] = Field(default_factory=list)
     next_modules: List[str] = Field(default_factory=list)
 
-class RoadmapStructure(BaseModel):
+class PathwayStructure(BaseModel):
     chapters: List[ChapterStructure]
     modules: List[ModuleStructure]
 

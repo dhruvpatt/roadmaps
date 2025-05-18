@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { Users, BookOpen, BarChart2 } from "lucide-react";
-import PathwayCard from "@/components/pathways/pathways-card";
-import CreateRoadmapModal from "@/components/modals/CreateRoadmapModal";
+import PathwayCard from "@/components/pathways/PathwaysCard";
+import CreatePathwayModal from "@/components/modals/CreatePathwayModal";
 import { useRouter } from "next/navigation";
 import backendUrl from "@/backendUrl";
 
 export default function OverviewComponent({ classroomCode, classroomId }) {
   const router = useRouter();
-  const [showRoadmapModal, setShowRoadmapModal] = useState(false);
+  const [showPathwayModal, setShowPathwayModal] = useState(false);
   const [user, setUser] = useState({});
   const [classroom, setClassroom] = useState({});
   const [stats, setStats] = useState([]);
@@ -38,12 +38,12 @@ export default function OverviewComponent({ classroomCode, classroomId }) {
       console.log("Classroom response:", ret);
 
       setClassroom(ret.classroom || {});
-      setPathways(Array.isArray(ret.roadmaps) ? ret.roadmaps : []);
+      setPathways(Array.isArray(ret.pathways) ? ret.pathways : []);
       console.log("pathways", pathways);
       const studentsCount = Array.isArray(ret.classroom?.students)
         ? ret.classroom.students.length
         : 0;
-      const roadmapCount = Array.isArray(ret.roadmaps) ? ret.roadmaps.length : 0;
+      const pathwayCount = Array.isArray(ret.pathways) ? ret.pathways.length : 0;
 
       const stat = [
         {
@@ -55,7 +55,7 @@ export default function OverviewComponent({ classroomCode, classroomId }) {
         },
         {
           label: "Total Pathways",
-          value: roadmapCount,
+          value: pathwayCount,
           icon: BookOpen,
           bg: "bg-green-100",
           text: "text-green-700",
@@ -75,19 +75,19 @@ export default function OverviewComponent({ classroomCode, classroomId }) {
     }
   };
 
-  const createRoadmap = async (data) => {
+  const createPathway = async (data) => {
     try {
-      const res = await fetch(`${backendUrl}/generate-roadmap/`, {
+      const res = await fetch(`${backendUrl}/generate-pathway/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
 
       const ret = await res.json();
-      console.log("Generated roadmap:", ret);
-      return ret?.roadmap;
+      console.log("Generated pathway:", ret);
+      return ret?.pathway;
     } catch (error) {
-      console.error("Failed to create roadmap", error);
+      console.error("Failed to create pathway", error);
     }
   };
 
@@ -116,7 +116,7 @@ export default function OverviewComponent({ classroomCode, classroomId }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Create Pathway Card FIRST */}
         <button
-          onClick={() => setShowRoadmapModal(true)}
+          onClick={() => setShowPathwayModal(true)}
           className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-4 text-center text-gray-500 hover:bg-amber-100 cursor-pointer transition"
         >
           <p className="text-sm md:text-base font-medium text-gray-600">
@@ -138,10 +138,10 @@ export default function OverviewComponent({ classroomCode, classroomId }) {
       </div>
 
       {/* Create Modal */}
-      <CreateRoadmapModal
-        isOpen={showRoadmapModal}
-        onClose={() => setShowRoadmapModal(false)}
-        onCreate={async (data) => await createRoadmap(data)}
+      <CreatePathwayModal
+        isOpen={showPathwayModal}
+        onClose={() => setShowPathwayModal(false)}
+        onCreate={async (data) => await createPathway(data)}
         user={user}
         classroomCode={classroomCode}
       />

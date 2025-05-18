@@ -7,8 +7,8 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import authenticate
-from .models import User, Roadmap, Chapter, Question, Quiz, Module, Content, Message, Classroom, Subject
-from .serializers import (UserSerializer, RoadmapSerializer, ChapterSerializer,
+from .models import User, Pathway, Chapter, Question, Quiz, Module, Content, Message, Classroom, Subject
+from .serializers import (UserSerializer, PathwaySerializer, ChapterSerializer,
                           QuestionSerializer, QuizSerializer, ModuleSerializer,
                           ContentSerializer, MessageSerializer, ClassroomSerializer,
                           SubjectSerializer, ClassroomDetailSerializer)
@@ -24,22 +24,22 @@ class StudentAnalyticsAPIView(APIView):
     def get(self, request, user_id):
         try:
             user = User.objects.get(pk=user_id)
-            all_roadmaps = user.roadmaps.all()
-            total = all_roadmaps.count()
+            all_pathways = user.pathways.all()
+            total = all_pathways.count()
             completed = 0
-            active_roadmaps = 0
+            active_pathways = 0
 
-            for roadmap in all_roadmaps:
-                if all(ch.status == 'completed' for ch in roadmap.chapters.all()):
+            for pathway in all_pathways:
+                if all(ch.status == 'completed' for ch in pathway.chapters.all()):
                     completed += 1
                 else:
-                    active_roadmaps += 1
+                    active_pathways += 1
 
             return Response({
                 "user": user.username,
-                "total_roadmaps": total,
-                "completed_roadmaps": completed,
-                "active_roadmaps": active_roadmaps
+                "total_pathways": total,
+                "completed_pathways": completed,
+                "active_pathways": active_pathways
             })
         except User.DoesNotExist:
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -64,16 +64,16 @@ class TeacherAnalyticsAPIView(APIView):
                     student_ids.add(student.id)
             total_students = len(student_ids)
 
-            # Get only teacher's own roadmaps
-            teacher_roadmaps = Roadmap.objects.filter(owner=user)
-            total_roadmaps = teacher_roadmaps.count()
-            active_pathways = teacher_roadmaps.exclude(chapters__status='completed').distinct().count()
+            # Get only teacher's own pathways
+            teacher_pathways = Pathway.objects.filter(owner=user)
+            total_pathways = teacher_pathways.count()
+            active_pathways = teacher_pathways.exclude(chapters__status='completed').distinct().count()
 
             return Response({
                 "user": user.username,
                 "classrooms": classroom_count,
                 "total_students": total_students,
-                "total_roadmaps": total_roadmaps,
+                "total_pathways": total_pathways,
                 "active_pathways": active_pathways
             })
 
@@ -88,10 +88,10 @@ class UserViewSet(ModelViewSet):
     serializer_class = UserSerializer
 
     @action(detail=True, methods=['get'])
-    def roadmaps(self, request, pk=None):
+    def pathways(self, request, pk=None):
         user = self.get_object()
-        roadmaps = user.roadmaps.all()
-        serializer = RoadmapSerializer(roadmaps, many=True)
+        pathways = user.pathways.all()
+        serializer = PathwaySerializer(pathways, many=True)
         return Response(serializer.data)
 
     @action(detail=True, methods=['get'])
@@ -105,15 +105,15 @@ class UserViewSet(ModelViewSet):
         return Response(serializer.data)
 
 
-# Roadmap ViewSet
-class RoadmapViewSet(ModelViewSet):
-    queryset = Roadmap.objects.all()
-    serializer_class = RoadmapSerializer
+# Pathway ViewSet
+class PathwayViewSet(ModelViewSet):
+    queryset = Pathway.objects.all()
+    serializer_class = PathwaySerializer
 
     @action(detail=True, methods=['get'])
     def chapters(self, request, pk=None):
-        roadmap = self.get_object()
-        chapters = roadmap.chapters.all()
+        pathway = self.get_object()
+        chapters = pathway.chapters.all()
         serializer = ChapterSerializer(chapters, many=True)
         return Response(serializer.data)
 
@@ -334,14 +334,14 @@ def user_detail(request, pk):
 
 
 @api_view(['GET'])
-def user_roadmaps(request, pk):
+def user_pathways(request, pk):
     try:
         user = User.objects.get(pk=pk)
     except User.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    roadmaps = user.roadmaps.all()
-    serializer = RoadmapSerializer(roadmaps, many=True)
+    pathways = user.pathways.all()
+    serializer = PathwaySerializer(pathways, many=True)
     return Response(serializer.data)
 
 
@@ -402,14 +402,14 @@ def user_classrooms(request, pk):
 
 
 @api_view(['GET', 'POST'])
-def roadmap_list(request):
+def pathway_list(request):
     if request.method == 'GET':
-        roadmaps = Roadmap.objects.all()
-        serializer = RoadmapSerializer(roadmaps, many=True)
+        pathways = Pathway.objects.all()
+        serializer = PathwaySerializer(pathways, many=True)
         return Response(serializer.data)
 
     elif request.method == 'POST':
-        serializer = RoadmapSerializer(data=request.data)
+        serializer = PathwaySerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -417,45 +417,45 @@ def roadmap_list(request):
 
 
 @api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
-def roadmap_detail(request, pk):
+def pathway_detail(request, pk):
     try:
-        roadmap = Roadmap.objects.get(pk=pk)
-    except Roadmap.DoesNotExist:
+        pathway = Pathway.objects.get(pk=pk)
+    except Pathway.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'GET':
-        serializer = RoadmapSerializer(roadmap)
-        print("roadmap get", serializer.data)
+        serializer = PathwaySerializer(pathway)
+        print("pathway get", serializer.data)
         return Response(serializer.data)
 
     elif request.method == 'PUT':
-        serializer = RoadmapSerializer(roadmap, data=request.data)
+        serializer = PathwaySerializer(pathway, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     elif request.method == 'PATCH':
-        serializer = RoadmapSerializer(roadmap, data=request.data, partial=True)
+        serializer = PathwaySerializer(pathway, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     elif request.method == 'DELETE':
-        roadmap.delete()
+        pathway.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 
 @api_view(['GET'])
-def roadmap_chapters(request, pk):
+def pathway_chapters(request, pk):
     try:
-        roadmap = Roadmap.objects.get(pk=pk)
-    except Roadmap.DoesNotExist:
+        pathway = Pathway.objects.get(pk=pk)
+    except Pathway.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    chapters = roadmap.chapters.all()
+    chapters = pathway.chapters.all()
     serializer = ChapterSerializer(chapters, many=True)
     return Response(serializer.data)
 
@@ -870,66 +870,6 @@ def message_detail(request, pk):
         message.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
-@api_view(['POST'])
-def get_user_classrooms(request):
-    user_id = request.data.get('user_id')
-
-    if not user_id:
-        return Response({"error": "user_id is required"}, status=status.HTTP_400_BAD_REQUEST)
-
-    try:
-        user = User.objects.get(id=user_id)
-    except User.DoesNotExist:
-        return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-
-    if user.role == User.TEACHER:
-        classrooms = user.teaching_classrooms.all()
-    else:
-        classrooms = user.enrolled_classrooms.all()
-
-    serializer = ClassroomSerializer(classrooms, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-# @api_view(['POST'])
-# def get_classroom(request):
-    
-#     classroom_id = request.data.get('classroom_id')
-#     user_id = request.data.get("user_id")
-#     print("get classroom hit")
-#     if not classroom_id:
-#         return Response({"error": "classroom_id is required"}, status=status.HTTP_400_BAD_REQUEST)
-    
-#     if not user_id:
-#         return Response({"error": "user_id is required"}, status=status.HTTP_400_BAD_REQUEST)
-    
-#     try: 
-#         classroom = Classroom.objects.get(id=classroom_id)
-#         serializer = ClassroomSerializer(classroom)
-#         return Response(serializer.data, status=status.HTTP_200_OK)
-#     except Classroom.DoesNotExist:
-#         return Response({"error": "Classroom not found"}, status=status.HTTP_404_NOT_FOUND)
-    
-# @api_view(['POST'])
-# def get_classroom(request):
-#     classroom_id = request.data.get('classroom_id')
-#     user_id = request.data.get("user_id")
-
-#     print("get classroom hit")
-
-#     if not classroom_id:
-#         return Response({"error": "classroom_id is required"}, status=status.HTTP_400_BAD_REQUEST)
-
-#     if not user_id:
-#         return Response({"error": "user_id is required"}, status=status.HTTP_400_BAD_REQUEST)
-
-#     try:
-#         classroom = Classroom.objects.get(id=classroom_id)
-#         serializer = ClassroomDetailSerializer(classroom)
-#         return Response(serializer.data, status=status.HTTP_200_OK)
-#     except Classroom.DoesNotExist:
-#         return Response({"error": "Classroom not found"}, status=status.HTTP_404_NOT_FOUND)
 @api_view(['POST'])
 def get_classroom(request):
     classroom_id = request.data.get('classroom_id')
@@ -946,16 +886,16 @@ def get_classroom(request):
     try:
         classroom = Classroom.objects.get(id=classroom_id)
 
-        # ✅ Get all roadmaps directly linked to the classroom
-        roadmaps = Roadmap.objects.filter(classroom=classroom)
+        # ✅ Get all pathways directly linked to the classroom
+        pathways = Pathway.objects.filter(classroom=classroom)
 
         # Serialize
         classroom_serializer = ClassroomDetailSerializer(classroom)
-        roadmap_serializer = RoadmapSerializer(roadmaps, many=True)
+        pathway_serializer = PathwaySerializer(pathways, many=True)
 
         return Response({
             "classroom": classroom_serializer.data,
-            "roadmaps": roadmap_serializer.data
+            "pathways": pathway_serializer.data
         }, status=status.HTTP_200_OK)
 
     except Classroom.DoesNotExist:
@@ -963,22 +903,22 @@ def get_classroom(request):
     
 @api_view(['POST'])
 @transaction.atomic
-def assign_roadmap_to_user(request):
-    roadmap_id = request.data.get("roadmap_id")
+def assign_pathway_to_user(request):
+    pathway_id = request.data.get("pathway_id")
 
     try:
-        roadmap = Roadmap.objects.get(pk=roadmap_id)
-        roadmap.published = True
-        roadmap.save()
+        pathway = Pathway.objects.get(pk=pathway_id)
+        pathway.published = True
+        pathway.save()
 
-        serialized = RoadmapSerializer(roadmap)
+        serialized = PathwaySerializer(pathway)
         return Response({
-            "message": "Roadmap successfully marked as published.",
-            "roadmap": serialized.data
+            "message": "Pathway successfully marked as published.",
+            "pathway": serialized.data
         }, status=status.HTTP_200_OK)
 
-    except Roadmap.DoesNotExist:
-        return Response({"error": "Roadmap not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Pathway.DoesNotExist:
+        return Response({"error": "Pathway not found"}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

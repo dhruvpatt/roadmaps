@@ -64,7 +64,7 @@ def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.get_role_display()})"
 
 
-class Roadmap(models.Model):
+class Pathway(models.Model):
     STRICT = 'strict'
     CASUAL = 'casual'
     MODE_CHOICES = [
@@ -72,8 +72,8 @@ class Roadmap(models.Model):
         (CASUAL, 'Casual'),
     ]
 
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='roadmaps')
-    classroom = models.ForeignKey('Classroom', on_delete=models.CASCADE, related_name='roadmaps', blank=True, null=True)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pathways')
+    classroom = models.ForeignKey('Classroom', on_delete=models.CASCADE, related_name='pathways', blank=True, null=True)
     details = models.CharField(max_length=10000, blank=True)
     mode = models.CharField(max_length=10, choices=MODE_CHOICES, default=CASUAL)
     title = models.CharField(max_length=255)
@@ -82,12 +82,12 @@ class Roadmap(models.Model):
     progress = models.IntegerField(default=0)
     published = models.BooleanField(default=False)
     def __str__(self):
-        return f"Roadmap by {self.owner.username}"
+        return f"Pathway by {self.owner.username}"
 
 
 class Chapter(models.Model):
     name = models.CharField(max_length=255)
-    roadmap = models.ForeignKey(Roadmap, on_delete=models.CASCADE, related_name='chapters')
+    pathway = models.ForeignKey(Pathway, on_delete=models.CASCADE, related_name='chapters')
     status = models.CharField(max_length=50, default='not_started')
     next_chapters = models.ManyToManyField('self', blank=True, symmetrical=False, related_name='previous_chapters')
     chapter_learning_goals = models.JSONField(blank=True, default=list)  # Use JSONField for SQLite
@@ -191,7 +191,7 @@ class Subject(models.Model):
     topic = models.CharField(max_length=255)
     master_scaffold = models.TextField()
     progress = models.FloatField(default=0.0)
-    student_roadmap = models.ForeignKey(Roadmap, on_delete=models.CASCADE, related_name='subjects')
+    student_pathway = models.ForeignKey(Pathway, on_delete=models.CASCADE, related_name='subjects')
 
     def __str__(self):
         return f"{self.topic} in {self.classroom.name}"
