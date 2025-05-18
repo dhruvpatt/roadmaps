@@ -195,6 +195,7 @@ class GenerationAgent:
             response_model=ChapterListStructure,
             mode="parsed"
         )
+        print("Result chapters", result.chapters)
         return result.chapters
 
     def generate_modules_for_chapter(self, chapter_name, perception_data, topic, learning_goals, grade, mode, complexity_level):
