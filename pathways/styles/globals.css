@@ -13,6 +13,7 @@
       transform: translateY(100%);
       opacity: 0;
     }
+
     100% {
       transform: translateY(0%);
       opacity: 1;
@@ -50,9 +51,11 @@ body {
   0% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
+
   100% {
     background-position: 0% 50%;
   }
@@ -69,6 +72,7 @@ body {
     opacity: 0;
     transform: translateX(20px);
   }
+
   100% {
     opacity: 1;
     transform: translateX(0);
@@ -84,20 +88,49 @@ body {
   transition: stroke 0.2s ease, stroke-width 0.2s ease;
 }
 
-.edge-hover:hover path {
-  stroke: #0070f3 !important;
-  stroke-width: 3 !important;
+.react-flow__edge path {
+  stroke-width: 3px;
+  stroke: #999;
+  transition: stroke 0.2s ease, stroke-width 0.2s ease;
 }
 
-.edge-connected path {
+
+.edge-connected path,
+.edge-hover:hover path {
   stroke: #0070f3 !important;
-  stroke-width: 3 !important;
+  stroke-width: 5px !important;
+}
+
+.node-hovered::before {
+  content: '';
+  position: absolute;
+  top: -2px; left: -2px; right: -2px; bottom: -2px;
+  border-radius: inherit;
+  z-index: -1;
+  background: linear-gradient(90deg, #ffcf33, #ff647c, #ffcf33);
+  background-size: 300% 300%;
+  animation: gradientShift 3s ease infinite;
 }
 
 .node-hovered {
   filter: brightness(1.05);
   transform: scale(1.03);
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+  box-shadow: 0 0 8px 2px rgba(133, 144, 247, 0.6),
+    0 0 12px 4px rgba(184, 179, 255, 0.4);
 }
 
 
+.react-flow__node {
+  z-index: 1 !important;
+}
+
+.react-flow__edge path {
+  z-index: 999 !important;
+  pointer-events: visibleStroke;
+}
+
+.react-flow__node {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

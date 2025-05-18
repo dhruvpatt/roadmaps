@@ -255,7 +255,7 @@ useEffect(() => {
 
       {pathway?.chapters?.length > 0 && (
         <div className="sticky w-full top-[60px] z-20 bg-white pt-3 pb-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold mb-2 px-6 text-gray-700">Module Chapters</h2>
+          <h2 className="text-lg font-semibold mb-2 px-6 text-gray-700 text-center">Module Chapters</h2>
 
           {/* Position Indicator Bar */}
           <div className="w-full flex justify-center items-center text-sm font-medium text-gray-600 mb-1">

@@ -9,7 +9,7 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 import { nodeTypes as defaultNodeTypes } from "@/components/pathways/PathwayNode";
 
-
+import FloatingEdge from './FloatingEdge';
 
 const isModuleUnlocked = (module, moduleMap) => {
   return (module.prereq || []).every(
@@ -17,17 +17,15 @@ const isModuleUnlocked = (module, moduleMap) => {
   );
 };
 
-const InnerGraph = ({
-  data,
-  viewMode = "student",
-  published = false,
-}) => {
+const edgeTypes = {
+  floating: FloatingEdge,
+};
 
-  // console.log("GRAPH DATA:", data)
-
+const InnerGraph = ({ data, viewMode = "student", published = false }) => {
   const { fitView } = useReactFlow();
   const isTeacher = viewMode === "teacher";
   const [hoveredNodeId, setHoveredNodeId] = React.useState(null);
+
 
 
   const { nodes, edges } = useMemo(() => {
@@ -36,10 +34,10 @@ const InnerGraph = ({
     const nodes = [];
     const edges = [];
     const moduleMap = new Map();
+    const positionMap = new Map();
     const chapter = data.chapter;
     const modules = chapter.modules || [];
 
-    // Step 1: Augment modules with fallback linear dependencies
     const modulesWithFallbackDeps = modules.map((mod, index) => {
       const prevId = index > 0 ? modules[index - 1].id : null;
       const augmentedPrereqs = new Set(mod.prerequisites || []);
@@ -47,130 +45,154 @@ const InnerGraph = ({
       return { ...mod, prereq: Array.from(augmentedPrereqs) };
     });
 
-    // Step 2: Compute compact column layout using topological sort
-    const moduleMapLocal = new Map(modulesWithFallbackDeps.map((m) => [m.id, m]));
-    const moduleColumns = new Map();
-    const visited = new Set();
+    const sortedModules = [...modulesWithFallbackDeps].sort((a, b) => a.id - b.id);
 
-    const assignColumn = (mod) => {
-      if (visited.has(mod.id)) return moduleColumns.get(mod.id);
-      visited.add(mod.id);
+    const xSpacing = 280;
+    const ySpacing = 200;
+    const positions = new Map();
 
-      const prereqCols = (mod.prereq || [])
-        .map((pid) => moduleMapLocal.get(parseInt(pid)))
-        .filter(Boolean)
-        .map(assignColumn);
+    const levels = new Map();
 
-      const col = prereqCols.length > 0 ? Math.max(...prereqCols) + 1 : 0;
-      moduleColumns.set(mod.id, col);
-      return col;
-    };
+    sortedModules.forEach((mod, index) => {
+      const depth = Math.floor(Math.log2(index + 1));
+      const posInLevel = index - (2 ** depth - 1);
+      const nodesInLevel = 2 ** depth;
 
-    modulesWithFallbackDeps.forEach(assignColumn);
+      const x = (posInLevel - (nodesInLevel - 1) / 2) * xSpacing;
+      const y = depth * ySpacing;
 
-    // Step 3: Group by columns
-    const columns = {};
-    modulesWithFallbackDeps.forEach((m) => {
-      const col = moduleColumns.get(m.id) ?? 0;
-      if (!columns[col]) columns[col] = [];
-      columns[col].push(m);
+      positions.set(mod.id, { x, y });
+      positionMap.set(mod.id.toString(), { x, y });
+
+      if (!levels.has(depth)) levels.set(depth, []);
+      levels.get(depth).push(mod);
     });
 
-    // Step 4: Generate nodes in zig-zag layout
-    const xSpacing = 260;
-    const ySpacing = 140;
-    const maxColumnHeight = Math.max(...Object.values(columns).map(c => c.length));
+    sortedModules.forEach((mod) => {
+      const pos = positions.get(mod.id);
+      if (!pos) return;
 
-    Object.entries(columns).forEach(([colStr, mods], colIdx) => {
-      const reverse = colIdx % 2 === 1;
-      const offsetX = colIdx * xSpacing;
-      const startY = (maxColumnHeight - mods.length) * ySpacing / 2;
+      moduleMap.set(mod.id, mod);
 
-      mods.forEach((mod, i) => {
-        const idx = reverse ? mods.length - 1 - i : i;
-        const y = startY + idx * ySpacing;
-        const x = offsetX;
-        const hue = (mod.chapter * 60) % 360;
-        const lightness = 85 - colIdx * 8;
+      const hue = (mod.chapter * 60) % 360;
+      const lightness = 80;
 
-        moduleMap.set(mod.id, mod);
-
-        nodes.push({
-          id: mod.id.toString(),
-          type: "pathwayNode",
-          position: { x, y },
-          data: {
-            label: mod.name,
-            status: mod.status ?? "not_started",
-            description: mod.learning_goals?.[0] || "",
-            id: mod.id,
-            unlocked: true,
-          },
-          style: {
-            backgroundColor: `hsl(${hue}, 70%, ${lightness}%)`,
-            borderRadius: 8,
-            padding: 10,
-          },
-        });
+      nodes.push({
+        id: mod.id.toString(),
+        type: "pathwayNode",
+        position: pos,
+        data: {
+          label: mod.name,
+          status: mod.status ?? "not_started",
+          description: mod.learning_goals?.[0] || "",
+          id: mod.id,
+          unlocked: true,
+        },
+        style: {
+          backgroundColor: `hsl(${hue}, 70%, ${lightness}%)`,
+          borderRadius: 8,
+          padding: 4,
+        },
       });
     });
 
-    // Step 5: Add explicit and fallback edges
-    modules.forEach((mod, idx) => {
+    sortedModules.forEach((mod, idx) => {
       const sourceId = mod.id.toString();
+      const sourcePos = positionMap.get(sourceId);
 
-      // Explicit edges
+      // Log base source position
+      console.log(`[NODE ${sourceId}] source node position:`, sourcePos);
+
+      // Explicit next_modules
       (mod.next_modules || []).forEach((targetId) => {
         const targetStr = targetId.toString();
-        if (moduleMap.has(targetId)) {
+        const targetPos = positionMap.get(targetStr);
+
+        if (moduleMap.has(targetId) && sourcePos && targetPos) {
+          const dx = targetPos.x - sourcePos.x;
+          const dy = targetPos.y - sourcePos.y;
+
+          const sourcePosition = Math.abs(dx) > Math.abs(dy)
+            ? dx > 0 ? 'right' : 'left'
+            : dy > 0 ? 'bottom' : 'top';
+          const targetPosition = Math.abs(dx) > Math.abs(dy)
+            ? dx > 0 ? 'left' : 'right'
+            : dy > 0 ? 'top' : 'bottom';
+
+          console.log(`[EDGE] ${sourceId} -> ${targetStr}`);
+          console.log(`  Source:`, sourcePos);
+          console.log(`  Target:`, targetPos);
+          console.log(`  dx = ${dx}, dy = ${dy}`);
+          console.log(`  Handles: source ${sourcePosition}, target ${targetPosition}`);
+
           edges.push({
             id: `e-${sourceId}-${targetStr}`,
             source: sourceId,
             target: targetStr,
-            type: "straight",
+            sourceHandle: `source-${sourcePosition}`,  // ← use the computed direction
+            targetHandle: `target-${targetPosition}`,  // ← same here
+            type: "floating",
             animated: true,
-            className: "edge-hover", // add this for hover animation
-            style: { stroke: "#999", strokeWidth: 2 },
+            className: "edge-connected",
+            style: { stroke: "#999" },
             markerEnd: {
-              type: "arrowclosed",
-              width: 12,
-              height: 12,
-              color: "#555",
-            },
+              type: 'arrowclosed',
+              width: 8,
+              height: 8,
+              color: '#555',
+            }
           });
         }
       });
 
-      // Fallback linear edge
-      if (idx < modules.length - 1) {
-        const nextMod = modules[idx + 1];
+      // Fallback: link to next module in list
+      if (idx < sortedModules.length - 1) {
+        const nextMod = sortedModules[idx + 1];
         const nextId = nextMod.id.toString();
-
         const alreadyLinked = mod.next_modules?.includes(nextMod.id);
-        if (!alreadyLinked && moduleMap.has(nextMod.id)) {
+        const targetPos = positionMap.get(nextId);
+
+        if (!alreadyLinked && moduleMap.has(nextMod.id) && sourcePos && targetPos) {
+          const dx = targetPos.x - sourcePos.x;
+          const dy = targetPos.y - sourcePos.y;
+
+          const sourcePosition = Math.abs(dx) > Math.abs(dy)
+            ? dx > 0 ? 'right' : 'left'
+            : dy > 0 ? 'bottom' : 'top';
+          const targetPosition = Math.abs(dx) > Math.abs(dy)
+            ? dx > 0 ? 'left' : 'right'
+            : dy > 0 ? 'top' : 'bottom';
+
+          console.log(`[FALLBACK EDGE] ${sourceId} -> ${nextId}`);
+          console.log(`  Source:`, sourcePos);
+          console.log(`  Target:`, targetPos);
+          console.log(`  dx = ${dx}, dy = ${dy}`);
+          console.log(`  Handles: source ${sourcePosition}, target ${targetPosition}`);
+
           edges.push({
             id: `e-${sourceId}-${nextId}-fallback`,
             source: sourceId,
             target: nextId,
-            type: "straight",
-            className: "edge-hover",
-            style: { stroke: "#bbb", strokeWidth: 1, strokeDasharray: "5,3" },
+            sourceHandle: `source-${sourcePosition}`,
+            targetHandle: `target-${targetPosition}`,
+            type: "floating",
+            animated: true,
+            className: "edge-connected",
+            style: { stroke: "#bbb", strokeDasharray: "5,3" },
             markerEnd: {
-              type: "arrowclosed",
-              width: 12,
-              height: 12,
-              color: "#555",
-            },
+              type: 'arrowclosed',
+              width: 8,
+              height: 8,
+              color: '#555',
+            }
           });
-
         }
       }
     });
 
+
     return { nodes, edges };
   }, [data, viewMode, published]);
-
-
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -188,25 +210,19 @@ const InnerGraph = ({
       edges={edges.map((e) => ({
         ...e,
         className:
-          hoveredNodeId &&
-            (e.source === hoveredNodeId || e.target === hoveredNodeId)
+          hoveredNodeId && (e.source === hoveredNodeId || e.target === hoveredNodeId)
             ? "edge-connected"
             : "",
       }))}
       onNodeMouseEnter={(_, node) => setHoveredNodeId(node.id)}
       onNodeMouseLeave={() => setHoveredNodeId(null)}
       nodeTypes={defaultNodeTypes}
+      edgeTypes={edgeTypes}
       fitView
       defaultEdgeOptions={{
-        type: "smoothstep",
+        type: "floating",
         animated: true,
         style: { stroke: "#555", strokeWidth: 2 },
-        markerEnd: {
-          type: "arrowclosed",
-          width: 12,
-          height: 12,
-          color: "#555",
-        },
       }}
     >
       <Background />
@@ -214,7 +230,6 @@ const InnerGraph = ({
     </ReactFlow>
   );
 };
-
 
 const PathwayGraph = (props) => {
   return (
