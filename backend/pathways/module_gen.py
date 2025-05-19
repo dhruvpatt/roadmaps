@@ -1,6 +1,6 @@
 import os
 import django
-
+import textwrap
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.backend.settings')
 django.setup()
 
@@ -142,51 +142,91 @@ class ContentGenerationAgent:
 
         return get_llm_response(prompt, response_model=ContentList, max_tokens=5000)
 
-    def generate_contextual_content_from_block(self, block, position, total_blocks, previous_block_summary,
-                                               learning_goals):
-        """
-        Enhanced block generation with:
-        - position info
-        - prior block context
-        - learning goals
-        """
-        prompt = f"""
-           You are generating an educational block in a structured learning article.
 
-           This is block {position + 1} of {total_blocks}.
-           Block Type: {block["block_type"]}
-           Render Type: {block["render_type"]}
-           Description: {block["description"]}
-           Learning Goals: {', '.join(learning_goals)}
+    def generate_contextual_content_from_block(
+        self,
+        block,
+        position,
+        total_blocks,
+        previous_block_summary,
+        learning_goals,
+    ):
+        prompt = textwrap.dedent(fr"""
+            You are generating an educational block in a structured learning article.
 
-           {'Previous Block Summary: ' + previous_block_summary if previous_block_summary else ''}
+            This is block {position + 1} of {total_blocks}.
+            Block Type: {block["block_type"]}
+            Render Type: {block["render_type"]}
+            Description: {block["description"]}
+            Learning Goals: {', '.join(learning_goals)}
 
-           Your task:
-           - Write a short transition sentence that connects this block to the previous one.
-           - Generate the block's main content.
+            {'Previous Block Summary: ' + previous_block_summary if previous_block_summary else ''}
 
-           Output JSON:
-           {{
-             "type": "{block["render_type"]}",
-             "content": "...",  // generated content
-             "styling": {block["styling"]},
-             "transition_text": "..."  // one sentence
-           }}
+            Your task:
+            - Write a short transition sentence that connects this block to the previous one.
+            - Generate the block's main content appropriate for the subject area.
 
-           Guidelines:
-            - If the block contains mathematical expressions — including definitions of theorems, formulas, or properties — format them using LaTeX syntax compatible with KaTeX.
-            - This includes block_types like 'definition', 'concept_explanation', 'worked_example', 'practice_exercise', and 'challenge_problem' when math is involved.
-            - Use \\begin{{cases}}...\\end{{cases}} for systems of equations.
-            - Wrap all math expressions inside double backslashes (\\[ ... \\]) so they render correctly in KaTeX.
-            - Escape all backslashes in your output JSON with double backslashes (\\\\) for React compatibility.
-            - DO NOT include headings like "Example" or "Exercise" — just give the pure instructional content.
-            - For 'content' type, return markdown with embedded KaTeX expressions.
-            - Also return a short transition sentence to lead into the next block.
-            - If 'content', use markdown.
-            - If 'html', write semantic static HTML (no JavaScript).
-            - Transition should lead into the topic smoothly but stay short.
-           """
+            Output JSON:
+            {{
+            "type": "{block["render_type"]}",
+            "content": "...",  // Markdown + LaTeX content
+            "styling": {block["styling"]},
+            "transition_text": "..."  // One connecting sentence
+            }}
+
+            Guidelines:
+
+            CONTENT FORMATTING GUIDELINES:
+            - Use Markdown for formatting:
+            * **bold**, *italic*, `inline code`, lists, headings, etc.
+
+            - For MATHEMATICAL content:
+            * Inline math: `$x^2 + y^2 = r^2$`
+            * Display math (on its own lines):
+                
+                $$
+                A = \begin{{bmatrix}}
+                1 & 2 \\\\
+                3 & 4
+                \end{{bmatrix}}
+                $$
+
+            * Systems of equations:
+                
+                $$
+                \begin{{cases}}
+                x + y = 3 \\\\
+                2x - y = 1
+                \end{{cases}}
+                $$
+
+            * **Do not** manually double-escape backslashes—each single `\` will be JSON-encoded as `\\` for you.
+
+            - For LANGUAGE/HUMANITIES content:
+            * Use italics or blockquotes where appropriate.
+
+            - For SCIENCE content:
+            * Format units (`m/s`, `kg`), chemical formulas (`H_2O`), etc.
+
+            - For CODING content:
+            * Use fenced code blocks:
+            
+                \`\`\`python
+                def foo(x):
+                    return x * 2
+                \`\`\`
+
+            BLOCK TYPE GUIDELINES:
+            - introduction, learning_objectives, definition, concept_explanation, etc. as before.
+
+            GENERAL:
+            - Headings (`###`) and display math (`$$…$$`) must be on their own blank lines.
+            - Your **content** field must be valid Markdown + LaTeX that `react-markdown + rehype-katex` can parse.
+            - Return **only** the JSON object—no extra prose outside it.
+        """).strip()
+
         return get_llm_response(prompt, response_model=ContentList, max_tokens=2000)
+
 
     def generate_content(self, module_name, learning_goals, insights, user_preferences):
         """
@@ -194,12 +234,12 @@ class ContentGenerationAgent:
         """
         block_plan = self.generate_block_plan(module_name, learning_goals, insights, user_preferences)
         full_content = []
-        print(f"BLOCK PLAN: {block_plan}")
+        # print(f"BLOCK PLAN: {block_plan}")
         previous_summary = None
         i = 0
         total_blocks = len(block_plan["items"])
         for block in block_plan["items"]:
-            print(f"BLOCK {i}: {block}")
+            # print(f"BLOCK {i}: {block}")
             contextual_block = self.generate_contextual_content_from_block(
                 block=block,
                 position=i,
@@ -233,7 +273,7 @@ class ContentGenerationAgent:
         block_plan = self.generate_block_plan(module_name, learning_goals, insights, user_preferences)
         full_content = []
         previous_summary = None
-        print(f"BLOCK FEEDBACK PLAN: {block_plan}")
+        # print(f"BLOCK FEEDBACK PLAN: {block_plan}")
         i = 0
         for block in block_plan["items"]:
             print(f"block {i}: {block}")
@@ -659,8 +699,7 @@ def pathway_chapter_count(request, pathway_id):
 def get_module(request):
     module_id = request.data.get('module_id')
     user_id = request.data.get('user_id')
-    print(request.data.get('module_id'))
-    print(request.data.get('user_id'))
+
     if not module_id or not user_id:
         return Response({"error": "module_id and user_id are required"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -684,6 +723,7 @@ def get_module(request):
             module.save()
 
         serializer = ModuleSerializer(module)
+        print("Module data:", serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     except Module.DoesNotExist:

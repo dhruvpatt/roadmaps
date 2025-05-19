@@ -7,9 +7,7 @@ import ReactFlow, {
 } from "reactflow";
 
 import "reactflow/dist/style.css";
-import { nodeTypes as defaultNodeTypes } from "@/components/pathways/PathwayNode";
-
-
+import { nodeTypes as defaultNodeTypes } from "../pathways/PathwayNode";
 
 const isModuleUnlocked = (module, moduleMap) => {
   return (module.prereq || []).every(
@@ -17,18 +15,12 @@ const isModuleUnlocked = (module, moduleMap) => {
   );
 };
 
-const InnerGraph = ({
-  data,
-  viewMode = "student",
-  published = false,
-}) => {
-
+const InnerGraph = ({ data, viewMode = "student", published = false }) => {
   // console.log("GRAPH DATA:", data)
 
   const { fitView } = useReactFlow();
   const isTeacher = viewMode === "teacher";
   const [hoveredNodeId, setHoveredNodeId] = React.useState(null);
-
 
   const { nodes, edges } = useMemo(() => {
     if (!data || !data.chapter) return { nodes: [], edges: [] };
@@ -48,7 +40,9 @@ const InnerGraph = ({
     });
 
     // Step 2: Compute compact column layout using topological sort
-    const moduleMapLocal = new Map(modulesWithFallbackDeps.map((m) => [m.id, m]));
+    const moduleMapLocal = new Map(
+      modulesWithFallbackDeps.map((m) => [m.id, m])
+    );
     const moduleColumns = new Map();
     const visited = new Set();
 
@@ -79,12 +73,14 @@ const InnerGraph = ({
     // Step 4: Generate nodes in zig-zag layout
     const xSpacing = 260;
     const ySpacing = 140;
-    const maxColumnHeight = Math.max(...Object.values(columns).map(c => c.length));
+    const maxColumnHeight = Math.max(
+      ...Object.values(columns).map((c) => c.length)
+    );
 
     Object.entries(columns).forEach(([colStr, mods], colIdx) => {
       const reverse = colIdx % 2 === 1;
       const offsetX = colIdx * xSpacing;
-      const startY = (maxColumnHeight - mods.length) * ySpacing / 2;
+      const startY = ((maxColumnHeight - mods.length) * ySpacing) / 2;
 
       mods.forEach((mod, i) => {
         const idx = reverse ? mods.length - 1 - i : i;
@@ -162,15 +158,12 @@ const InnerGraph = ({
               color: "#555",
             },
           });
-
         }
       }
     });
 
     return { nodes, edges };
   }, [data, viewMode, published]);
-
-
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -189,7 +182,7 @@ const InnerGraph = ({
         ...e,
         className:
           hoveredNodeId &&
-            (e.source === hoveredNodeId || e.target === hoveredNodeId)
+          (e.source === hoveredNodeId || e.target === hoveredNodeId)
             ? "edge-connected"
             : "",
       }))}
@@ -214,7 +207,6 @@ const InnerGraph = ({
     </ReactFlow>
   );
 };
-
 
 const PathwayGraph = (props) => {
   return (

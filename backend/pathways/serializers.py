@@ -74,7 +74,15 @@ class UserSerializer(serializers.ModelSerializer):
 class ContentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Content
-        fields = ['id', 'type', 'content', 'module']
+        fields = [
+            'id',
+            'module',
+            'type',
+            'block_type',
+            'content',
+            'transition_text',
+            'styling',
+        ]
 
 class MessageSerializer(serializers.ModelSerializer):
     class Meta:
@@ -99,7 +107,6 @@ class ModuleSerializer(serializers.ModelSerializer):
     chat_history = MessageSerializer(many=True, read_only=True)
     prerequisites = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     next_modules = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-
     class Meta:
         model = Module
         fields = [
@@ -137,7 +144,7 @@ class ClassroomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Classroom
         fields = ['id', 'join_id', 'name', 'teachers', 'students', 'subjects']
-        
+
 
 class StudentSerializer(serializers.ModelSerializer):
     class Meta:

@@ -1,4 +1,3 @@
-
 import ClassroomHeader from "@/components/classrooms/classroom-header";
 import ClassroomTabs from "@/components/classrooms/classroom-tabs";
 import ClassroomTabsStudent from "@/components/classrooms/classroom-tabs-student";
@@ -68,25 +67,24 @@ const Classroom = () => {
   };
 
   return (
+    <div className="flex-1 px-6 md:px-12 py-8 bg-gray-100 overflow-y-auto">
+      <div className="max-w-6xl mx-auto">
+        {/* Classroom Header */}
+        <ClassroomHeader
+          title={classroom.name || "Loading..."}
+          subtitle=""
+          code={classroom.join_id}
+          onInviteClick={() => setShowInviteModal(true)}
+        />
 
-        <div className="flex-1 px-6 md:px-12 py-8 bg-gray-100 overflow-y-auto">
-          <div className="max-w-6xl mx-auto">
-            {/* Classroom Header */}
-            <ClassroomHeader
-              title={classroom.name || "Loading..."}
-              subtitle=""
-              code={classroom.join_id}
-              onInviteClick={() => setShowInviteModal(true)}
-            />
-
-            {/* Conditional Tabs */}
-            {role === "student" ? (
-              <ClassroomTabsStudent classroomCode={classroomCode} user={user} />
-            ) : (
-              <ClassroomTabs classroomCode={classroomCode} id={classroomId} />
-            )}
-          </div>
-        </div>
+        {/* Conditional Tabs */}
+        {role === "student" ? (
+          <ClassroomTabsStudent classroomCode={classroomCode} user={user} />
+        ) : (
+          <ClassroomTabs classroomCode={classroomCode} id={classroomId} />
+        )}
+      </div>
+    </div>
   );
 };
 
