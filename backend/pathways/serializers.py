@@ -3,7 +3,6 @@
 from rest_framework import serializers
 from pathways.models import User, Pathway, Chapter, Question, Quiz, Module, Content, Message, Classroom, Subject
 
-
 class QueryRequestSerializer(serializers.Serializer):
     # Topic of the lesson
     topic = serializers.CharField(max_length=255, required=True)
@@ -116,15 +115,6 @@ class ChapterSerializer(serializers.ModelSerializer):
         model = Chapter
         fields = ['id', 'name', 'pathway', 'status', 'next_chapters', 'modules']
 
-class PathwaySerializer(serializers.ModelSerializer):
-    chapters = ChapterSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Pathway
-        fields = [
-            'id', 'owner', 'title', 'details', 'mode', 'grade',
-            'learning_goals', 'progress', 'chapters', 'published', "classroom"
-        ]
 
 class SubjectSerializer(serializers.ModelSerializer):
     class Meta:
@@ -137,7 +127,18 @@ class ClassroomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Classroom
         fields = ['id', 'join_id', 'name', 'teachers', 'students', 'subjects']
-        
+
+class PathwaySerializer(serializers.ModelSerializer):
+    chapters = ChapterSerializer(many=True, read_only=True)
+    classroom = ClassroomSerializer(read_only=True)  # <-- add this line
+
+    class Meta:
+        model = Pathway
+        fields = [
+            'id', 'owner', 'title', 'details', 'mode', 'grade',
+            'learning_goals', 'progress', 'chapters', 'published', 'classroom'
+        ]
+  
 
 class StudentSerializer(serializers.ModelSerializer):
     class Meta:

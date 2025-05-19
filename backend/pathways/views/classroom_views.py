@@ -62,29 +62,6 @@ def classroom_list(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['GET', 'PUT', 'DELETE'])
-def classroom_detail(request, pk):
-    try:
-        classroom = Classroom.objects.get(pk=pk)
-    except Classroom.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-
-    if request.method == 'GET':
-        serializer = ClassroomSerializer(classroom)
-        return Response(serializer.data)
-
-    elif request.method == 'PUT':
-        serializer = ClassroomSerializer(classroom, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    elif request.method == 'DELETE':
-        classroom.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
 @api_view(['POST'])
 def classroom_join(request):
     join_id = request.data.get('join_id')
@@ -152,22 +129,24 @@ def get_user_classrooms(request):
     }, status=status.HTTP_200_OK)
 
 
-@api_view(['POST'])
-def get_classroom(request):
-    classroom_id = request.data.get('classroom_id')
-    user_id = request.data.get("user_id")
-
-    print("get classroom hit")
-
-    if not classroom_id:
-        return Response({"error": "classroom_id is required"}, status=status.HTTP_400_BAD_REQUEST)
-
-    if not user_id:
-        return Response({"error": "user_id is required"}, status=status.HTTP_400_BAD_REQUEST)
-
+@api_view(['GET', 'PUT', 'DELETE'])
+def classroom_detail(request, pk):
     try:
-        classroom = Classroom.objects.get(id=classroom_id)
-        serializer = ClassroomDetailSerializer(classroom)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        classroom = Classroom.objects.get(pk=pk)
     except Classroom.DoesNotExist:
         return Response({"error": "Classroom not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        serializer = ClassroomDetailSerializer(classroom)
+        return Response(serializer.data)
+
+    elif request.method == 'PUT':
+        serializer = ClassroomDetailSerializer(classroom, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'DELETE':
+        classroom.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

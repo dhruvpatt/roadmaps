@@ -36,7 +36,7 @@ def pathway_list(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
+@api_view(['GET', 'PUT', 'DELETE'])
 def pathway_detail(request, pk):
     try:
         pathway = Pathway.objects.get(pk=pk)
@@ -48,18 +48,38 @@ def pathway_detail(request, pk):
         return Response(serializer.data)
 
     elif request.method == 'PUT':
-        serializer = PathwaySerializer(pathway, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            pathway = Pathway.objects.get(pk=pk)
+            if pathway.owner.id != request.data.get("userid", None):
+                return Response({"error": "User cannot update this pathway"}, status=status.HTTP_401_UNAUTHORIZED)
 
-    elif request.method == 'PATCH':
-        serializer = PathwaySerializer(pathway, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            pathway.title = request.data.get("title", pathway.title)
+            pathway.details = request.data.get("details", pathway.details)
+            pathway.mode = request.data.get("mode", pathway.mode)
+            pathway.grade = request.data.get("grade", pathway.grade)
+            pathway.learning_goals = request.data.get("learning_goals", pathway.learning_goals)
+            pathway.progress = request.data.get("progress", pathway.progress)
+
+            classroom_id = request.data.get("classroom", {}).get("id", None)
+            if classroom_id:
+                try:
+                    from pathways.models import Classroom  # adjust import if needed
+                    classroom = Classroom.objects.get(id=classroom_id)
+                    pathway.classroom = classroom
+                except Classroom.DoesNotExist:
+                    return Response({"error": "Classroom not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+            pathway.save()
+
+            # optionally update chapters here if needed
+
+            serializer = PathwaySerializer(pathway)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except Pathway.DoesNotExist:
+            return Response({"error": "Pathway not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     elif request.method == 'DELETE':
         pathway.delete()

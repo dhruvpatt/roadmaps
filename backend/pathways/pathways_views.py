@@ -573,137 +573,53 @@ def get_pathway_by_id(request, pathway_id):
 @api_view(['POST'])
 def get_user_pathways(request):
     user_id = request.data.get("user_id")
+    classroom_id = request.data.get("classroom_id")
     search_query = request.GET.get("search", "")
+
+    print("Request received with user_id:", user_id, "classroom_id:", classroom_id)
 
     try:
         user = User.objects.get(pk=user_id)
-        pathways = Pathway.objects.filter(owner=user, title__icontains=search_query).order_by("id")
+        print("Loaded user:", user.email, "| ID:", user.id)
+
+        if classroom_id:
+            try:
+                classroom = Classroom.objects.get(pk=classroom_id)
+                print("Loaded classroom:", classroom.name)
+                print("Teachers:", [t.email for t in classroom.teachers.all()])
+                print("Students:", [s.email for s in classroom.students.all()])
+            except Classroom.DoesNotExist:
+                return Response({"error": "Classroom not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            # Check membership
+            is_teacher = classroom.teachers.filter(id=user.id).exists()
+            is_student = classroom.students.filter(id=user.id).exists()
+
+            print("Is teacher:", is_teacher, "| Is student:", is_student)
+
+            if not is_teacher and not is_student:
+                return Response({"error": "You do not belong to this classroom"}, status=status.HTTP_403_FORBIDDEN)
+
+            pathways = Pathway.objects.filter(
+                classroom=classroom,
+                title__icontains=search_query
+            ).order_by("id")
+
+        else:
+            pathways = Pathway.objects.filter(
+                owner=user,
+                title__icontains=search_query
+            ).order_by("id")
 
         paginator = PageNumberPagination()
         paginator.page_size = 15
         result_page = paginator.paginate_queryset(pathways, request)
         serializer = PathwaySerializer(result_page, many=True)
-
         return paginator.get_paginated_response(serializer.data)
 
     except User.DoesNotExist:
         return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
-@api_view(['PUT'])
-def update_pathway(request, pathway_id):
-    try:
-        pathway = Pathway.objects.get(pk=pathway_id)
-
-        pathway.title = request.data.get("title", pathway.title)
-        pathway.details = request.data.get("details", pathway.details)
-        pathway.mode = request.data.get("mode", pathway.mode)
-        pathway.grade = request.data.get("grade", pathway.grade)
-        pathway.learning_goals = request.data.get("learning_goals", pathway.learning_goals)
-        pathway.progress = request.data.get("progress", pathway.progress)
-
-        pathway.save()
-
-        serializer = PathwaySerializer(pathway)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    except Pathway.DoesNotExist:
-        return Response({"error": "Pathway not found"}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-# @api_view(['POST'])
-# @transaction.atomic
-# def publish_pathway_to_classroom(request):
-#     pathway_id = request.data.get("pathway_id")
-#     classroom_id = request.data.get("classroom_id")
-#     topic = request.data.get("topic", "Untitled Topic")
-#     master_scaffold = request.data.get("master_scaffold", "")
-
-#     try:
-#         pathway = Pathway.objects.get(pk=pathway_id)
-#         classroom = Classroom.objects.get(pk=classroom_id)
-#         students = classroom.students.all()
-
-#         for student in students:
-#             student_pathway = Pathway.objects.create(
-#                 owner=student,
-#                 title=pathway.title,
-#                 details=pathway.details,
-#                 mode=pathway.mode,
-#                 grade=pathway.grade,
-#                 learning_goals=pathway.learning_goals,
-#                 progress=0,
-#                 published=True
-#             )
-
-#             chapter_map = {}
-#             for chapter in pathway.chapters.all():
-#                 new_chapter = Chapter.objects.create(
-#                     name=chapter.name,
-#                     pathway=student_pathway,
-#                     status='not_started'
-#                 )
-#                 chapter_map[chapter.id] = new_chapter
-
-#             module_map = {}
-#             for chapter in pathway.chapters.all():
-#                 for module in chapter.modules.all():
-#                     # Clone quiz
-#                     new_quiz = None
-#                     if module.practice:
-#                         new_quiz = Quiz.objects.create(user=student)
-#                         for q in module.practice.questions.all():
-#                             new_question = Question.objects.create(
-#                                 question=q.question,
-#                                 solution=q.solution,
-#                                 type=q.type
-#                             )
-#                             new_quiz.questions.add(new_question)
-
-#                     new_module = Module.objects.create(
-#                         name=module.name,
-#                         chapter=chapter_map[chapter.id],
-#                         owner=student,
-#                         yt_video=module.yt_video,
-#                         status='not_started',
-#                         learning_goals=module.learning_goals,
-#                         feedback="",
-#                         practice=new_quiz
-#                     )
-#                     for content in module.content_list.all():
-#                         Content.objects.create(
-#                             type=content.type,
-#                             content=content.content,
-#                             module=new_module
-#                         )
-#                     module_map[module.id] = new_module
-
-#             for module in pathway.chapters.all().prefetch_related('modules'):
-#                 for original_module in module.modules.all():
-#                     new_module = module_map[original_module.id]
-#                     new_module.prerequisites.set([
-#                         module_map[prereq.id] for prereq in original_module.prerequisites.all()
-#                     ])
-#                     new_module.next_modules.set([
-#                         module_map[next.id] for next in original_module.next_modules.all()
-#                     ])
-
-#             Subject.objects.create(
-#                 classroom=classroom,
-#                 topic=topic,
-#                 master_scaffold=master_scaffold,
-#                 progress=0.0,
-#                 student_pathway=student_pathway
-#             )
-
-#         return Response({"message": "Pathway and structure published to classroom successfully."}, status=status.HTTP_201_CREATED)
-
-#     except Pathway.DoesNotExist:
-#         return Response({"error": "Pathway not found"}, status=status.HTTP_404_NOT_FOUND)
-#     except Classroom.DoesNotExist:
-#         return Response({"error": "Classroom not found"}, status=status.HTTP_404_NOT_FOUND)
-#     except Exception as e:
-#         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 @api_view(['POST'])
 @transaction.atomic
 def publish_pathway_to_classroom(request):
