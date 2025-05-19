@@ -12,6 +12,7 @@ import { MoreHorizontal, Users, Calendar, Clock } from "lucide-react"
  * - A 'View Classroom' button
  */
 export default function ClassroomCard({
+  classroomId,
   title,
   subtitle,
   students,
@@ -40,38 +41,50 @@ export default function ClassroomCard({
     }
   }, [menuOpen])
 
+
   return (
     <div className="relative bg-white p-6 border border-gray-200 rounded-lg shadow-md flex flex-col">
       {/* Top Row: Title + More Options */}
       <div className="flex items-start justify-between mb-2">
         <h3 className="text-lg font-bold text-gray-900">{title}</h3>
         <button
-            type="button"
-            onClick={() => {
-              setMenuOpen((prev) => !prev)
-              onMoreClick?.()
-            }}
-            className="text-gray-400 hover:text-gray-600 focus:outline-none"
-          >
+          type="button"
+          onClick={() => {
+            setMenuOpen((prev) => !prev)
+            onMoreClick?.()
+          }}
+          className="text-gray-400 hover:text-gray-600 focus:outline-none"
+        >
           <MoreHorizontal className="w-5 h-5" />
         </button>
         {menuOpen && (
-            <div
-              ref={menuRef}
-              className="absolute right-0 mt-4 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10"
+          <div
+            ref={menuRef}
+            className="absolute right-0 mt-4 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10"
+          >
+            <button
+              type="button"
+              onClick={() => {
+                // TODO: implement edit
+                setMenuOpen(false)
+              }}
+              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
             >
-              <button
-                type="button"
-                onClick={() => {
-                  onDelete?.()
-                  setMenuOpen(false)
-                }}
-                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-              >
-                Delete
-              </button>
-            </div>
-          )}
+              Edit
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onDelete?.(classroomId)
+                setMenuOpen(false)
+              }}
+              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+            >
+              Delete
+            </button>
+          </div>
+        )}
+
       </div>
 
       {/* Subtitle / Description */}
@@ -86,7 +99,7 @@ export default function ClassroomCard({
       </div>
 
       <div
-      className="mb-12"
+        className="mb-12"
       ></div>
 
       {/* Schedule */}

@@ -1,6 +1,5 @@
-import React from "react"
-import { MoreHorizontal } from "lucide-react"
-import {useEffect, useState} from 'react'
+import React, { useEffect, useState, useRef } from "react";
+import { MoreHorizontal } from "lucide-react";
 
 export default function PathwayCard({
   title,
@@ -8,63 +7,98 @@ export default function PathwayCard({
   chapters = 0,
   onMoreClick,
   onViewClick,
-  published
+  onDelete,
+  onEdit,
+  published,
+  pathwayId
 }) {
-    const [user, setUser] = useState({})
-    useEffect(() => {
-        const usr = JSON.parse(localStorage.getItem("user"));
-        console.log("user", usr);
-        if (!user) {
-            router.push("/login");
-        }
+  const [user, setUser] = useState({});
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
 
-        setUser(usr);
+  useEffect(() => {
+    const usr = JSON.parse(localStorage.getItem("user"));
+    if (!usr) {
+      router.push("/login");
+    }
+    setUser(usr);
+  }, []);
 
-    }, [])
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuOpen && menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuOpen]);
 
   return (
     <div className="relative bg-white p-6 border border-gray-200 rounded-lg shadow-md flex flex-col">
+      {/* Top row */}
       <div className="flex items-start justify-between mb-2">
         <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-        {onMoreClick && (
+        <div className="relative">
           <button
-            onClick={onMoreClick}
+            onClick={() => {
+              setMenuOpen(prev => !prev);
+              onMoreClick?.();
+            }}
             className="text-gray-400 hover:text-amber-600 focus:outline-none"
           >
             <MoreHorizontal className="w-5 h-5" />
           </button>
-        )}
+          {menuOpen && (
+            <div
+              ref={menuRef}
+              className="absolute right-0 mt-4 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10"
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  onEdit?.(pathwayId);
+                  setMenuOpen(false);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onDelete?.(pathwayId);
+                  setMenuOpen(false);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+              >
+                Delete
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Progress */}
-      {/* <div className="mb-3">
-        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-black transition-all duration-300"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-        <p className="mt-1 text-sm text-gray-500">{progress}% complete</p>
-      </div> */}
+      {/* Progress bar (student) or status (teacher) */}
       {user.role === "student" ? (
         <>
-        <div className="mt-4 h-2 bg-gray-300 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-amber-600"
-            style={{ width: `${progress}%` }}
-          />
-
-
-        </div>
-        <div className="flex justify-between text-md text-gray-600 mt-2">
-        <p className="font-medium">{progress}% complete</p>
-        </div>
+          <div className="mt-4 h-2 bg-gray-300 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-amber-600"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <div className="flex justify-between text-md text-gray-600 mt-2">
+            <p className="font-medium">{progress}% complete</p>
+          </div>
         </>
       ) : (
-        // fill in for teacher or other roles
         <div>
           {published ? (
-            <p className="text-green-500">Published</p>): (<p className="text-red-500">Not Published</p>)}
+            <p className="text-green-500">Published</p>
+          ) : (
+            <p className="text-red-500">Not Published</p>
+          )}
         </div>
       )}
 
@@ -73,7 +107,7 @@ export default function PathwayCard({
         {chapters} {chapters === 1 ? "chapter" : "chapters"}
       </p>
 
-      {/* View Button */}
+      {/* View button */}
       {onViewClick && (
         <button
           onClick={onViewClick}
@@ -83,5 +117,5 @@ export default function PathwayCard({
         </button>
       )}
     </div>
-  )
+  );
 }

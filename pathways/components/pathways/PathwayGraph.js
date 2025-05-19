@@ -71,12 +71,11 @@ const InnerGraph = ({ data, viewMode = "student", published = false }) => {
     sortedModules.forEach((mod) => {
       const pos = positions.get(mod.id);
       if (!pos) return;
-
       moduleMap.set(mod.id, mod);
 
       const hue = (mod.chapter * 60) % 360;
       const lightness = 80;
-
+      //TODO: Update to use description
       nodes.push({
         id: mod.id.toString(),
         type: "pathwayNode",
@@ -84,7 +83,7 @@ const InnerGraph = ({ data, viewMode = "student", published = false }) => {
         data: {
           label: mod.name,
           status: mod.status ?? "not_started",
-          description: mod.learning_goals?.[0] || "",
+          description: mod.learningGoals?.[0] || "", 
           id: mod.id,
           unlocked: true,
         },
@@ -100,8 +99,6 @@ const InnerGraph = ({ data, viewMode = "student", published = false }) => {
       const sourceId = mod.id.toString();
       const sourcePos = positionMap.get(sourceId);
 
-      // Log base source position
-      console.log(`[NODE ${sourceId}] source node position:`, sourcePos);
 
       // Explicit next_modules
       (mod.next_modules || []).forEach((targetId) => {
@@ -118,12 +115,6 @@ const InnerGraph = ({ data, viewMode = "student", published = false }) => {
           const targetPosition = Math.abs(dx) > Math.abs(dy)
             ? dx > 0 ? 'left' : 'right'
             : dy > 0 ? 'top' : 'bottom';
-
-          console.log(`[EDGE] ${sourceId} -> ${targetStr}`);
-          console.log(`  Source:`, sourcePos);
-          console.log(`  Target:`, targetPos);
-          console.log(`  dx = ${dx}, dy = ${dy}`);
-          console.log(`  Handles: source ${sourcePosition}, target ${targetPosition}`);
 
           edges.push({
             id: `e-${sourceId}-${targetStr}`,
@@ -162,12 +153,6 @@ const InnerGraph = ({ data, viewMode = "student", published = false }) => {
           const targetPosition = Math.abs(dx) > Math.abs(dy)
             ? dx > 0 ? 'left' : 'right'
             : dy > 0 ? 'top' : 'bottom';
-
-          console.log(`[FALLBACK EDGE] ${sourceId} -> ${nextId}`);
-          console.log(`  Source:`, sourcePos);
-          console.log(`  Target:`, targetPos);
-          console.log(`  dx = ${dx}, dy = ${dy}`);
-          console.log(`  Handles: source ${sourcePosition}, target ${targetPosition}`);
 
           edges.push({
             id: `e-${sourceId}-${nextId}-fallback`,

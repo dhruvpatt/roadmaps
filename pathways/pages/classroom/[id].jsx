@@ -1,7 +1,6 @@
 
 import ClassroomHeader from "@/components/classrooms/classroom-header";
-import ClassroomTabs from "@/components/classrooms/classroom-tabs";
-import ClassroomTabsStudent from "@/components/classrooms/classroom-tabs-student";
+import ClassroomTabs from "@/components/classrooms/ClassroomTabs";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import backendUrl from "@/backendUrl";
@@ -48,12 +47,11 @@ const Classroom = () => {
 
     try {
       console.log("Fetching classroom with ID:", id);
-      const res = await fetch(`${backendUrl}/get-classroom/`, {
-        method: "POST",
+      const res = await fetch(`${backendUrl}/clasrooms/${id}`, {
+        method: "GET",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ classroom_id: id, user_id: user.id }),
       });
 
       const ret = await res.json();
@@ -66,12 +64,11 @@ const Classroom = () => {
       console.error("Failed to fetch classroom", error);
     }
   };
-
   return (
-
-        <div className="flex-1 px-6 md:px-12 py-8 bg-gray-100 overflow-y-auto">
-          <div className="max-w-6xl mx-auto">
-            {/* Classroom Header */}
+    <div className="flex-1 px-6 md:px-12 py-8 bg-gray-100 overflow-y-auto">
+      <div className="max-w-6xl mx-auto">
+        {classroomId && user?.id ? (
+          <>
             <ClassroomHeader
               title={classroom.name || "Loading..."}
               subtitle=""
@@ -79,14 +76,17 @@ const Classroom = () => {
               onInviteClick={() => setShowInviteModal(true)}
             />
 
-            {/* Conditional Tabs */}
-            {role === "student" ? (
-              <ClassroomTabsStudent classroomCode={classroomCode} user={user} />
-            ) : (
-              <ClassroomTabs classroomCode={classroomCode} id={classroomId} />
-            )}
-          </div>
-        </div>
+            <ClassroomTabs
+              classroomCode={classroomCode}
+              classroomId={classroomId}
+              isTeacher={role === "teacher"}
+            />
+          </>
+        ) : (
+          <div className="text-gray-600 text-center py-12">Loading classroom...</div>
+        )}
+      </div>
+    </div>
   );
 };
 

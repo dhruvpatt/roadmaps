@@ -1,18 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Plus, Minus } from "lucide-react";
 import { useRouter } from "next/router";
+import backendUrl from "@/backendUrl";
 
-import { useEffect } from "react";
-
-
-
-// 🔹 Mock user (can be dynamic later)
-const mockpathwayID = {
-  id: 1,
-};
-
-export default function CreatePathwayModal({ isOpen, onClose, onCreate, user, classroomCode }) {
+export default function CreatePathwayModal({
+  isOpen,
+  onClose,
+  onCreate,
+  onUpdate,
+  user,
+  classroomCode,
+  pathway = null,
+}) {
   const router = useRouter();
+  const isEdit = Boolean(pathway);
+
   const [form, setForm] = useState({
     title: "",
     topic: "",
@@ -23,6 +25,9 @@ export default function CreatePathwayModal({ isOpen, onClose, onCreate, user, cl
     details: "",
     chapters: [],
   });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [classrooms, setClassrooms] = useState([]);
 
   useEffect(() => {
     if (isOpen) {
@@ -30,16 +35,47 @@ export default function CreatePathwayModal({ isOpen, onClose, onCreate, user, cl
     } else {
       document.body.style.overflow = "";
     }
-
-    // Cleanup on unmount
     return () => {
       document.body.style.overflow = "";
     };
   }, [isOpen]);
 
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [showChapters, setShowChapters] = useState(false);
+  useEffect(() => {
+    if (isEdit && pathway) {
+      setForm({
+        title: pathway.title || "",
+        topic: pathway.topic || "",
+        mode: pathway.mode || "CASUAL",
+        classroom: pathway.classroom || classroomCode || "",
+        grade: pathway.grade || "",
+        learningGoals: (pathway.learning_goals || []).join(", "),
+        details: pathway.details || "",
+        chapters: pathway.chapters || [],
+      });
+    }
+  }, [isEdit, isOpen, user, pathway, classroomCode]);
+
+  useEffect(() => {
+    const fetchClassrooms = async () => {
+      try {
+        const res = await fetch(`${backendUrl}/get-user-classrooms/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: user.id }),
+        });
+        const data = await res.json();
+        setClassrooms(data.results || []);
+      } catch (err) {
+        console.error("Failed to load classrooms", err);
+      }
+    };
+
+    if (isOpen && user?.id && user?.role == "teacher") {
+      fetchClassrooms();
+    }
+  }, [isOpen, user]);
+
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -65,12 +101,12 @@ export default function CreatePathwayModal({ isOpen, onClose, onCreate, user, cl
   };
 
   const handleSubmit = async () => {
-    if (!form.title.trim() || !form.topic.trim() || !form.grade.trim() || !form.learningGoals.trim()) {
-      setError("Title, Topic, Grade and Learning Goals are required.");
+    if (!form.title.trim() || !form.grade.trim() || !form.learningGoals.trim()) {
+      setError("Title, Grade and Learning Goals are required.");
       return;
     }
-    console.log("form", form);
-    const pathway = {
+
+    const payload = {
       ...form,
       chapters: JSON.stringify(form.chapters),
       learning_goals: form.learningGoals
@@ -78,14 +114,19 @@ export default function CreatePathwayModal({ isOpen, onClose, onCreate, user, cl
         .map((g) => g.trim())
         .filter(Boolean),
       userid: user.id,
-      classroom: classroomCode || null,
+      classroom: classroomCode || form.classroom || null,
     };
-    console.log("submit pathway", pathway);
+
+    console.log(isEdit ? "Updating pathway:" : "Creating pathway:", payload);
     setLoading(true);
 
     try {
-
-      const pathway_id = await onCreate(pathway);
+      let pathway_id;
+      if (isEdit && onUpdate) {
+        pathway_id = await onUpdate(pathway.id, payload);
+      } else {
+        pathway_id = await onCreate(payload);
+      }
 
       onClose();
       setForm({
@@ -98,13 +139,11 @@ export default function CreatePathwayModal({ isOpen, onClose, onCreate, user, cl
         details: "",
         chapters: [],
       });
-      setShowChapters(false);
       setError("");
-
       router.push(`/pathways/${pathway_id}`);
     } catch (error) {
-      console.error("Failed to create pathway", error);
-      setError("Failed to create pathway, Please try again.");
+      console.error("Failed to save pathway", error);
+      setError("Failed to save pathway. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -122,7 +161,9 @@ export default function CreatePathwayModal({ isOpen, onClose, onCreate, user, cl
           <X className="w-5 h-5" />
         </button>
 
-        <h2 className="text-2xl font-bold text-amber-800 mb-4">Create Pathway</h2>
+        <h2 className="text-2xl font-bold text-amber-800 mb-4">
+          {isEdit ? "Edit Pathway" : "Create Pathway"}
+        </h2>
 
         {error && (
           <div className="bg-red-100 text-red-700 text-sm px-4 py-2 rounded mb-4">
@@ -131,7 +172,6 @@ export default function CreatePathwayModal({ isOpen, onClose, onCreate, user, cl
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          {/* Title */}
           <div>
             <label className="text-sm font-medium text-gray-700">Title *</label>
             <input
@@ -144,20 +184,20 @@ export default function CreatePathwayModal({ isOpen, onClose, onCreate, user, cl
             />
           </div>
 
-          {/* Topic */}
-          <div>
-            <label className="text-sm font-medium text-gray-700">Topic *</label>
-            <input
-              name="topic"
-              value={form.topic}
-              onChange={handleChange}
-              placeholder="e.g. Algebra, Geometry, Photosynthesis"
-              className="w-full mt-1 border border-gray-300 rounded px-3 py-2"
-              required
-            />
-          </div>
+          {!isEdit && (
+            <div>
+              <label className="text-sm font-medium text-gray-700">Topic *</label>
+              <input
+                name="topic"
+                value={form.topic}
+                onChange={handleChange}
+                placeholder="e.g. Algebra, Geometry, Photosynthesis"
+                className="w-full mt-1 border border-gray-300 rounded px-3 py-2"
+                required
+              />
+            </div>
+          )}
 
-          {/* Mode */}
           <div>
             <label className="text-sm font-medium text-gray-700">Mode</label>
             <select
@@ -174,17 +214,22 @@ export default function CreatePathwayModal({ isOpen, onClose, onCreate, user, cl
           {user.role === "teacher" && (
             <div>
               <label className="text-sm font-medium text-gray-700">Classroom</label>
-              <input
+              <select
                 name="classroom"
-                value={form.classroom}
+                value={form.classroom.id}
                 onChange={handleChange}
-                placeholder="Optional"
                 className="w-full mt-1 border border-gray-300 rounded px-3 py-2"
-              />
+              >
+                <option value="">None (Personal)</option>
+                {classrooms.map((cls) => (
+                  <option key={cls.id} value={cls.id}>
+                    {cls.name}, with {cls.students.length} student(s)
+                  </option>
+                ))}
+              </select>
             </div>
           )}
 
-          {/* Grade */}
           <div>
             <label className="text-sm font-medium text-gray-700">Grade *</label>
             <input
@@ -197,7 +242,6 @@ export default function CreatePathwayModal({ isOpen, onClose, onCreate, user, cl
             />
           </div>
 
-          {/* Learning Goals */}
           <div className="md:col-span-2">
             <label className="text-sm font-medium text-gray-700">Learning Goals *</label>
             <input
@@ -209,7 +253,6 @@ export default function CreatePathwayModal({ isOpen, onClose, onCreate, user, cl
             />
           </div>
 
-          {/* Details */}
           <div className="md:col-span-2">
             <label className="text-sm font-medium text-gray-700">Details</label>
             <textarea
@@ -223,7 +266,6 @@ export default function CreatePathwayModal({ isOpen, onClose, onCreate, user, cl
           </div>
         </div>
 
-        {/* Chapter Section */}
         <div className="border-t pt-6 mt-6 space-y-4">
           <h3 className="text-lg font-semibold text-amber-800">Chapters</h3>
 
@@ -291,7 +333,6 @@ export default function CreatePathwayModal({ isOpen, onClose, onCreate, user, cl
           </button>
         </div>
 
-        {/* Submit */}
         <div className="flex justify-end gap-2 pt-6">
           <button
             onClick={onClose}
@@ -304,16 +345,17 @@ export default function CreatePathwayModal({ isOpen, onClose, onCreate, user, cl
             className="px-4 py-2 text-sm rounded-md bg-amber-600 hover:bg-amber-700 text-white font-semibold"
             disabled={loading}
           >
-            Create Pathway
+            {isEdit ? "Update Pathway" : "Create Pathway"}
           </button>
         </div>
       </div>
-      {/* Loading overlay */}
       {loading && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/30">
           <div className="bg-white p-6 rounded shadow-lg text-center">
             <div className="loader mb-2 mx-auto border-4 border-gray-300 border-t-4 border-t-amber-600 rounded-full w-8 h-8 animate-spin"></div>
-            <p className="text-gray-700 font-medium">Creating Pathway...</p>
+            <p className="text-gray-700 font-medium">
+              {isEdit ? "Updating Pathway..." : "Creating Pathway..."}
+            </p>
           </div>
         </div>
       )}

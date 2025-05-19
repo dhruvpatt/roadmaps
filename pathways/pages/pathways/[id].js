@@ -6,6 +6,8 @@ import PathwayGraph from "@/components/pathways/PathwayGraph";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRef } from "react";
 
+import CreatePathwayModal from "@/components/modals/CreatePathwayModal";
+
 const ViewPathwayPage = () => {
   const router = useRouter();
   const { id } = router.query;
@@ -21,19 +23,22 @@ const ViewPathwayPage = () => {
   const [tempGoals, setTempGoals] = useState([]);
   const [currentChapterIndex, setCurrentChapterIndex] = useState(0);
   const [chapterOnlyPathway, setChapterOnlyPathway] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [user, setUser] = useState(null)
 
-useEffect(() => {
-  if (pathway?.chapters?.length > 0) {
-    const currentChapter = pathway.chapters[currentChapterIndex];
-    if (currentChapter) {
-      const { chapters, ...rest } = pathway;
-      setChapterOnlyPathway({
-        ...rest,
-        chapter: currentChapter,              
-      });
+
+  useEffect(() => {
+    if (pathway?.chapters?.length > 0) {
+      const currentChapter = pathway.chapters[currentChapterIndex];
+      if (currentChapter) {
+        const { chapters, ...rest } = pathway;
+        setChapterOnlyPathway({
+          ...rest,
+          chapter: currentChapter,
+        });
+      }
     }
-  }
-}, [pathway, currentChapterIndex]);
+  }, [pathway, currentChapterIndex]);
 
 
   const scrollRef = useRef(null);
@@ -76,11 +81,12 @@ useEffect(() => {
         const res = await fetch(`${backendUrl}/api/pathways/${id}/`);
         if (!res.ok) throw new Error("Network response was not ok");
         const data = await res.json();
+        const usr = JSON.parse(localStorage.getItem("user"))
+        setUser(usr);
 
-        const user = await fetch(`${backendUrl}/api/users/${data.owner}/`);
-        const userData = await user.json();
 
-        const isTeacher = userData?.role === "teacher";
+
+        const isTeacher = usr?.role === "teacher";
         setViewMode(isTeacher ? "teacher" : "student");
 
         console.log("data", data);
@@ -117,19 +123,19 @@ useEffect(() => {
             learningGoals: data.learning_goals,
             details: data.details,
             chapters: data.chapters.map((chapter) => ({
-              id: `chapter-${chapter.id}`,
+              id: chapter.id,
               name: chapter.name,
               test: false,
               prereq: [],
-              next: chapter.next_chapters.map((nextId) => `chapter-${nextId}`),
+              next: chapter.next_chapters.map((nextId) => `${nextId}`),
               modules: chapter.modules.map((mod) => ({
                 id: `${mod.id}`,
                 name: mod.name,
-                chapter: `chapter-${mod.chapter}`,
+                chapter: `${mod.chapter}`,
                 status: mod.status,
                 prereq: mod.prerequisites.map((pid) => `${pid}`),
                 next: mod.next_modules.map((nid) => `${nid}`),
-                owner: "student-a",
+                owner: data.owner,
                 content: mod.contents || [],
                 learningGoals: mod.learning_goals,
               })),
@@ -182,7 +188,7 @@ useEffect(() => {
           },
           body: JSON.stringify({
             pathway_id: pathway.id,
-            user_id: pathway.owner,
+            user_id: user.id,
             classroom_id: pathway.classroom,
           }),
         })
@@ -198,7 +204,7 @@ useEffect(() => {
           },
           body: JSON.stringify({
             pathway_id: pathway.id,
-            user_id: pathway.owner,
+            user_id: user.id,
           }),
         })
 
@@ -211,6 +217,19 @@ useEffect(() => {
     }
   }
 
+  const handleUpdate = async (id, data) => {
+    const res = await fetch(`${backendUrl}/api/pathways/${id}/`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    if (!res.ok) throw new Error("Update failed");
+    const updated = await res.json();
+    setPathway(updated);
+    return updated.id;
+  };
+
 
 
   return (
@@ -221,18 +240,29 @@ useEffect(() => {
       </div>
 
       <div>
-        <div className="flex space-x-2 justify-between">
+        <div className="flex space-x-2 justify-between items-center">
           <h1 className="text-5xl font-bold text-gray-900">{pathway?.title || "Pathway"}</h1>
 
-          {(viewMode === "teacher" && !pathway.published) && (
-            <div>
+          {pathway.owner == user?.id ? (          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => setShowEditModal(true)}
+              className="flex items-center text-sm font-medium text-amber-600 hover:underline"
+            >
+              ✏️ Edit
+            </button>
+            {(viewMode === "teacher" && !pathway.published) && (
               <button
                 onClick={async () => await handlePublish()}
-                className="w-full mt-4 px-3 py-1 text-sm font-medium text-white rounded bg-black hover:bg-amber-600 cursor-pointer"
-              >Publish</button>
-            </div>
-          )}
+                className="px-3 py-1 text-sm font-medium text-white rounded bg-black hover:bg-amber-600"
+              >
+                Publish
+              </button>
+            )}
+
+          </div>) : (<></>)}
+
         </div>
+
 
         <p className="text-gray-600 mt-1">{pathway?.details}</p>
 
@@ -343,8 +373,6 @@ useEffect(() => {
           </div>
         </div>
       )}
-
-
 
       <div className="gap-6">
         <div className="border rounded-xl p-4 flex flex-col h-full">
@@ -516,7 +544,18 @@ useEffect(() => {
             })}
         </div>
       </div>
+
+      <CreatePathwayModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onUpdate={handleUpdate}
+        user={user}
+        classroomCode={pathway.classroom}
+        pathway={pathway}
+      />
     </div>
+
+
   );
 };
 
