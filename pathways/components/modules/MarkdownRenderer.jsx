@@ -1,52 +1,13 @@
-// App.jsx - Main application file
-import React, { useState, useEffect } from "react";
-import { ModuleContentRenderer } from "./ModuleContentRenderer";
-
-// Import the data - in a real app this would be fetched from an API
-// For demo purposes we're importing it directly
-const moduleData = [
-    {
-        "id": 148,
-        "module": 22,
-        "type": "content",
-        "block_type": "introduction",
-        "content": "### Introduction to Vector Spaces\n\nIn mathematics, **vector spaces** are fundamental structures that allow for the study and application of various concepts in linear algebra. They are composed of vectors, which can be added together and multiplied by scalars, adhering to specific rules that define their behavior. Vector spaces are not only crucial in pure mathematics but also play a significant role in applied fields such as physics, engineering, and computer science, where they provide a framework for solving complex problems.\n\nUnderstanding vector spaces enables us to tackle a wide range of topics, from solving linear equations to analyzing transformations and dimensions. For example, in physics, the concept of a vector space is essential for representing forces, velocities, and other physical quantities. In computer graphics, vector spaces are used to describe images and animations, allowing for the manipulation of shapes and colors in a digital environment.\n\nOverall, vector spaces serve as the foundation for many concepts in linear algebra, making them a vital area of study for anyone interested in mathematics and its applications. As we delve deeper into this topic, we will explore definitions, properties, and examples of vector spaces and subspaces.",
-        "transition_text": "Having laid the groundwork for our exploration of mathematics, we now turn our focus to the essential concept of vector spaces.",
-        "styling": {
-            "centered": false,
-            "spacing": "medium",
-            "font_size": "normal",
-            "highlight": false
-        }
-    },
-    // ... The rest of your data would be here
-];
-
-function App() {
-  const [contents, setContents] = useState([]);
-
-  useEffect(() => {
-    // In a real application, you might fetch this data from an API
-    // For this example, we're using the imported data
-    setContents(moduleData);
-  }, []);
-
-  return (
-    <div className="container mx-auto p-4 max-w-4xl">
-      <h1 className="text-3xl font-bold mb-6">Vector Spaces Module</h1>
-      <ModuleContentRenderer contents={contents} />
-    </div>
-  );
-}
-
-export default App;
-
+'use client';
 // ModuleContentRenderer.jsx - Fixed version
 import React, { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
+import rehypeRaw from 'rehype-raw';
+import rehypeSanitize from 'rehype-sanitize';       // optional
+import remarkGfm    from 'remark-gfm'
 import {
   BookOpen,
   CheckCircle,
@@ -202,12 +163,12 @@ export function ModuleContentRenderer({ contents = [] }) {
       initialExpandedState[i] = true;
     });
     setExpanded(initialExpandedState);
+    console.log(contents)
   }, [contents]);
 
   if (!contents || contents.length === 0) {
     return <div className="text-center py-10">Loading content...</div>;
   }
-
   return (
     <div className="space-y-0 mb-12">
       {contents.map((block, i) => {
@@ -215,7 +176,7 @@ export function ModuleContentRenderer({ contents = [] }) {
         const contentType = block.type;
         const { content, transition_text } = block;
         const isOpen = expanded[i] !== false;
-
+        console.log(contentType)
         return (
           <div key={block.id || i} className={getBlockStyles(blockType)}>
             <div
@@ -241,13 +202,22 @@ export function ModuleContentRenderer({ contents = [] }) {
                 )}
                 {blockType === "video" ? (
                   <VideoRenderer url={content} />
+                ) : block.type === "html" ? (
+                  // Raw HTML blocks: skip ReactMarkdown entirely
+                  <div   data-renderer="raw-html" className="bg-red-100"
+                    dangerouslySetInnerHTML={{ __html: content }}
+                  />
                 ) : (
-                  <ReactMarkdown
-                    remarkPlugins={[remarkMath]}
-                    rehypePlugins={[rehypeKatex]}
-                  >
-                    {normalizeMath(content)}
-                  </ReactMarkdown>
+                <ReactMarkdown
+                  remarkPlugins={[remarkMath, remarkGfm]}
+                  rehypePlugins={[
+                    rehypeRaw,        // parse raw HTML
+                    rehypeSanitize,   // sanitize it (if needed)
+                    rehypeKatex       // then typeset math
+                  ]}
+                >
+                  {normalizeMath(content)}
+                </ReactMarkdown>
                 )}
               </div>
             )}

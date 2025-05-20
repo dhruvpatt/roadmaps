@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import backendUrl from "@/backendUrl";
+import backendUrl from "../../backendUrl";
 import ReactMarkdown from "react-markdown";
 
 const ModuleChat = ({ id }) => {
