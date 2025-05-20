@@ -20,19 +20,19 @@ import {
 // Helper to normalize delimiters and auto-wrap environments
 const normalizeMath = (text) => {
   if (typeof text !== "string") return text;
-  return text
-    // 1) wrap any \begin{...}...\end{...} in $$...$$
-    .replace(
-      /\\\\begin\{([^\}]+)\}([\\s\\S]*?)\\\\end\{\1\}/g,
-      (_, envName, body) => `$$\\begin{${envName}}${body}\\end{${envName}}$$`
-    )
-    // 2) convert \[…\] → $$…$$
-    .replace(/\\\\\[([\s\S]+?)\\\\\]/g, "$$$$1$$$$")
-    // 3) convert \(...\) → $…$
-    .replace(/\\\\\(([\s\S]+?)\\\\\)/g, "$$$1$$");
+  return (
+    text
+      // 1) wrap any \begin{...}...\end{...} in $$...$$
+      .replace(
+        /\\\\begin\{([^\}]+)\}([\\s\\S]*?)\\\\end\{\1\}/g,
+        (_, envName, body) => `$$\\begin{${envName}}${body}\\end{${envName}}$$`
+      )
+      // 2) convert \[…\] → $$…$$
+      .replace(/\\\\\[([\s\S]+?)\\\\\]/g, "$$$$1$$$$")
+      // 3) convert \(...\) → $…$
+      .replace(/\\\\\(([\s\S]+?)\\\\\)/g, "$$$1$$")
+  );
 };
-
-
 
 // Map block types to icons
 const getBlockIcon = (type) => {
@@ -49,7 +49,7 @@ const getBlockIcon = (type) => {
       return <PenTool className="h-5 w-5 text-indigo-600" />;
     case "practice_exercise":
       return <PenTool className="h-5 w-5 text-emerald-600" />;
-    case "misconception":
+    case "misconception" || "challenge_problem":
       return <BookOpen className="h-5 w-5 text-red-600" />;
     default:
       return <BookOpen className="h-5 w-5 text-gray-600" />;
@@ -77,7 +77,32 @@ const getBlockTitle = (type) => {
   };
   return titles[type] || "Concept";
 };
+const VideoRenderer = ({ url }) => {
+  // Extract video ID from YouTube URL
+  const getYouTubeId = (url) => {
+    const regExp =
+      /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return match && match[2].length === 11 ? match[2] : null;
+  };
 
+  const videoId = getYouTubeId(url);
+
+  if (!videoId) return <p>Invalid YouTube URL</p>;
+
+  return (
+    <div className="aspect-w-16 aspect-h-9">
+      <iframe
+        src={`https://www.youtube.com/embed/${videoId}`}
+        title="YouTube video player"
+        frameBorder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+        className="w-full h-64 rounded-md"
+      ></iframe>
+    </div>
+  );
+};
 // Styling backgrounds by block type to match icon colors
 const getBlockStyles = (type) => {
   const common = "rounded-lg p-6 mb-10 transition-all duration-300 border-l-4";
@@ -88,8 +113,6 @@ const getBlockStyles = (type) => {
       return `${common} bg-green-50 border-green-600`;
     case "definition":
       return `${common} bg-purple-50 border-purple-600`;
-    case "concept_explanation":
-      return `${common} bg-amber-50 border-amber-600`;
     case "worked_example":
       return `${common} bg-indigo-50 border-indigo-600`;
     case "practice_exercise":
@@ -136,11 +159,24 @@ export function ModuleContentRenderer({ contents }) {
                 {transition_text && (
                   <p className="mb-4 italic text-gray-600">{transition_text}</p>
                 )}
-                <ReactMarkdown
-                  remarkPlugins={[remarkMath]}
-                  rehypePlugins={[rehypeKatex]}
-                  children={normalizeMath(content)}
-                />
+                {blockType === "video" ? (
+                  <VideoRenderer url={content} />
+                ) : contentType === "html" ||
+                  blockType === "visual_aid" ||
+                  blockType === "interactive_element" ? (
+                  // Render HTML content directly for html type or visual_aid and interactive_element block types
+                  <div
+                    tag-renderer="THIS IS A TEST"
+                    className="html-content w-full"
+                    dangerouslySetInnerHTML={{ __html: content }}
+                  />
+                ) : (
+                  <ReactMarkdown
+                    remarkPlugins={[remarkMath]}
+                    rehypePlugins={[rehypeKatex]}
+                    children={normalizeMath(content)}
+                  />
+                )}
               </div>
             )}
           </div>
