@@ -131,6 +131,7 @@ def get_user_classrooms(request):
 
 @api_view(['GET', 'PUT', 'DELETE'])
 def classroom_detail(request, pk):
+    print("HEREEREE")
     try:
         classroom = Classroom.objects.get(pk=pk)
     except Classroom.DoesNotExist:

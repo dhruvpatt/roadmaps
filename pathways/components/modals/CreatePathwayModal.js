@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { X, Plus, Minus } from "lucide-react";
 import { useRouter } from "next/router";
-import backendUrl from "@/backendUrl";
+import backendUrl from "../../backendUrl";
 
 export default function CreatePathwayModal({
   isOpen,

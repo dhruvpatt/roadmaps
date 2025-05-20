@@ -1,6 +1,6 @@
 import ClassroomOverview from "./ClassroomOverview";
 import { useEffect, useState } from "react";
-import StudentsComponent from "./classroom-students";
+import StudentsComponent from "./ClassroomStudents";
 
 
 export default function ClassroomTabs({ classroomCode, classroomId, isTeacher }) {

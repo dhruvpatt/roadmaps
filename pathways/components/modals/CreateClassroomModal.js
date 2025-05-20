@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import mockStudents from "../../data/mockStudents";
-import emitter from "@/mitt";
 
 export default function CreateClassroomModal({ isOpen, onClose, onCreate, user }) {
   const [form, setForm] = useState({ name: "", details: "" });

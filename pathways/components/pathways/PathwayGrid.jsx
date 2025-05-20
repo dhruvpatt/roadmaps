@@ -36,7 +36,6 @@ export default function Pathways({ title = "Your Pathways", classroomId }) {
             const body = {
                 user_id: usr.id,
             };
-            console.log("classid in grid", classroomId)
             if (classroomId) {
                 body.classroom_id = classroomId;
             }

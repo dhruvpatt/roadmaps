@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Users, BookOpen, BarChart2, CircleCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
-import backendUrl from "@/backendUrl";
-import PathwayGrid from "@/components/pathways/PathwayGrid";
+import backendUrl from "../../backendUrl";
+import PathwayGrid from "../../components/pathways/PathwayGrid";
 
 
 export default function ClassroomOverview({ isTeacher = false, classroomCode = null, classroomId = null }) {

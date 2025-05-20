@@ -1,5 +1,5 @@
 import React from "react"
-import ClassroomCard from "@/components/classrooms/classroom-card"
+import ClassroomCard from "@/components/classrooms/ClassroomCard"
 import CreateClassroomModal from "@/components/modals/CreateClassroomModal"
 import { useState, useEffect } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"

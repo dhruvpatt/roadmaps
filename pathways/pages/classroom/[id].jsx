@@ -1,5 +1,5 @@
-import ClassroomHeader from "@/components/classrooms/classroom-header";
-import ClassroomTabs from "@/components/classrooms/ClassroomTabs";
+import ClassroomHeader from "../../components/classrooms/ClassroomHeader";
+import ClassroomTabs from "../../components/classrooms/ClassroomTabs";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import backendUrl from "@/backendUrl";
@@ -46,7 +46,7 @@ const Classroom = () => {
 
     try {
       console.log("Fetching classroom with ID:", id);
-      const res = await fetch(`${backendUrl}/clasrooms/${id}`, {
+      const res = await fetch(`${backendUrl}/api/classrooms/${id}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

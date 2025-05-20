@@ -575,9 +575,7 @@ def get_user_pathways(request):
     user_id = request.data.get("user_id")
     classroom_id = request.data.get("classroom_id")
     search_query = request.GET.get("search", "")
-
-    print("Request received with user_id:", user_id, "classroom_id:", classroom_id)
-
+    
     try:
         user = User.objects.get(pk=user_id)
         print("Loaded user:", user.email, "| ID:", user.id)
