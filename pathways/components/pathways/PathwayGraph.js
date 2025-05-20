@@ -8,9 +8,7 @@ import ReactFlow, {
 
 import "reactflow/dist/style.css";
 import { nodeTypes as defaultNodeTypes } from "@/components/pathways/PathwayNode";
-
 import FloatingEdge from './FloatingEdge';
-import { nodeTypes as defaultNodeTypes } from "../pathways/PathwayNode";
 
 const isModuleUnlocked = (module, moduleMap) => {
   return (module.prereq || []).every(
