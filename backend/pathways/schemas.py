@@ -1,5 +1,5 @@
-from pydantic import BaseModel, Field, validator
-from typing import Dict, List, Optional, Union
+from pydantic import BaseModel, Field, validator, RootModel
+from typing import Dict, List, Optional, Union, Literal
 class GradingResponse(BaseModel):
     items: List[str]
 
@@ -14,12 +14,26 @@ class QuizList(BaseModel):
 class SlideScript(BaseModel):
     scripts: Dict[str, str]
 
-class ContentItem(BaseModel):
-    type: str  # 'html', 'content', or 'video'
-    content: str
+class Styling(BaseModel):
+    centered: Optional[bool]
+    spacing: Optional[Literal['small', 'medium', 'large']]
+    font_size: Optional[Literal['small', 'normal', 'large']]
+    highlight: Optional[bool]
+
+class ContentBlock(BaseModel):
+    block_type: Literal[
+        'introduction', 'learning_objectives', 'definition', 'concept_explanation', 'worked_example',
+        'practice_exercise', 'visual_aid', 'real_world_link', 'misconception', 'comparison',
+        'summary', 'reflection', 'challenge_problem', 'interactive_element', 'video'
+    ]
+    render_type: Literal['content', 'html', 'video']
+    description: Optional[str]
+    content: Optional[str]
+    styling: Optional[Styling]
+    transition_text: Optional[str]
 
 class ContentList(BaseModel):
-    items: List[ContentItem]
+    items:List[ContentBlock]
 
 class FeedbackResponse(BaseModel):
     feedback: str
@@ -128,4 +142,4 @@ class ChapterListStructure(BaseModel):
     chapters: List[ChapterStructure]
 
 
-    
+

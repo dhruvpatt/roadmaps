@@ -1,4 +1,3 @@
-
 import ClassroomHeader from "@/components/classrooms/classroom-header";
 import ClassroomTabs from "@/components/classrooms/ClassroomTabs";
 import { useState, useEffect } from "react";

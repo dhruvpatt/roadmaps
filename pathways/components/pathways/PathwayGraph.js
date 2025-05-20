@@ -10,6 +10,7 @@ import "reactflow/dist/style.css";
 import { nodeTypes as defaultNodeTypes } from "@/components/pathways/PathwayNode";
 
 import FloatingEdge from './FloatingEdge';
+import { nodeTypes as defaultNodeTypes } from "../pathways/PathwayNode";
 
 const isModuleUnlocked = (module, moduleMap) => {
   return (module.prereq || []).every(
@@ -22,6 +23,8 @@ const edgeTypes = {
 };
 
 const InnerGraph = ({ data, viewMode = "student", published = false }) => {
+  // console.log("GRAPH DATA:", data)
+
   const { fitView } = useReactFlow();
   const isTeacher = viewMode === "teacher";
   const [hoveredNodeId, setHoveredNodeId] = React.useState(null);

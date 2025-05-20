@@ -137,23 +137,46 @@ class Module(models.Model):
     def __str__(self):
         return self.name
 
-
 class Content(models.Model):
     CONTENT = 'content'
     HTML = 'html'
     VIDEO = 'video'
+
     TYPE_CHOICES = [
         (CONTENT, 'Content'),
         (HTML, 'HTML'),
         (VIDEO, 'Video'),
     ]
 
-    type = models.CharField(max_length=20, choices=TYPE_CHOICES)
-    content = models.TextField()
-    module = models.ForeignKey(Module, on_delete=models.CASCADE, related_name='contents')
+    BLOCK_TYPE_CHOICES = [
+        ('introduction', 'Introduction'),
+        ('learning_objectives', 'Learning Objectives'),
+        ('definition', 'Definition'),
+        ('concept_explanation', 'Concept Explanation'),
+        ('worked_example', 'Worked Example'),
+        ('practice_exercise', 'Practice Exercise'),
+        ('visual_aid', 'Visual Aid'),
+        ('real_world_link', 'Real World Link'),
+        ('misconception', 'Misconception'),
+        ('comparison', 'Comparison'),
+        ('summary', 'Summary'),
+        ('reflection', 'Reflection'),
+        ('challenge_problem', 'Challenge Problem'),
+        ('interactive_element', 'Interactive Element'),
+        ('video', 'Video')
+    ]
 
-    def __str__(self):
-        return f"{self.get_type_display()} for {self.module.name}"
+    module = models.ForeignKey('Module', on_delete=models.CASCADE, related_name='contents')
+    type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    block_type = models.CharField(max_length=50, choices=BLOCK_TYPE_CHOICES)  # ✅ NEW
+    content = models.TextField()
+    transition_text = models.TextField(blank=True, null=True)
+    styling = models.JSONField(blank=True, null=True)
+
+    # def __str__(self):
+    #     return f"{self.block_type} ({self.get_type_display()}) for {self.module.name}"
+
+
 
 
 class Message(models.Model):

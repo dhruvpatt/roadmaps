@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
-import backendUrl from "@/backendUrl"
+import backendUrl from "@/backendUrl";
 import ReactMarkdown from "react-markdown";
-
 
 const ModuleChat = ({ id }) => {
   const [messages, setMessages] = useState([
@@ -25,7 +24,7 @@ const ModuleChat = ({ id }) => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ module_id: id, message: input }),
-    })
+    });
 
     const ret = await res.json();
     setMessages((prev) => [...prev, { role: "assistant", content: ret.reply }]);
@@ -51,20 +50,16 @@ const ModuleChat = ({ id }) => {
 
   return (
     <div className="h-full flex flex-col bg-white border rounded-lg p-4 shadow-sm">
-      <h2 className="text-xl font-semibold text-gray-800 mb-1">💬 AI Learning Assistant</h2>
-      <p className="text-sm text-gray-700 mb-3">
-        Ask questions about this module
-      </p>
-
       {/* Chat area */}
       <div className="flex-1 overflow-y-auto mb-4 space-y-3 pr-1">
         {messages.map((msg, idx) => (
           <div
             key={idx}
-            className={`px-4 py-2 rounded-md text-sm max-w-[85%] whitespace-pre-wrap ${msg.role === "assistant"
-              ? "bg-yellow-50 text-gray-800 self-start"
-              : "bg-black text-white self-end"
-              }`}
+            className={`px-4 py-2 rounded-md text-sm max-w-[85%] whitespace-pre-wrap ${
+              msg.role === "assistant"
+                ? "bg-yellow-50 text-gray-800 self-start"
+                : "bg-black text-white self-end"
+            }`}
           >
             <ReactMarkdown>{msg.content}</ReactMarkdown>
           </div>
@@ -94,7 +89,6 @@ const ModuleChat = ({ id }) => {
         </button>
       </div>
     </div>
-
   );
 };
 

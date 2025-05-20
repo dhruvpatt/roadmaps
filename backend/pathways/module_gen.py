@@ -1,6 +1,6 @@
 import os
 import django
-
+import textwrap
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.backend.settings')
 django.setup()
 
@@ -55,118 +55,266 @@ class PerceptionAgent:
 
 
 class ContentGenerationAgent:
-    def generate_content(self, module_name, learning_goals, insights, user_preferences):
-        """Generate educational content based on module parameters"""
-        prompt = f"""
-        You are a educator designing an article for one of your students
-        Based on the insights: '{insights}' for the module '{module_name}' with learning goals {', '.join(learning_goals)}, generate educational content.
-        The user has the following preferences: {user_preferences}.
-
-        The content should be personalized according to these preferences and follow these guidelines:
-
-         ### Structure Guidelines
-        1. Begin with an engaging introduction that clearly states learning objectives do not state that it is the introduction
-        2. Present concepts in a logical progression with imense depth (fundamental to advanced)
-        3. Include practical examples and real-world applications
-        4. End with a concise summary reinforcing key takeaways
-        
-        ### Content Types
-        - **'content'**: Text-based content with markdown formatting for readable structure will be rendered using react markdown 
-        - **'html'**: Interactive HTML elements (Note: JavaScript functionality is not avialble DO NOT create html that rely on scripts, focus on visual elements graphs, diagrams, titles, subheadings NO IMAGES CONSTRUCT THE DIAGRAMS/GRAPHS USING HTML)
-        - **'video'**: Specific YouTube video search queries (descriptive enough to find relevant content)
-        
-        ### Best Practices
-        - Use language appropriate for the target audience's level
-        - talk as if you are a lecturer create good materials that cover a variety of variations and cases and explains materials in a way that does beyond understanding
-        - Provide concrete examples that connect concepts to real-world applications
-        - Incorporate interactive elements to maintain engagement
-        - Ensure all information is technically accurate and current
-        - Address all learning goals thoroughly
-        - If the topic is math related work through sample questions to demonstrate concepts 
-        - Imagine this as a khan acadmy article with supporting videos
-        - HMTML elements that are meant to be graphs or diagrams should have the highest level of quality NO PLACE HOLDERS THIS IS NOT GOING UNDER REVIEW OR HAVE ANYTHING ADDED TO IT
-
-        Return a list of content items in valid JSON format, each with:
-        - type: one of ['html', 'content', 'video']
-        - content: the actual content or interactive structure
-
-        Example format:
-        [
-            {{
-                "type": "content", 
-                "content": "# Introduction\\nIn this module, we will explore..."
-            }},
-            {{
-                "type": "html",
-                "content": "<div class=\\"interactive\\">\\n  <h3>Interactive Example</h3>\\n  <p>Here is an interactive demonstration...</p>\\n</div>"
-            }},
-            {{
-                "type": "video",
-                "content": "detailed tutorial on [specific concept from module]"
-            }}
-        ]
-
-        Ensure that the HTML content is properly formatted and will render correctly in a browser.
-        DO NOT GIVE LINKS TO INTERACTIVE QUIZZES
+    def generate_block_plan(self, module_name, learning_goals, insights, user_preferences):
         """
-        return get_llm_response(prompt, response_model=ContentList)
+        Step 1: Generate a structured list of content blocks with descriptions and render types.
+        Adds styling metadata (centered, spacing, font size, etc.).
+        """
+        prompt = f"""
+        You are a curriculum designer creating an AI-generated educational article for the module '{module_name}'.
+
+        Learning Goals:
+        - {', '.join(learning_goals)}
+
+        Insights:
+        - {insights}
+
+        User Preferences:
+        - {user_preferences}
+
+        Your job is to return a JSON list of content **blocks** to structure the article. Each block must include:
+        - block_type: one of ['introduction', 'learning_objectives', 'definition', 'concept_explanation', 'worked_example',
+                              'practice_exercise', 'visual_aid', 'real_world_link', 'misconception', 'comparison',
+                              'summary', 'reflection', 'challenge_problem', 'interactive_element', 'video']
+        - description: plain English of what this block should include
+        - render_type: one of ['content', 'html', 'video']
+        - styling: JSON object that includes visual preferences:
+          - centered: true or false
+          - spacing: one of ['small', 'medium', 'large']
+          - font_size: optional, one of ['small', 'normal', 'large']
+          - highlight: optional, true or false
+
+        Guidelines:
+        1. You dont need to use every block type and can reuse block types if needed 
+        2. Keep each block modular and purposeful — avoid redundancy.
+        3. For block_type 'html', DO NOT plan for anything requiring JavaScript or interactivity. Use static visual elements like labeled diagrams, charts, headings, subheadings, and tables. Construct them with semantic HTML.
+        4. Be sure to vary the block types to keep the learning experience dynamic.
+        5. The blocks should follow a logical flow: from motivation and definitions, through explanations and examples, to review and application.
+
+        Block-specific guidelines:
+        - 'introduction': Provide context and motivation for the topic. Do NOT include the words "Introduction" as a heading.
+        - 'learning_objectives': State 3–5 specific skills or outcomes the learner should achieve. Use a bullet or numbered list.
+        - 'definition': Define key terms or principles clearly and concisely. Only one concept per block.
+        - 'concept_explanation': Explain a concept in detail. Include variations, edge cases, or common use patterns.
+        - 'worked_example': Present a step-by-step solved problem that clearly applies a concept previously explained.
+        - 'practice_exercise': Pose 1–3 problems learners can attempt on their own. These should directly follow a worked example and align with it.
+        - 'visual_aid': Describe a static diagram or chart that would help visualize the concept. No images — use only HTML structures like divs, tables, lists, or headings.
+        - 'real_world_link': Describe how the concept connects to real-world applications or scenarios.
+        - 'misconception': Highlight a common misunderstanding related to the topic and explain the correct understanding.
+        - 'comparison': Describe a comparison between two or more similar concepts, including when each is appropriate.
+        - 'summary': Concisely recap the most important ideas covered. Use bullet points if appropriate.
+        - 'reflection': Prompt the learner to consider how the topic relates to their experience or how well they’ve understood it.
+        - 'challenge_problem': Present a more advanced or multi-step problem to deepen understanding.
+        - 'interactive_element': Describe a simple HTML structure that encourages user engagement — such as a sortable table, toggleable explanation sections, or fill-in-the-blank style layout (no JavaScript).
+        - 'video': Suggest a detailed and specific YouTube search phrase that would return a relevant and high-quality explainer video on the topic.
+        
+        First, plan the content structure in your mind step-by-step:
+        1. What prior knowledge or context does the learner need?
+        2. What sequence of concepts should be taught to build understanding?
+        3. Where should practice or examples occur?
+        4. How will you close and reinforce the key ideas?
+        
+        Then, generate the JSON list of blocks based on this mental plan.
+
+        Example return:
+        [
+          {{
+            "block_type": "definition",
+            "description": "Define and explain Newton’s Second Law (F = ma)",
+            "render_type": "content",
+            "styling": {{
+              "centered": false,
+              "spacing": "medium",
+              "font_size": "normal"
+            }}
+          }},
+          {{
+            "block_type": "visual_aid",
+            "description": "Diagram of force vectors acting on an accelerating cart",
+            "render_type": "html",
+            "styling": {{
+              "centered": true,
+              "spacing": "large"
+            }}
+          }}
+        ]
+        """
+
+        return get_llm_response(prompt, response_model=ContentList, max_tokens=5000)
+
+
+    def generate_contextual_content_from_block(
+        self,
+        block,
+        position,
+        total_blocks,
+        previous_block_summary,
+        learning_goals,
+    ):
+        prompt = textwrap.dedent(fr"""
+            You are generating an educational block in a structured learning article.
+
+            This is block {position + 1} of {total_blocks}.
+            Block Type: {block["block_type"]}
+            Render Type: {block["render_type"]}
+            Description: {block["description"]}
+            Learning Goals: {', '.join(learning_goals)}
+
+            {'Previous Block Summary: ' + previous_block_summary if previous_block_summary else ''}
+
+            Your task:
+            - Write a short transition sentence that connects this block to the previous one.
+            - Generate the block's main content appropriate for the subject area.
+
+            Output JSON:
+            {{
+            "type": "{block["render_type"]}",
+            "content": "...",  // Markdown + LaTeX content
+            "styling": {block["styling"]},
+            "transition_text": "..."  // One connecting sentence
+            }}
+
+            Guidelines:
+
+            CONTENT FORMATTING GUIDELINES:
+            - Use Markdown for formatting:
+            * **bold**, *italic*, `inline code`, lists, headings, etc.
+
+            - For MATHEMATICAL content:
+            * Inline math: `$x^2 + y^2 = r^2$`
+            * Display math (on its own lines):
+                
+                $$
+                A = \begin{{bmatrix}}
+                1 & 2 \\\\
+                3 & 4
+                \end{{bmatrix}}
+                $$
+
+            * Systems of equations:
+                
+                $$
+                \begin{{cases}}
+                x + y = 3 \\\\
+                2x - y = 1
+                \end{{cases}}
+                $$
+
+            * **Do not** manually double-escape backslashes—each single `\` will be JSON-encoded as `\\` for you.
+
+            - For LANGUAGE/HUMANITIES content:
+            * Use italics or blockquotes where appropriate.
+
+            - For SCIENCE content:
+            * Format units (`m/s`, `kg`), chemical formulas (`H_2O`), etc.
+
+            - For CODING content:
+            * Use fenced code blocks:
+            
+                \`\`\`python
+                def foo(x):
+                    return x * 2
+                \`\`\`
+
+            BLOCK TYPE GUIDELINES:
+            - introduction, learning_objectives, definition, concept_explanation, etc. as before.
+
+            GENERAL:
+            - Headings (`###`) and display math (`$$…$$`) must be on their own blank lines.
+            - Your **content** field must be valid Markdown + LaTeX that `react-markdown + rehype-katex` can parse.
+            - Return **only** the JSON object—no extra prose outside it.
+        """).strip()
+
+        return get_llm_response(prompt, response_model=ContentList, max_tokens=2000)
+
+
+    def generate_content(self, module_name, learning_goals, insights, user_preferences):
+        """
+        Main generation function
+        """
+        block_plan = self.generate_block_plan(module_name, learning_goals, insights, user_preferences)
+        full_content = []
+        # print(f"BLOCK PLAN: {block_plan}")
+        previous_summary = None
+        i = 0
+        total_blocks = len(block_plan["items"])
+        for block in block_plan["items"]:
+            # print(f"BLOCK {i}: {block}")
+            contextual_block = self.generate_contextual_content_from_block(
+                block=block,
+                position=i,
+                total_blocks=total_blocks,
+                previous_block_summary=previous_summary,
+                learning_goals=learning_goals
+            )
+
+            # Extract summary for next block's context (basic form)
+            print(contextual_block)
+            if contextual_block and contextual_block["items"][0]["content"]:
+                previous_summary = contextual_block["items"][0]["content"][:300]  # crude approximation
+
+                full_content.extend(contextual_block["items"])
+            i += 1
+        return full_content
 
     def generate_content_with_feedback(self, module_name, learning_goals, insights, user_preferences,
                                        previous_evaluation):
-        """Generate improved content using feedback from previous evaluation"""
+        """
+        Full generation pipeline with feedback support and contextual transitions for cohesion.
+        """
         print(previous_evaluation)
-        prompt = f"""
-            You are an experienced instructional designer and subject-matter expert charged with elevating an existing module.  
-            Using the insights below for the module '{module_name}' and its learning goals ({', '.join(learning_goals)}), generate richer, more engaging educational content that aligns with the user’s stated preferences.
-            
-            Insights:
-            '{insights}'
-            
-            Module:
-            '{module_name}'
-            
-            Learning Goals:
-            {', '.join(learning_goals)}
-            
-            User Preferences:
-            {user_preferences}
-            
-            Your previous content received this evaluation:
-            
-            Scores:
-            {previous_evaluation.scores}
-            
-            Feedback:
-            {previous_evaluation.feedback}
-            
-            Specific improvement suggestions:
-            {previous_evaluation.improvement_suggestions}
-            
-            Please address all these suggestions while creating new content that follows these guidelines:
-            
-            1. Content Structure:
-               - Start with a clear introduction and learning objectives
-               - Present concepts in logical order
-               - Include examples, applications, and practice opportunities
-               - End with a concise summary
-            
-            2. Content Types:
-               - 'html': HTML content with interactive elements or titles and subheadings—ensure proper HTML syntax  
-               - 'content': Text-based content with React Markdown formatting  
-               - 'video': Specific YouTube video search queries (these will be resolved to actual videos)
-            
-            3. Best Practices:
-               - Use clear, concise language appropriate for the target audience  
-               - Include concrete examples that relate to real-world applications  
-               - Incorporate interactive elements to maintain engagement  
-               - Ensure technical accuracy and currency of all information
-            
-            Return a list of content items in valid JSON format, each with:
-            - type: one of ['html', 'content', 'video']
-            - content: the actual content or interactive structure
-            """
 
-        return get_llm_response(prompt, response_model=ContentList)
+        feedback_summary = f"""
+        Scores: {previous_evaluation.scores}
+        Feedback: {previous_evaluation.feedback}
+        Suggestions: {previous_evaluation.improvement_suggestions}
+        """
+
+        block_plan = self.generate_block_plan(module_name, learning_goals, insights, user_preferences)
+        full_content = []
+        previous_summary = None
+        # print(f"BLOCK FEEDBACK PLAN: {block_plan}")
+        i = 0
+        for block in block_plan["items"]:
+            print(f"block {i}: {block}")
+            prompt = f"""
+            You are improving an educational content block using expert feedback and cohesive flow design.
+
+            Block {i + 1} of {len(block_plan)}
+            Block Type: {block["block_type"]}
+            Render Type: {block["render_type"]}
+            Description: {block["description"]}
+            Styling: {block["styling"]}
+
+            Learning Goals: {', '.join(learning_goals)}
+            Prior Block Summary: {previous_summary or 'N/A'}
+
+            Feedback Summary:
+            {feedback_summary}
+
+            Generate:
+            - One short transition sentence
+            - The block’s main content
+
+            Output JSON:
+            {{
+              "type": "{block["render_type"]}",
+              "content": "...",
+              "styling": {block["styling"]},
+              "transition_text": "..."
+            }}
+
+            Format properly and apply all feedback.
+            """
+            improved_block = get_llm_response(prompt, response_model=ContentList, max_tokens=5000)
+
+            # Update previous summary for next block
+            if improved_block and improved_block[0].content:
+                previous_summary = improved_block[0].content[:300]
+
+            full_content.extend(improved_block)
+            i += 1
+        return full_content
 
 
 class EvaluationAgent:
@@ -219,7 +367,7 @@ class EvaluationAgent:
         try:
             response = get_llm_response(prompt, response_model=ContentEvaluation, mode="standard")
             #print("Response:", response)
-
+            return True, response
             if response.overall_verdict == "VALID":
                 return True, response
             else:
@@ -322,28 +470,31 @@ class ModuleContentGenerationAPIView(APIView):
                     if is_valid:
                         print("EVALUATION PASSED - Content is valid")
                         content_objects = []
-                        print(content_list)
-                        for item in content_list['items']:
-                            if item['type'] == 'video':
+                        for item in content_list:
+                            # Handle video lookup
+                            if item['block_type'] == 'video':
                                 query = item['content']
                                 resolved_url = search_youtube_video(query)
                                 if resolved_url:
                                     item['content'] = resolved_url
                                 else:
-                                    # Optionally skip if no valid video was found
                                     print(f"No valid video found for query: {query}")
                                     continue
+
+                            # Ensure all required and optional fields are properly mapped
                             content = Content.objects.create(
                                 module=module,
-                                type=item['type'],
-                                content=item['content']
+                                type=item.get('render_type', 'content'),
+                                block_type=item.get('block_type'),
+                                content=item.get('content'),
+                                transition_text=item.get('transition_text'),
+                                styling=item.get('styling'),
+                                # description=item.get('description')
                             )
                             content_objects.append(content)
 
-                        # Now add these to the ManyToMany field manually
                         module.content_list.set(content_objects)
 
-                        # Save evaluation metrics to the module for future reference
                         module.content_evaluation_scores = evaluation_result.scores
                         module.save()
 
@@ -548,8 +699,7 @@ def pathway_chapter_count(request, pathway_id):
 def get_module(request):
     module_id = request.data.get('module_id')
     user_id = request.data.get('user_id')
-    print(request.data.get('module_id'))
-    print(request.data.get('user_id'))
+
     if not module_id or not user_id:
         return Response({"error": "module_id and user_id are required"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -573,6 +723,7 @@ def get_module(request):
             module.save()
 
         serializer = ModuleSerializer(module)
+        print("Module data:", serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     except Module.DoesNotExist:
