@@ -511,6 +511,7 @@ const ViewPathwayPage = () => {
             : (currentChapter?.modules || []).map((mod) => {
                 const unlocked = isModuleUnlocked(mod, moduleMap);
                 const completed = mod.status === "completed";
+                const in_progress = mod.status === "in_progress";
                 return (
                   <div
                     key={mod.id}
@@ -545,7 +546,11 @@ const ViewPathwayPage = () => {
                             : "bg-black text-white cursor-pointer"
                         }`}
                       >
-                        {completed ? "Review" : "Start"}
+                        {completed
+                          ? "Review"
+                          : in_progress
+                          ? "Resume"
+                          : "Start"}{" "}
                       </button>
                     ) : (
                       <button
