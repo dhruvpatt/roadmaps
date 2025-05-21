@@ -9,7 +9,7 @@ export default function CreatePathwayModal({
   onCreate,
   onUpdate,
   user,
-  classroomCode,
+  classroom = null,
   pathway = null,
 }) {
   const router = useRouter();
@@ -19,7 +19,7 @@ export default function CreatePathwayModal({
     title: "",
     topic: "",
     mode: "CASUAL",
-    classroom: "",
+    classroom: {},
     grade: "",
     learningGoals: "",
     details: "",
@@ -41,19 +41,20 @@ export default function CreatePathwayModal({
   }, [isOpen]);
 
   useEffect(() => {
+
     if (isEdit && pathway) {
       setForm({
         title: pathway.title || "",
         topic: pathway.topic || "",
         mode: pathway.mode || "CASUAL",
-        classroom: pathway.classroom || classroomCode || "",
+        classroom: classroom || pathway?.classroom || "",
         grade: pathway.grade || "",
         learningGoals: (pathway.learning_goals || []).join(", "),
         details: pathway.details || "",
         chapters: pathway.chapters || [],
       });
     }
-  }, [isEdit, isOpen, user, pathway, classroomCode]);
+  }, [isEdit, isOpen, user, pathway, classroom]);
 
   useEffect(() => {
     const fetchClassrooms = async () => {
@@ -114,9 +115,8 @@ export default function CreatePathwayModal({
         .map((g) => g.trim())
         .filter(Boolean),
       userid: user.id,
-      classroom: classroomCode || form.classroom || null,
+      classroom: form.classroom ? { id: Number(form.classroom) } : null,
     };
-
     console.log(isEdit ? "Updating pathway:" : "Creating pathway:", payload);
     setLoading(true);
 
@@ -216,13 +216,13 @@ export default function CreatePathwayModal({
               <label className="text-sm font-medium text-gray-700">Classroom</label>
               <select
                 name="classroom"
-                value={form.classroom.id}
+                value={pathway?.classroom || form.classroom || null}
                 onChange={handleChange}
                 className="w-full mt-1 border border-gray-300 rounded px-3 py-2"
               >
                 <option value="">None (Personal)</option>
                 {classrooms.map((cls) => (
-                  <option key={cls.id} value={cls.id}>
+                  <option key={cls.id} value={cls}>
                     {cls.name}, with {cls.students.length} student(s)
                   </option>
                 ))}

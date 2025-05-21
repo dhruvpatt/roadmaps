@@ -76,7 +76,12 @@ const InnerGraph = ({ data, viewMode = "student", published = false }) => {
 
       const hue = (mod.chapter * 60) % 360;
       const lightness = 80;
+      // const formattedGoals = mod.learning_goals
+      // .map((goal, index) => `${index + 1}. ${goal}`)
+      // .join("\n");
       //TODO: Update to use description
+
+      console.log(mod)
       nodes.push({
         id: mod.id.toString(),
         type: "pathwayNode",
@@ -84,7 +89,7 @@ const InnerGraph = ({ data, viewMode = "student", published = false }) => {
         data: {
           label: mod.name,
           status: mod.status ?? "not_started",
-          description: mod.learningGoals?.[0] || "", 
+          description: mod.learning_goals || mod.learningGoals || "", 
           id: mod.id,
           unlocked: true,
         },

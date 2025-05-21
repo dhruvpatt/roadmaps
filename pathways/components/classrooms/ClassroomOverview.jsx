@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Users, BookOpen, BarChart2, CircleCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
-import backendUrl from "../../backendUrl";
-import PathwayGrid from "../../components/pathways/PathwayGrid";
+import backendUrl from "@backendUrl";
+import PathwayGrid from "@components/pathways/PathwayGrid";
 
 
 export default function ClassroomOverview({ isTeacher = false, classroomCode = null, classroomId = null }) {
@@ -20,8 +20,8 @@ export default function ClassroomOverview({ isTeacher = false, classroomCode = n
     }
     setUser(usr);
 
-    if (isTeacher && classroomId) {
-      fetchClassroom(usr, classroomId);
+    if (classroomId) {
+      fetchClassroom(usr, classroomId)
     } else {
       loadMockData();
     }
@@ -29,16 +29,16 @@ export default function ClassroomOverview({ isTeacher = false, classroomCode = n
 
   const fetchClassroom = async (user, id) => {
     try {
-      const res = await fetch(`${backendUrl}/api/classrooms/${id}}`, {
+      const res = await fetch(`${backendUrl}/api/classrooms/${id}/`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
       const ret = await res.json();
 
-      setClassroom(ret.classroom || {});
+      setClassroom(ret || {});
       setPathways(Array.isArray(ret.pathways) ? ret.pathways : []);
 
-      const studentsCount = ret.classroom?.students?.length || 0;
+      const studentsCount = ret?.students?.length || 0;
       const pathwayCount = ret.pathways?.length || 0;
 
       setStats([
@@ -100,6 +100,7 @@ export default function ClassroomOverview({ isTeacher = false, classroomCode = n
     ]);
   };
 
+
   return (
     <div className="space-y-10">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -119,10 +120,15 @@ export default function ClassroomOverview({ isTeacher = false, classroomCode = n
         ))}
       </div>
 
-      <PathwayGrid
-        title={"Class Pathways"}
-        classroomId={classroomId}
-      />
+      {classroom?.id ? (
+        <PathwayGrid
+          title={"Class Pathways"}
+          classroom={classroom}
+        />
+      ) : (
+        <div className="text-center text-gray-500 text-sm">Loading classroom pathways...</div>
+      )}
     </div>
   );
+
 }

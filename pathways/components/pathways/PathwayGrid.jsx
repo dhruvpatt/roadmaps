@@ -7,7 +7,7 @@ import { useState, useEffect } from "react"
 import backendUrl from "@/backendUrl"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
-export default function Pathways({ title = "Your Pathways", classroomId }) {
+export default function Pathways({ title = "Your Pathways", classroom }) {
     const router = useRouter()
     const [showPathwayModal, setShowPathwayModal] = useState(false);
     const [user, setUser] = useState({});
@@ -30,14 +30,15 @@ export default function Pathways({ title = "Your Pathways", classroomId }) {
     }, []);
 
     const fetchPathways = async (usr, pageNum = 1, query = "") => {
+        console.log(classroom)
         if (pageNum < 1 || pageNum > totalPages) return;
         setLoading(true);
         try {
             const body = {
                 user_id: usr.id,
             };
-            if (classroomId) {
-                body.classroom_id = classroomId;
+            if (classroom) {
+                body.classroom_id = classroom.id;
             }
 
             const res = await fetch(`${backendUrl}/get-user-pathways/?page=${pageNum}&search=${query}`, {
@@ -100,7 +101,7 @@ export default function Pathways({ title = "Your Pathways", classroomId }) {
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {user.role == "teacher" || classroomId == null? (<button
+                {user.role == "teacher" || classroom?.id == null? (<button
                     onClick={() => setShowPathwayModal(true)}
                     className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-4 text-center text-gray-500 hover:bg-amber-100 cursor-pointer transition"
                 >
@@ -152,6 +153,7 @@ export default function Pathways({ title = "Your Pathways", classroomId }) {
                 onClose={() => setShowPathwayModal(false)}
                 onCreate={async (data) => await createPathway(data)}
                 user={user}
+                classroom={classroom}
             />
         </div>
     )

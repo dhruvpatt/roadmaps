@@ -6,10 +6,12 @@ import PathwayGraph from "../../components/pathways/PathwayGraph";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRef } from "react";
 
+
 import CreatePathwayModal from "@/components/modals/CreatePathwayModal";
 
 const ViewPathwayPage = () => {
   const router = useRouter();
+
   const { id } = router.query;
 
   const [pathway, setPathway] = useState({});
@@ -25,6 +27,8 @@ const ViewPathwayPage = () => {
   const [chapterOnlyPathway, setChapterOnlyPathway] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [user, setUser] = useState(null)
+
+  
 
 
   useEffect(() => {
@@ -240,17 +244,18 @@ const ViewPathwayPage = () => {
     <div className="min-h-screen bg-white p-6 space-y-6 text-gray-800 w-full">
       <div
         className="flex items-center text-sm text-gray-500 cursor-pointer hover:underline"
-        onClick={() => router.push("/pathways")}
+        onClick={() => router.back()}
       >
-        <ArrowLeft size={16} className="mr-1" />
-        Back to pathways
+        <ArrowLeft size={24} className="mr-1" />
+        Back
       </div>
 
       <div>
         <div className="flex space-x-2 justify-between items-center">
           <h1 className="text-5xl font-bold text-gray-900">{pathway?.title || "Pathway"}</h1>
 
-          {pathway.owner == user?.id ? (          <div className="flex items-center space-x-3">
+          {pathway.owner == user?.id ? (          
+            <div className="flex items-center space-x-3">
             <button
               onClick={() => setShowEditModal(true)}
               className="flex items-center text-sm font-medium text-amber-600 hover:underline"
@@ -591,7 +596,6 @@ const ViewPathwayPage = () => {
         onClose={() => setShowEditModal(false)}
         onUpdate={handleUpdate}
         user={user}
-        classroomCode={pathway.classroom}
         pathway={pathway}
       />
     </div>

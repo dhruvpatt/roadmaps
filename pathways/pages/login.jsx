@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import backendUrl from "@/backendUrl";
+import backendUrl from "../backendUrl";
 
 function useAuth() {
   return {

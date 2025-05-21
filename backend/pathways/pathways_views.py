@@ -335,10 +335,16 @@ class PathwayGenerationAPIView(APIView):
             details = serializer.validated_data['details']
             mode = serializer.validated_data.get('mode', 'CASUAL')
             user_chapters = serializer.validated_data.get('chapters')
-            classroomCode = serializer.validated_data.get('classroom')
+
+            classroom_data = serializer.validated_data.get('classroom')
             classroom = None
-            if classroomCode:
-                classroom = Classroom.objects.get(join_id=classroomCode)
+            if classroom_data and isinstance(classroom_data, dict):
+                classroom_id = classroom_data.get("id")
+                if classroom_id:
+                    try:
+                        classroom = Classroom.objects.get(id=classroom_id)
+                    except Classroom.DoesNotExist:
+                        return Response({"error": "Classroom not found"}, status=status.HTTP_400_BAD_REQUEST)
 
             user = User.objects.get(pk=user_id)
 
@@ -575,25 +581,26 @@ def get_user_pathways(request):
     user_id = request.data.get("user_id")
     classroom_id = request.data.get("classroom_id")
     search_query = request.GET.get("search", "")
+
+    print(request.data)
     
     try:
         user = User.objects.get(pk=user_id)
-        print("Loaded user:", user.email, "| ID:", user.id)
 
         if classroom_id:
             try:
                 classroom = Classroom.objects.get(pk=classroom_id)
-                print("Loaded classroom:", classroom.name)
-                print("Teachers:", [t.email for t in classroom.teachers.all()])
-                print("Students:", [s.email for s in classroom.students.all()])
             except Classroom.DoesNotExist:
                 return Response({"error": "Classroom not found"}, status=status.HTTP_404_NOT_FOUND)
-
             # Check membership
             is_teacher = classroom.teachers.filter(id=user.id).exists()
             is_student = classroom.students.filter(id=user.id).exists()
 
-            print("Is teacher:", is_teacher, "| Is student:", is_student)
+
+            all_pathways = Pathway.objects.all()
+            # print("ALL Pathways in DB:")
+            # for p in all_pathways:
+            #     print(f"- ID: {p.id}, Title: {p.title}, Classroom: {p.classroom_id}, Owner: {p.owner_id}")
 
             if not is_teacher and not is_student:
                 return Response({"error": "You do not belong to this classroom"}, status=status.HTTP_403_FORBIDDEN)
@@ -608,6 +615,8 @@ def get_user_pathways(request):
                 owner=user,
                 title__icontains=search_query
             ).order_by("id")
+
+        print(pathways)
 
         paginator = PageNumberPagination()
         paginator.page_size = 15

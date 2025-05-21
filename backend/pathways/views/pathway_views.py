@@ -5,7 +5,7 @@ from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from django.db import transaction
-from ..models import Pathway
+from ..models import Pathway, User
 from ..serializers import PathwaySerializer, ChapterSerializer
 
 
@@ -46,9 +46,11 @@ def pathway_detail(request, pk):
     if request.method == 'GET':
         serializer = PathwaySerializer(pathway)
         return Response(serializer.data)
-
+    
     elif request.method == 'PUT':
         try:
+
+            print(request.data["classroom"])
             pathway = Pathway.objects.get(pk=pk)
             if pathway.owner.id != request.data.get("userid", None):
                 return Response({"error": "User cannot update this pathway"}, status=status.HTTP_401_UNAUTHORIZED)

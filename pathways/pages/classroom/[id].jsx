@@ -33,8 +33,6 @@ const Classroom = () => {
     setUser(usr);
     setRole(usr.role);
     setClassroomId(classroomId);
-    console.log("Loaded classroom ID:", classroomId);
-
     fetchClassroom(usr, classroomId);
   }, [router.query]);
 
@@ -45,8 +43,7 @@ const Classroom = () => {
     }
 
     try {
-      console.log("Fetching classroom with ID:", id);
-      const res = await fetch(`${backendUrl}/api/classrooms/${id}`, {
+      const res = await fetch(`${backendUrl}/api/classrooms/${id}/`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -64,7 +61,7 @@ const Classroom = () => {
     }
   };
   return (
-    <div className="flex-1 px-6 md:px-12 py-8 bg-gray-100 overflow-y-auto">
+    <div className="flex-1 px-6 md:px-12 py-8 bg-white overflow-y-auto">
       <div className="max-w-6xl mx-auto">
         {classroomId && user?.id ? (
           <>
