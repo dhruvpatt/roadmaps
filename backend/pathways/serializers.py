@@ -108,13 +108,19 @@ class ModuleSerializer(serializers.ModelSerializer):
             'feedback', 'chat_history'
         ]
 
+class QuizMiniSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Quiz
+        fields = ["id", "name"]
+
 class ChapterSerializer(serializers.ModelSerializer):
     modules = ModuleSerializer(many=True, read_only=True)
     next_chapters = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-
+    required_quiz = QuizMiniSerializer(read_only=True)
+    
     class Meta:
         model = Chapter
-        fields = ['id', 'name', 'pathway', 'status', 'next_chapters', 'modules']
+        fields = ['id', 'name', 'pathway', 'status', 'next_chapters', 'modules', "chapter_learning_goals", 'required_quiz']
 
 class PathwaySerializer(serializers.ModelSerializer):
     chapters = ChapterSerializer(many=True, read_only=True)

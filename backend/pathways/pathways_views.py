@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Pathway, User, Chapter, Module, Subject, Classroom
+from .models import Pathway, User, Chapter, Module, Subject, Classroom, Quiz, Question
 from .serializers import QueryRequestSerializer, ChapterSerializer, SubjectSerializer, PathwaySerializer
 from django.db import transaction
 from datetime import datetime, timedelta
@@ -187,8 +187,13 @@ class GenerationAgent:
             response_model=ChapterListStructure,
             mode="parsed"
         )
-        print("Result chapters", result.chapters)
-        return result.chapters
+        
+        chapters = result.chapters
+        for chapter in chapters: 
+            mandatory_quiz = self.generate_required_quiz(perception_data, chapter.name, chapter.learning_goals, grade)
+            chapter.required_quiz = mandatory_quiz
+                    
+        return chapters
 
     def generate_modules_for_chapter(self, chapter_name, perception_data, topic, learning_goals, grade, mode, complexity_level):
         complexity_guidance = ""
@@ -237,6 +242,7 @@ class GenerationAgent:
         print(f"Generated chapters: {chapters}")
         # Step 2: Generate modules per chapter, one at a time
         all_modules = []
+        count = 0
         for chapter in chapters:
             chapter_modules = self.generate_modules_for_chapter(
                 chapter.name,
@@ -251,6 +257,40 @@ class GenerationAgent:
 
         return PathwayStructure(chapters=chapters, modules=all_modules)
 
+    def generate_required_quiz(self, perception_data, chapter, learning_goals, grade, quiz_duration=30):
+        
+        prompt = f"""
+        You are an assessment design expert helping to create a quiz for the chapter '{chapter}'. Your goal is to generate a quiz that
+        effectively assesses the learning goals {', '.join([f"'{goal}'" for goal in learning_goals])} for students in grade '{grade}'.
+        
+        The quiz should include a variety of multiple-choice questions, true/false questions, and short answer questions (also known as text).
+        The quiz should be designed to be challenging but fair, and should cover the key concepts and skills outlined in the chapter.
+        The quiz should be designed to be completed in {quiz_duration} minutes for students in grade '{grade}'.
+        
+        Return a JSON object with the following structure: 
+        {{
+            "quiz_title": "Quiz for Chapter '{chapter}'",
+            "quiz_duration": "quiz duration in minutes",
+            "questions": [
+                {{
+                    "question": "Question text",
+                    "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
+                    "correct_answer": "Correct answer text",
+                    "type": "multiple_choice" or "true_false" or "text"
+                }},
+                ...
+            ],
+        }}
+        """
+        result = get_llm_response(
+            prompt,
+            temperature=0.7,
+            response_model=QuizStructure,
+            mode="parsed"
+        )
+        print("Generated mandatory quiz:", result)
+        return result
+        
 
 class EvaluationAgent:
     def evaluate(self, pathway, learning_goals, topic):
@@ -404,8 +444,47 @@ class PathwayGenerationAPIView(APIView):
                         chapters = dict()
                         for chapter in module_list.chapters:
                             chapters[chapter.name] = Chapter.objects.create(
-                                name=chapter.name, pathway=pathway_object
+                                name=chapter.name, pathway=pathway_object,
+                                chapter_learning_goals=chapter.learning_goals,
                             )
+                            # Create mandatory quiz
+                            quiz = chapter.required_quiz
+                            if quiz:
+                                quiz_instance = Quiz.objects.create(
+                                    user=user,
+                                    name=quiz.quiz_title,
+                                )
+                                questions = []
+                                for question in quiz.questions:
+                                    if question.type == "multiple_choice":
+                                        question_instance = Question.objects.create(
+                                            question=question.question,
+                                            solution=question.correct_answer,
+                                            type=question.type,
+                                            choices=question.options
+                                        )
+                                    elif question.type == "true_false":
+                                        question_instance = Question.objects.create(
+                                            question=question.question,
+                                            solution=question.correct_answer,
+                                            type=question.type,
+                                            choices=["True", "False"]
+                                        )
+                                    elif question.type == "text":
+                                        question_instance = Question.objects.create(
+                                            question=question.question,
+                                            solution=question.correct_answer,
+                                            type=question.type
+                                        )
+                                        
+                                    question_instance.save()
+                                    questions.append(question_instance)
+                                    
+                                quiz_instance.questions.set(questions)
+                                quiz_instance.save()
+                                chapters[chapter.name].required_quiz = quiz_instance
+                                chapters[chapter.name].save()
+                                
                         for chapter in module_list.chapters:
                             if chapter.next:
                                 chapters[chapter.name].next = chapters.get(chapter.next)

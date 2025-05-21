@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, validator
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Literal
 
 ##########################################
 # Schemas are for LLM responses, 1-1 for the most part to models but not always. 
@@ -10,14 +10,26 @@ from typing import Dict, List, Optional, Union
 class GradingResponse(BaseModel):
     items: List[str]
 
+# class QuizQuestion(BaseModel):
+#     question: str
+#     solution: str
+#     type: str  # must be "text"
+
+# class QuizList(BaseModel):
+#     items: List[QuizQuestion]
 class QuizQuestion(BaseModel):
     question: str
-    solution: str
-    type: str  # must be "text"
+    options: Optional[List[str]] = None          # only for MC
+    correct_answer: str
+    type: Literal["multiple_choice", "true_false", "short_answer"]
 
-class QuizList(BaseModel):
-    items: List[QuizQuestion]
 
+class QuizStructure(BaseModel):
+    quiz_title: str
+    quiz_duration: int                           # minutes
+    questions: List[QuizQuestion]
+    
+    
 class SlideScript(BaseModel):
     scripts: Dict[str, str]
 
@@ -102,6 +114,7 @@ class InsightResponse(BaseModel):
 class ChapterStructure(BaseModel):
     name: str
     learning_goals: List[str]
+    required_quiz: Optional[QuizStructure] = None
     next: Optional[str] = None
 
 class ModuleStructure(BaseModel):

@@ -51,6 +51,17 @@ useEffect(() => {
     );
   };
 
+  const isQuizUnlocked = (chapterIdx) => {
+    // return pathway.chapters[chapterIdx].modules.every(
+    //   (m) => m.status === "completed"
+    // );
+    if (pathway.chapters[chapterIdx].modules){
+      return pathway.chapters[chapterIdx].modules.every(
+        (m) => m.status === "completed"
+      );
+    }
+  }
+
   const getOrderedModules = (pathway) => {
     const list = [];
     const moduleMap = new Map();
@@ -76,7 +87,7 @@ useEffect(() => {
         const res = await fetch(`${backendUrl}/api/pathways/${id}/`);
         if (!res.ok) throw new Error("Network response was not ok");
         const data = await res.json();
-
+        console.log("data", data);
         const user = await fetch(`${backendUrl}/api/users/${data.owner}/`);
         const userData = await user.json();
 
@@ -120,6 +131,7 @@ useEffect(() => {
               id: `chapter-${chapter.id}`,
               name: chapter.name,
               test: false,
+              required_quiz: chapter.required_quiz,
               prereq: [],
               next: chapter.next_chapters.map((nextId) => `chapter-${nextId}`),
               modules: chapter.modules.map((mod) => ({
@@ -514,6 +526,41 @@ useEffect(() => {
                 </div>
               );
             })}
+            {/* ---------- Required Quiz card ---------- */}
+        {currentChapter && (
+          <div
+            className={`flex items-center justify-between p-3 mb-3 rounded-lg shadow-sm border
+              ${isQuizUnlocked(currentChapterIndex)
+                ? "bg-yellow-50"
+                : "bg-gray-100 text-gray-400"}`}
+          >
+            {/* left side */}
+            <div className="flex items-center space-x-3">
+              <span className="text-blue-500">📝</span>
+              <p className="font-medium text-sm">
+                {currentChapter.required_quiz.name || "Required Quiz"}
+              </p>
+            </div>
+
+            {/* right-side button */}
+            {isQuizUnlocked(currentChapterIndex) ? (
+              <button
+                onClick={() => router.push(`/quizzes/${currentChapter.requiredQuiz.id}`)}
+                className="text-sm px-4 py-1.5 rounded-md bg-black text-white"
+              >
+                Start Quiz
+              </button>
+            ) : (
+              <button
+                disabled
+                className="text-sm px-4 py-1.5 rounded-md bg-gray-300 text-white cursor-not-allowed"
+              >
+                Locked
+              </button>
+            )}
+          </div>
+        )}
+
         </div>
       </div>
     </div>
