@@ -3,11 +3,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import QuizContainer from "@/components/QuizContainer";
 import backendUrl from "@/backendUrl";
+import { createServerSearchParamsForServerPage } from "next/dist/server/request/search-params";
 
 export default function QuizPage() {
   const router = useRouter();
-  const { moduleId } = router.query;
-
+  const { moduleId, mandatoryQuiz } = router.query;
+  console.log("Mandatory Quiz:", mandatoryQuiz, moduleId);
   const [quiz, setQuiz] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -15,7 +16,7 @@ export default function QuizPage() {
   useEffect(() => {
     if (!moduleId) return;
 
-    const fetchQuiz = async () => {
+    const generateQuiz = async () => {
       try {
         const user = JSON.parse(localStorage.getItem("user"));
         if (!user?.id) {
@@ -50,7 +51,32 @@ export default function QuizPage() {
       }
     };
 
-    fetchQuiz();
+    const fetchQuiz = async () => {
+      console.log("Fetching quiz data...");
+      try {
+        setLoading(true);
+        const res = await fetch(`${backendUrl}/api/quizzes/${moduleId}/`);
+        if (!res.ok){
+          const data = await res.json();
+          setError(data.error || "Failed to fetch quiz.");
+          return;
+        }
+        console.log("Response status:", res.status);
+        const data = await res.json();
+        console.log("Fetched quiz data:", data);
+        setQuiz(data);
+        setLoading(false);
+      } catch (err){
+        console.error("Error fetching quiz:", err);
+        setError("Failed to fetch quiz data.");
+      }
+    }
+    if (mandatoryQuiz){
+      fetchQuiz();  
+    } else{
+      generateQuiz();
+    }
+    
   }, [moduleId]);
 
   if (loading) {

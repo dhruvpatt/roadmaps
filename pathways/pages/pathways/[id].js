@@ -55,11 +55,20 @@ useEffect(() => {
     // return pathway.chapters[chapterIdx].modules.every(
     //   (m) => m.status === "completed"
     // );
-    if (pathway.chapters[chapterIdx].modules){
-      return pathway.chapters[chapterIdx].modules.every(
-        (m) => m.status === "completed"
-      );
-    }
+    // if (pathway.chapters[chapterIdx].modules){
+    //   return pathway.chapters[chapterIdx].modules.every(
+    //     (m) => m.status === "completed"
+    //   );
+    // }
+    return true;
+  }
+
+  const handleStartRequiredQuiz = (chapter) => {
+    console.log("Starting required quiz for chapter:", chapter);
+    router.push({
+      pathname: `/quiz/${chapter.required_quiz.id}`,
+      query: { mandatoryQuiz: true },
+    });
   }
 
   const getOrderedModules = (pathway) => {
@@ -545,7 +554,7 @@ useEffect(() => {
             {/* right-side button */}
             {isQuizUnlocked(currentChapterIndex) ? (
               <button
-                onClick={() => router.push(`/quizzes/${currentChapter.requiredQuiz.id}`)}
+                onClick={() => handleStartRequiredQuiz(currentChapter)}
                 className="text-sm px-4 py-1.5 rounded-md bg-black text-white"
               >
                 Start Quiz

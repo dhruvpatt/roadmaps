@@ -15,6 +15,7 @@ from pathways.classroom_views import classroom_analytics, classroom_student_deta
     join_classroom_as_teacher, create_classroom, student_classroom_analytics
 from pathways.views.module_views import mark_module_completed
 from pathways.views.pathway_views import assign_pathway_to_user
+from pathways.views.quiz_views import QuizDetailAPIView
 
 from django.contrib import admin
 
@@ -36,6 +37,7 @@ urlpatterns = [
     path('api/get-quiz-results/<int:quiz_id>/', get_quiz_results),
     path('api/student-analytics/<int:user_id>/', StudentAnalyticsAPIView.as_view(), name='get-student-analytics'),
     path('api/teacher-analytics/<int:user_id>/', TeacherAnalyticsAPIView.as_view(), name='get-teacher-analytics'),
+    path('api/quizzes/<int:pk>/', QuizDetailAPIView.as_view(), name='quiz-detail'),
 
     # Function-based view URLs
     path('api/users/', user_list, name='user-list'),
