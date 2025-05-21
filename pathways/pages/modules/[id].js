@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from "react";
 import {
   ArrowLeft,
@@ -142,9 +144,8 @@ export default function ModulePage() {
       </div>
     );
   }
-  console.log("MODULE DATA:", moduleData)
   const { name, learning_goals, yt_video, contents = [] } = moduleData;
-
+  console.log(contents)
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Main Content Area */}
