@@ -148,7 +148,6 @@ class GenerationAgent:
         return result.chapters
 
     def generate_modules_for_chapter(self, chapter_name, perception_data, topic, learning_goals, grade, mode, complexity_level, covered, titles):
-        print("MADE IT TO MODULES")
         complexity_guidance = ""
         if complexity_level == "HIGH":
             complexity_guidance = """
@@ -165,7 +164,6 @@ class GenerationAgent:
                 • Include 1–4 modules for this chapter.
                 • Focus on the core definitions only.
                 """
-        print(complexity_guidance)
         prompt = f"""
         You are an expert curriculum designer.  
         Goal: For the chapter '{chapter_name}', generate a JSON array of detailed module objects that together cover these learning goals: {', '.join(learning_goals)}.  
@@ -195,14 +193,13 @@ class GenerationAgent:
         - If a proposed module’s title or focus feels too similar to any in {titles}, rename it and shift its emphasis.
         - Avoid vague or generic titles.  
         """
-        print(f"prompt: {prompt}")
         result = get_llm_response(
             prompt,
             temperature=0.7,
             response_model=ModuleListStructure,
             mode="parsed"
         )
-        print(f"Generated modules for chapter '{chapter_name}': {result}")
+        # print(f"Generated modules for chapter '{chapter_name}': {result}")
         return result.modules
 
     def generate_pathway(self, perception_data, topic, learning_goals, grade, mode, user_chapters, complexity_level="MEDIUM"):
@@ -216,9 +213,7 @@ class GenerationAgent:
 
         for chapter in chapters:
             # generate only for goals not yet covered
-            print(f"Generating modules for chapter: {chapter}")
             new_goals = [g for g in chapter.learning_goals if g not in covered_goals]
-            print(f"New goals for chapter '{chapter.name}': {new_goals}")
             chapter_modules = self.generate_modules_for_chapter(
                 chapter_name=chapter.name,
                 perception_data=perception_data,
