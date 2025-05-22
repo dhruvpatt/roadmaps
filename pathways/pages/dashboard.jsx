@@ -114,8 +114,12 @@ const Dashboard = () => {
                   <div className="flex items-center gap-3">
                     <BookOpenText className="w-6 h-6 text-amber-700" />
                     <div>
-                      <p className="text-sm font-semibold text-amber-900">Classroom</p>
-                      <p className="text-xs text-gray-500">Set up a new classroom</p>
+                      <p className="text-sm font-semibold text-amber-900">
+                        Classroom
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Set up a new classroom
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -131,7 +135,9 @@ const Dashboard = () => {
                   <div className="flex items-center gap-3">
                     <BookOpenText className="w-6 h-6 text-amber-700" />
                     <div>
-                      <p className="text-sm font-semibold text-amber-900">Classroom</p>
+                      <p className="text-sm font-semibold text-amber-900">
+                        Classroom
+                      </p>
                       <p className="text-xs text-gray-500">Join a Classroom</p>
                     </div>
                   </div>
@@ -149,7 +155,9 @@ const Dashboard = () => {
                 <div className="flex items-center gap-3">
                   <Map className="w-6 h-6 text-amber-700" />
                   <div>
-                    <p className="text-sm font-semibold text-amber-900">Pathway</p>
+                    <p className="text-sm font-semibold text-amber-900">
+                      Pathway
+                    </p>
                     <p className="text-xs text-gray-500">Build a new Pathway</p>
                   </div>
                 </div>
