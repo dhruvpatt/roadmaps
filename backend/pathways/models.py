@@ -85,27 +85,21 @@ class Pathway(models.Model):
         return f"Pathway by {self.owner.username}"
 
 
-class Chapter(models.Model):
-    name = models.CharField(max_length=255)
-    pathway = models.ForeignKey(Pathway, on_delete=models.CASCADE, related_name='chapters')
-    status = models.CharField(max_length=50, default='not_started')
-    next_chapters = models.ManyToManyField('self', blank=True, symmetrical=False, related_name='previous_chapters')
-
-    def __str__(self):
-        return self.name
-
 
 class Question(models.Model):
     TEXT = 'text'
     MULTIPLE_CHOICE = 'multiple_choice'
+    TRUE_FALSE = "true_false"
     CODE = 'code'
     TYPE_CHOICES = [
         (TEXT, 'Text'),
         (MULTIPLE_CHOICE, 'Multiple Choice'),
+        (TRUE_FALSE, 'True/False'),
     ]
 
     question = models.TextField()
     solution = models.TextField()
+    choices = models.JSONField(blank=True, default=list)
     type = models.CharField(max_length=20, choices=TYPE_CHOICES)
     answer = models.CharField(max_length=1000, blank=True) # student inputted answer
     def __str__(self):
@@ -113,6 +107,7 @@ class Question(models.Model):
 
 
 class Quiz(models.Model):
+    name = models.CharField(max_length=255)
     questions = models.ManyToManyField(Question, related_name='quizzes')
     scores = models.JSONField(blank=True, default=list)  # Use JSONField for SQLite
     failed_questions = models.ManyToManyField(Question, related_name='failed_in_quizzes', blank=True)
@@ -121,6 +116,15 @@ class Quiz(models.Model):
     def __str__(self):
         return f"Quiz for {self.user.username}"
 
+class Chapter(models.Model):
+    name = models.CharField(max_length=255)
+    pathway = models.ForeignKey(Pathway, on_delete=models.CASCADE, related_name='chapters')
+    status = models.CharField(max_length=50, default='not_started')
+    next_chapters = models.ManyToManyField('self', blank=True, symmetrical=False, related_name='previous_chapters')
+    chapter_learning_goals = models.JSONField(blank=True, default=list)  # Use JSONField for SQLite
+    required_quiz = models.ForeignKey(Quiz, on_delete=models.SET_NULL, null=True, blank=True, related_name='required_chapters')
+    def __str__(self):
+        return self.name
 
 class Module(models.Model):
     name = models.CharField(max_length=255)

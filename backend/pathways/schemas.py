@@ -1,16 +1,35 @@
 from pydantic import BaseModel, Field, validator, RootModel
-from typing import Dict, List, Optional, Union, Literal
+from typing import Dict, List, Optional, Union, Literal, Literal
+
+##########################################
+# Schemas are for LLM responses, 1-1 for the most part to models but not always. 
+# This is for LLM to understand what format to return data in.# 
+###########################################
+
+
 class GradingResponse(BaseModel):
     items: List[str]
 
+# class QuizQuestion(BaseModel):
+#     question: str
+#     solution: str
+#     type: str  # must be "text"
+
+# class QuizList(BaseModel):
+#     items: List[QuizQuestion]
 class QuizQuestion(BaseModel):
     question: str
-    solution: str
-    type: str  # must be "text"
+    options: Optional[List[str]] = None          # only for MC
+    correct_answer: str
+    type: Literal["multiple_choice", "true_false", "short_answer"]
 
-class QuizList(BaseModel):
-    items: List[QuizQuestion]
 
+class QuizStructure(BaseModel):
+    quiz_title: str
+    quiz_duration: int                           # minutes
+    questions: List[QuizQuestion]
+    
+    
 class SlideScript(BaseModel):
     scripts: Dict[str, str]
 
@@ -109,6 +128,8 @@ class InsightResponse(BaseModel):
 
 class ChapterStructure(BaseModel):
     name: str
+    learning_goals: List[str]
+    required_quiz: Optional[QuizStructure] = None
     next: Optional[str] = None
     learning_goals: List[str] = Field(default_factory=list)
     description: Optional[str] = None

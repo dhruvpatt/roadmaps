@@ -59,6 +59,26 @@ const ViewPathwayPage = () => {
 
 
 
+  const isQuizUnlocked = (chapterIdx) => {
+    // return pathway.chapters[chapterIdx].modules.every(
+    //   (m) => m.status === "completed"
+    // );
+    // if (pathway.chapters[chapterIdx].modules){
+    //   return pathway.chapters[chapterIdx].modules.every(
+    //     (m) => m.status === "completed"
+    //   );
+    // }
+    return true;
+  }
+
+  const handleStartRequiredQuiz = (chapter) => {
+    console.log("Starting required quiz for chapter:", chapter);
+    router.push({
+      pathname: `/quiz/${chapter.required_quiz.id}`,
+      query: { mandatoryQuiz: true },
+    });
+  }
+
   const getOrderedModules = (pathway) => {
     const list = [];
     const moduleMap = new Map();
@@ -86,7 +106,7 @@ const ViewPathwayPage = () => {
         const usr = JSON.parse(localStorage.getItem("user"))
         setUser(usr);
 
-
+        console.log("data", data);
 
         const isTeacher = usr?.role === "teacher";
         setViewMode(isTeacher ? "teacher" : "student");
@@ -132,6 +152,7 @@ const ViewPathwayPage = () => {
               id: chapter.id,
               name: chapter.name,
               test: false,
+              required_quiz: chapter.required_quiz,
               prereq: [],
               next: chapter.next_chapters.map((nextId) => `${nextId}`),
               modules: chapter.modules.map((mod) => ({
@@ -620,6 +641,41 @@ const ViewPathwayPage = () => {
                 </div>
               );
             })}
+            {/* ---------- Required Quiz card ---------- */}
+        {currentChapter && (
+          <div
+            className={`flex items-center justify-between p-3 mb-3 rounded-lg shadow-sm border
+              ${isQuizUnlocked(currentChapterIndex)
+                ? "bg-yellow-50"
+                : "bg-gray-100 text-gray-400"}`}
+          >
+            {/* left side */}
+            <div className="flex items-center space-x-3">
+              <span className="text-blue-500">📝</span>
+              <p className="font-medium text-sm">
+                {currentChapter.required_quiz.name || "Required Quiz"}
+              </p>
+            </div>
+
+            {/* right-side button */}
+            {isQuizUnlocked(currentChapterIndex) ? (
+              <button
+                onClick={() => handleStartRequiredQuiz(currentChapter)}
+                className="text-sm px-4 py-1.5 rounded-md bg-black text-white"
+              >
+                Start Quiz
+              </button>
+            ) : (
+              <button
+                disabled
+                className="text-sm px-4 py-1.5 rounded-md bg-gray-300 text-white cursor-not-allowed"
+              >
+                Locked
+              </button>
+            )}
+          </div>
+        )}
+
 
         </div>
       </div>
