@@ -148,7 +148,6 @@ class QuizGenerationAPIView(APIView):
 
                 quiz_data = get_llm_response(prompt, temperature=0.7, response_model=QuizStructure)
 
-
                 quiz = Quiz.objects.create(user=user)
                 for q in quiz_data['questions']:
                     print(q)
@@ -167,7 +166,7 @@ class QuizGenerationAPIView(APIView):
 
                 return Response({
                     "message": "Quiz generated successfully.",
-                    "quiz": QuizSerializer(quiz).data
+                    "quiz": quiz_data
                 }, status=status.HTTP_201_CREATED)
 
             except Exception as e:
