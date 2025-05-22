@@ -19,7 +19,7 @@ export default function CreatePathwayModal({
     title: "",
     topic: "",
     mode: "CASUAL",
-    classroom: {},
+    classroom: classroom ? classroom : null,
     grade: "",
     learningGoals: "",
     details: "",
@@ -107,6 +107,9 @@ export default function CreatePathwayModal({
       return;
     }
 
+
+    console.log("Form data:", form);
+    console.log("classroom:", classroom);
     const payload = {
       ...form,
       chapters: JSON.stringify(form.chapters),
@@ -115,8 +118,9 @@ export default function CreatePathwayModal({
         .map((g) => g.trim())
         .filter(Boolean),
       userid: user.id,
-      classroom: form.classroom ? { id: Number(form.classroom) } : null,
+      classroom: classroom || form.classroom != {} ? form.classroom : null,
     };
+    console.log(payload)
     console.log(isEdit ? "Updating pathway:" : "Creating pathway:", payload);
     setLoading(true);
 
@@ -216,7 +220,7 @@ export default function CreatePathwayModal({
               <label className="text-sm font-medium text-gray-700">Classroom</label>
               <select
                 name="classroom"
-                value={pathway?.classroom || form.classroom || null}
+                value={pathway?.classroom || form.classroom || classroom}
                 onChange={handleChange}
                 className="w-full mt-1 border border-gray-300 rounded px-3 py-2"
               >

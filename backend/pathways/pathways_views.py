@@ -424,19 +424,49 @@ class PathwayGenerationAPIView(APIView):
                             )
 
                         # Step 2: Update "prerequisite_modules" and "next_modules"
-                        for module_data in module_list.modules:
-                            module_instance = modules[module_data.name]
+                        if mode.upper() == "CASUAL":
+                            # Remove all dependencies
+                            for module_instance in modules.values():
+                                module_instance.prerequisites.clear()
+                                module_instance.next_modules.clear()
+                                module_instance.save()
+                        else:
+                            # STRICT mode
+                            # First, assign existing dependencies
+                            for module_data in module_list.modules:
+                                module_instance = modules[module_data.name]
 
-                            module_instance.prerequisites.set(
-                                [modules[prerequisite] for prerequisite in module_data.prerequisite_modules if
-                                 prerequisite in modules]
-                            )
+                                # Keep original defined prerequisites
+                                prereq_instances = [
+                                    modules[prerequisite] for prerequisite in module_data.prerequisite_modules if prerequisite in modules
+                                ]
+                                module_instance.prerequisites.set(prereq_instances)
 
-                            module_instance.next_modules.set(
-                                [modules[next_module] for next_module in module_data.next_modules if
-                                 next_module in modules]
-                            )
-                            module_instance.save()
+                                # Keep original defined next_modules
+                                next_instances = [
+                                    modules[next_module] for next_module in module_data.next_modules if next_module in modules
+                                ]
+                                module_instance.next_modules.set(next_instances)
+
+                                module_instance.save()
+
+                            # Then augment with linear dependencies (1 -> 2 -> 3) in each chapter
+                            for chapter in module_list.chapters:
+                                chapter_modules = [m for m in module_list.modules if m.chapter == chapter.name]
+
+                                for i in range(len(chapter_modules) - 1):
+                                    current = modules[chapter_modules[i].name]
+                                    next_mod = modules[chapter_modules[i + 1].name]
+
+                                    # Prevent duplicates and circular links
+                                    if next_mod not in current.next_modules.all():
+                                        current.next_modules.add(next_mod)
+                                    if current not in next_mod.prerequisites.all():
+                                        next_mod.prerequisites.add(current)
+
+                                    current.save()
+                                    next_mod.save()
+
 
                         print("CREATED MODULES")
                         return Response({

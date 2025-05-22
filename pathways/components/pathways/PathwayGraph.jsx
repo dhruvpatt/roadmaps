@@ -9,6 +9,7 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 import { nodeTypes as defaultNodeTypes } from "@/components/pathways/PathwayNode";
 import FloatingEdge from './FloatingEdge';
+import backendUrl from "@backendUrl";
 
 const isModuleUnlocked = (module, moduleMap) => {
   return (module.prereq || []).every(
@@ -39,14 +40,7 @@ const InnerGraph = ({ data, viewMode = "student", published = false }) => {
     const chapter = data.chapter;
     const modules = chapter.modules || [];
 
-    const modulesWithFallbackDeps = modules.map((mod, index) => {
-      const prevId = index > 0 ? modules[index - 1].id : null;
-      const augmentedPrereqs = new Set(mod.prerequisites || []);
-      if (prevId) augmentedPrereqs.add(prevId);
-      return { ...mod, prereq: Array.from(augmentedPrereqs) };
-    });
-
-    const sortedModules = [...modulesWithFallbackDeps].sort((a, b) => a.id - b.id);
+    const sortedModules = [...modules].sort((a, b) => a.id - b.id);
 
     const xSpacing = 280;
     const ySpacing = 200;
@@ -89,7 +83,7 @@ const InnerGraph = ({ data, viewMode = "student", published = false }) => {
         data: {
           label: mod.name,
           status: mod.status ?? "not_started",
-          description: mod.learning_goals || mod.learningGoals || "", 
+          description: mod.learning_goals || mod.learningGoals || "",
           id: mod.id,
           unlocked: true,
         },

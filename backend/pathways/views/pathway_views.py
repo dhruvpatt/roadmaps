@@ -5,8 +5,9 @@ from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from django.db import transaction
-from ..models import Pathway, User
+from ..models import Pathway, User, Module
 from ..serializers import PathwaySerializer, ChapterSerializer
+
 
 
 class PathwayViewSet(ModelViewSet):
@@ -36,7 +37,8 @@ def pathway_list(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['GET', 'PUT', 'DELETE'])
+@api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
+@transaction.atomic
 def pathway_detail(request, pk):
     try:
         pathway = Pathway.objects.get(pk=pk)
@@ -46,6 +48,67 @@ def pathway_detail(request, pk):
     if request.method == 'GET':
         serializer = PathwaySerializer(pathway)
         return Response(serializer.data)
+    
+    elif request.method == 'PATCH':
+        try:
+            user_id = request.data.get("userid")
+            if pathway.owner.id != user_id:
+                return Response({"error": "User cannot modify this pathway"}, status=status.HTTP_401_UNAUTHORIZED)
+
+            updated_modules = request.data.get("modules", [])
+
+            with transaction.atomic():
+                module_lookup = {mod.id: mod for mod in Module.objects.filter(chapter__pathway=pathway)}
+
+                # Optional: detect cycles before updating
+                def has_cycle():
+                    visited = set()
+                    stack = set()
+
+                    def dfs(mod_id):
+                        if mod_id in stack:
+                            return True
+                        if mod_id in visited:
+                            return False
+                        visited.add(mod_id)
+                        stack.add(mod_id)
+
+                        mod = module_lookup.get(mod_id)
+                        if not mod:
+                            return False
+                        prereq_ids = set(mod.prerequisites.values_list('id', flat=True))
+                        for pid in prereq_ids:
+                            if dfs(pid):
+                                return True
+                        stack.remove(mod_id)
+                        return False
+
+                    return any(dfs(mid) for mid in module_lookup)
+
+                # Update prerequisites and next_modules
+                for mdata in updated_modules:
+                    mod = module_lookup.get(mdata["id"])
+                    if not mod:
+                        continue
+
+                    prereq_ids = mdata.get("prerequisites", [])
+                    next_ids = mdata.get("next_modules", [])
+
+                    mod.prerequisites.set([module_lookup[pid] for pid in prereq_ids if pid in module_lookup])
+                    mod.next_modules.set([module_lookup[nid] for nid in next_ids if nid in module_lookup])
+                    mod.save()
+
+                # Re-check for cycles after changes
+                if has_cycle():
+                    raise ValueError("Circular dependency detected among modules")
+
+            serializer = PathwaySerializer(pathway)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     elif request.method == 'PUT':
         try:
