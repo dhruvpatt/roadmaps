@@ -120,7 +120,7 @@ const getBlockStyles = (type) => {
     case "misconception":
       return `${common} bg-red-50 border-red-600`;
     case "visual_aid":
-      return `${common} bg-amber-50 border-gray-600`;
+      return `${common} bg-amber-100 border-amber-600`;
     case "summary":
       return `${common} bg-blue-50 border-gray-600`;
     default:
