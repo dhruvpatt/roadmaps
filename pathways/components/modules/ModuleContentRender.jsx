@@ -31,6 +31,7 @@ const normalizeMath = (text) => {
       .replace(/\\\\\[([\s\S]+?)\\\\\]/g, "$$$$1$$$$")
       // 3) convert \(...\) → $…$
       .replace(/\\\\\(([\s\S]+?)\\\\\)/g, "$$$1$$")
+      .replace(/\u0008/g, "\\b")
   );
 };
 
