@@ -60,7 +60,7 @@ export default function ClassroomCard({
         {menuOpen && (
           <div
             ref={menuRef}
-            className="absolute right-0 mt-4 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10"
+            className="absolute right-5 top-10 mt-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10"
           >
             <button
               type="button"

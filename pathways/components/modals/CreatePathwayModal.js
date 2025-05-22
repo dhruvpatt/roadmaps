@@ -15,6 +15,7 @@ export default function CreatePathwayModal({
   const router = useRouter();
   const isEdit = Boolean(pathway);
 
+
   const [form, setForm] = useState({
     title: "",
     topic: "",
@@ -43,11 +44,20 @@ export default function CreatePathwayModal({
   useEffect(() => {
 
     if (isEdit && pathway) {
+      const classroomObj =
+        typeof classroom === "object" && classroom !== null
+          ? classroom
+          : typeof pathway?.classroom === "object" && pathway.classroom?.id
+            ? pathway.classroom
+            : typeof pathway.classroom === "number"
+              ? { id: pathway.classroom }
+              : null;
+
       setForm({
         title: pathway.title || "",
         topic: pathway.topic || "",
         mode: pathway.mode || "CASUAL",
-        classroom: classroom || pathway?.classroom || "",
+        classroom: classroomObj,
         grade: pathway.grade || "",
         learningGoals: (pathway.learning_goals || []).join(", "),
         details: pathway.details || "",
@@ -77,11 +87,17 @@ export default function CreatePathwayModal({
   }, [isOpen, user]);
 
 
-
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+
+    if (name === "classroom") {
+      const selected = classrooms.find((cls) => cls.id.toString() === value);
+      setForm((prev) => ({ ...prev, classroom: selected || null }));
+    } else {
+      setForm((prev) => ({ ...prev, [name]: value }));
+    }
   };
+
 
   const handleChapterChange = (index, field, value) => {
     const updated = [...form.chapters];
@@ -107,9 +123,8 @@ export default function CreatePathwayModal({
       return;
     }
 
-
-    console.log("Form data:", form);
-    console.log("classroom:", classroom);
+    console.log("Form data class")
+    console.log(form.classroom);
     const payload = {
       ...form,
       chapters: JSON.stringify(form.chapters),
@@ -118,7 +133,7 @@ export default function CreatePathwayModal({
         .map((g) => g.trim())
         .filter(Boolean),
       userid: user.id,
-      classroom: classroom || form.classroom != {} ? form.classroom : null,
+      classroom: form.classroom && form.classroom.id ? { id: form.classroom.id } : null,
     };
     console.log(payload)
     console.log(isEdit ? "Updating pathway:" : "Creating pathway:", payload);
@@ -137,7 +152,7 @@ export default function CreatePathwayModal({
         title: "",
         topic: "",
         mode: "CASUAL",
-        classroom: "",
+        classroom: null,
         grade: "",
         learningGoals: "",
         details: "",
@@ -220,17 +235,18 @@ export default function CreatePathwayModal({
               <label className="text-sm font-medium text-gray-700">Classroom</label>
               <select
                 name="classroom"
-                value={pathway?.classroom || form.classroom || classroom}
+                value={form.classroom?.id || ""}
                 onChange={handleChange}
                 className="w-full mt-1 border border-gray-300 rounded px-3 py-2"
               >
                 <option value="">None (Personal)</option>
                 {classrooms.map((cls) => (
-                  <option key={cls.id} value={cls}>
+                  <option key={cls.id} value={cls.id}>
                     {cls.name}, with {cls.students.length} student(s)
                   </option>
                 ))}
               </select>
+
             </div>
           )}
 
@@ -257,17 +273,6 @@ export default function CreatePathwayModal({
             />
           </div>
 
-          <div className="md:col-span-2">
-            <label className="text-sm font-medium text-gray-700">Details</label>
-            <textarea
-              name="details"
-              value={form.details}
-              onChange={handleChange}
-              rows={3}
-              placeholder="Pathway description, notes, learning outcomes..."
-              className="w-full mt-1 border border-gray-300 rounded px-3 py-2"
-            />
-          </div>
         </div>
 
         <div className="border-t pt-6 mt-6 space-y-4">

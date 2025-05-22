@@ -27,6 +27,9 @@ const ViewPathwayPage = () => {
   const [chapterOnlyPathway, setChapterOnlyPathway] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [user, setUser] = useState(null)
+  const [tempName, setTempName] = useState("");
+  const [tempDescription, setTempDescription] = useState("");
+
 
 
 
@@ -53,11 +56,7 @@ const ViewPathwayPage = () => {
   const scrollRight = () =>
     scrollRef.current?.scrollBy({ left: scrollAmount, behavior: "smooth" });
 
-  const isModuleUnlocked = (module, moduleMap) => {
-    return (module.prereq || []).every(
-      (id) => moduleMap.get(id)?.status === "completed"
-    );
-  };
+
 
   const getOrderedModules = (pathway) => {
     const list = [];
@@ -170,18 +169,50 @@ const ViewPathwayPage = () => {
   const handleEdit = (i) => {
     setEditingIndex(i);
     setTempGoals([...modulesData[i].learning_goals]);
+    setTempName(modulesData[i].name);
+    setTempDescription(modulesData[i].module_description || "");
   };
+
 
   const handleSave = async (i) => {
     const updated = [...modulesData];
-    updated[i] = {
-      ...updated[i],
-      learning_goals: tempGoals,
-    };
+    const modToSave = updated[i];
+
+    modToSave.learning_goals = tempGoals;
+    modToSave.name = tempName;
+    modToSave.module_description = tempDescription;
+
     setModulesData(updated);
     setEditingIndex(-1);
     setTempGoals([]);
+    setTempName("");
+    setTempDescription("");
+
+    try {
+      const res = await fetch(`${backendUrl}/api/pathways/${pathway.id}/`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userid: user.id,
+          modules: [
+            {
+              id: modToSave.id,
+              name: modToSave.name,
+              description: modToSave.module_description,
+              learning_goals: modToSave.learning_goals,
+            },
+          ],
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to update module");
+      const data = await res.json();
+      console.log("✅ Module updated:", data);
+    } catch (error) {
+      console.error("❌ Error updating module:", error);
+    }
   };
+
 
   const handlePublish = async () => {
     try {
@@ -419,8 +450,7 @@ const ViewPathwayPage = () => {
               ? "Click on a module to edit the learning goals."
               : "Click on a module to begin"}
           </p>
-
-          {viewMode === "teacher"
+          {(viewMode === "teacher" || user?.id === pathway.owner)
             ? modulesData
               .filter((mod) => mod.chapter === currentChapterIndex)
               .map((mod, i) => {
@@ -430,12 +460,100 @@ const ViewPathwayPage = () => {
                     key={i}
                     className="p-3 mb-3 rounded-lg shadow-sm border bg-yellow-50"
                   >
-                    {/* ...teacher module UI... */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-orange-500">▶</span>
+                        <p className="text-lg font-bold">{mod.name}</p>
+                      </div>
+                      {!pathway.published && (
+                        <div className="w-1/8">
+                          {!isEditing ? (
+                            <button
+                              onClick={() => handleEdit(i)}
+                              className="w-full mt-4 px-3 py-1 text-sm font-medium text-white rounded bg-black"
+                            >
+                              Edit
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleSave(i)}
+                              className="w-full mt-4 px-3 py-1 text-sm font-medium text-white rounded bg-amber-600"
+                            >
+                              Save
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <p className="text-md text-gray-700 mt-2 italic">
+                      {mod.module_description}
+                    </p>
+
+                    <div className="mt-2">
+                      <h3 className="text-lg font-semibold mb-1">Learning Goals</h3>
+                      {!isEditing ? (
+                        <ul className="list-disc list-inside space-y-1">
+                          {mod.learning_goals.map((goal, idx) => (
+                            <li key={idx} className="text-md text-gray-700">
+                              {goal}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <div className="space-y-2 mt-2">
+                          <label className="text-sm font-medium block">Module Name</label>
+                          <input
+                            type="text"
+                            value={tempName}
+                            onChange={(e) => setTempName(e.target.value)}
+                            className="w-full p-1 border rounded text-md text-gray-700"
+                          />
+
+                          <label className="text-sm font-medium block mt-2">Description</label>
+                          <textarea
+                            value={tempDescription}
+                            onChange={(e) => setTempDescription(e.target.value)}
+                            rows={3}
+                            className="w-full p-1 border rounded text-md text-gray-700"
+                          />
+
+                          <label className="text-sm font-medium block mt-2">Learning Goals</label>
+                          {tempGoals.map((goal, idx) => (
+                            <input
+                              key={idx}
+                              type="text"
+                              value={goal}
+                              onChange={(e) => {
+                                const updatedGoals = [...tempGoals];
+                                updatedGoals[idx] = e.target.value;
+                                setTempGoals(updatedGoals);
+                              }}
+                              className="w-full p-1 border rounded text-md text-gray-700 mb-1"
+                            />
+                          ))}
+                          <button
+                            onClick={() => setTempGoals([...tempGoals, ""])}
+                            className="px-3 py-1 text-md font-medium bg-gray-200 hover:bg-gray-300 rounded"
+                          >
+                            + Add Goal
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {mod.prerequisite_modules?.length > 0 && (
+                      <p className="text-sm text-gray-600 mt-2">
+                        <strong>Dependent on:</strong> {mod.prerequisite_modules.join(", ")}
+                      </p>
+                    )}
                   </div>
                 );
               })
             : (currentChapter?.modules || []).map((mod) => {
-              const unlocked = isModuleUnlocked(mod, moduleMap);
+              const unlocked = (mod.prereq || []).every(
+                (id) => moduleMap.get(id)?.status === "completed"
+              );
               const completed = mod.status === "completed";
               const in_progress = mod.status === "in_progress";
 
@@ -453,10 +571,61 @@ const ViewPathwayPage = () => {
                   className={`flex flex-col gap-2 p-3 mb-3 rounded-lg shadow-sm border ${unlocked ? "bg-yellow-50" : "bg-gray-100 text-gray-400"
                     }`}
                 >
-                  {/* ...student module UI... */}
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center space-x-3">
+                      <div>
+                        {completed ? (
+                          <span className="text-green-500">✓</span>
+                        ) : unlocked ? (
+                          <span className="text-orange-500">▶</span>
+                        ) : (
+                          <span className="text-gray-400">🔒</span>
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{mod.name}</p>
+                        <p className="text-xs">15:30</p>
+                      </div>
+                    </div>
+
+                    {unlocked ? (
+                      <button
+                        onClick={() => router.push(`/modules/${mod.id}`)}
+                        className={`text-sm px-4 py-1.5 rounded-md ${completed
+                          ? "bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 cursor-pointer"
+                          : "bg-black text-white cursor-pointer"
+                          }`}
+                      >
+                        {completed ? "Review" : in_progress ? "Resume" : "Start"}
+                      </button>
+                    ) : (
+                      <button
+                        className="text-sm px-4 py-1.5 rounded-md bg-gray-300 text-white cursor-not-allowed"
+                        disabled
+                      >
+                        Locked
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="ml-6 text-xs text-gray-700 space-y-1">
+                    {prereqLabels.length > 0 && (
+                      <p>
+                        <span className="font-semibold">Prerequisites:</span>{" "}
+                        {prereqLabels.join(", ")}
+                      </p>
+                    )}
+                    {nextLabels.length > 0 && (
+                      <p>
+                        <span className="font-semibold">Next:</span>{" "}
+                        {nextLabels.join(", ")}
+                      </p>
+                    )}
+                  </div>
                 </div>
               );
             })}
+
         </div>
       </div>
 

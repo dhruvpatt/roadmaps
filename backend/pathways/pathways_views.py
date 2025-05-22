@@ -310,9 +310,17 @@ class PathwayGenerationAPIView(APIView):
     serializer_class = QueryRequestSerializer
 
     def post(self, request):
+        # Handle classroom attribute: can be an object or an integer id
+        classroom_data = request.data.get("classroom")
+
+        if isinstance(classroom_data, dict):
+            classroom_id = classroom_data.get("id")
+            if classroom_id is not None:
+                request.data["classroom"] = classroom_id
+
         serializer = self.serializer_class(data=request.data)
         if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"serializer" : serializer.errors, "Error": "serialization problem"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             title = serializer.validated_data['title']
@@ -442,11 +450,18 @@ class PathwayGenerationAPIView(APIView):
                             for chapter in module_list.chapters:
                                 chapter_modules = [m for m in module_list.modules if m.chapter == chapter.name]
 
+                                # To prevent cycles, enforce strict linear order: 1->2->3->...
                                 for i in range(len(chapter_modules) - 1):
                                     current = modules[chapter_modules[i].name]
                                     next_mod = modules[chapter_modules[i + 1].name]
 
-                                    # Prevent duplicates and circular links
+                                    # Remove any existing backward dependency to break cycles
+                                    if current in next_mod.next_modules.all():
+                                        next_mod.next_modules.remove(current)
+                                    if next_mod in current.prerequisites.all():
+                                        current.prerequisites.remove(next_mod)
+
+                                    # Now set only the forward dependency
                                     if next_mod not in current.next_modules.all():
                                         current.next_modules.add(next_mod)
                                     if current not in next_mod.prerequisites.all():

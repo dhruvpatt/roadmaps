@@ -124,8 +124,8 @@ def mark_module_completed(request):
     try:
         module = Module.objects.get(id=module_id)
 
-        if module.owner.id != user_id:
-            return Response({"error": "You do not have permission to modify this module"}, status=status.HTTP_403_FORBIDDEN)
+        # if module.owner.id != user_id:
+        #     return Response({"error": "You do not have permission to modify this module"}, status=status.HTTP_403_FORBIDDEN)
 
         module.status = "completed"
         module.save()

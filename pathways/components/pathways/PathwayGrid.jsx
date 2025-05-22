@@ -16,6 +16,30 @@ export default function Pathways({ title = "Your Pathways", classroom }) {
     const [totalPages, setTotalPages] = useState(1);
     const [searchQuery, setSearchQuery] = useState("");
     const [loading, setLoading] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [selectedPathway, setSelectedPathway] = useState(null);
+
+
+    const handleEdit = (pathway) => {
+        setSelectedPathway(pathway);
+        setShowEditModal(true);
+    };
+
+    const handleDelete = async (pathway) => {
+        if (!window.confirm(`Are you sure you want to delete "${pathway.title}"?`)) return;
+
+        try {
+            const res = await fetch(`${backendUrl}/api/pathways/${pathway.id}/`, {
+                method: "DELETE",
+            });
+            if (!res.ok) throw new Error("Failed to delete");
+            fetchPathways(user, page, searchQuery); // Refresh the list
+        } catch (err) {
+            console.error("Error deleting pathway", err);
+            alert("Failed to delete pathway. Try again.");
+        }
+    };
+
 
     useEffect(() => {
         const usr = JSON.parse(localStorage.getItem("user"));
@@ -101,7 +125,7 @@ export default function Pathways({ title = "Your Pathways", classroom }) {
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {user.role == "teacher" || classroom?.id == null? (<button
+                {user.role == "teacher" || classroom?.id == null ? (<button
                     onClick={() => setShowPathwayModal(true)}
                     className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-4 text-center text-gray-500 hover:bg-amber-100 cursor-pointer transition"
                 >
@@ -125,6 +149,9 @@ export default function Pathways({ title = "Your Pathways", classroom }) {
                             onViewClick={() => router.push(`/pathways/${pathway.id}`)}
                             user={user}
                             published={pathway.published}
+                            pathwayId={pathway.id}
+                            onEdit={() => handleEdit(pathway)}
+                            onDelete={() => handleDelete(pathway)}
                         />
                     ))
                 )}
@@ -149,12 +176,26 @@ export default function Pathways({ title = "Your Pathways", classroom }) {
             </div>
 
             <CreatePathwayModal
-                isOpen={showPathwayModal}
-                onClose={() => setShowPathwayModal(false)}
-                onCreate={async (data) => await createPathway(data)}
+                isOpen={showEditModal}
+                onClose={() => {
+                    setShowEditModal(false);
+                    setSelectedPathway(null);
+                }}
+                onUpdate={async (id, data) => {
+                    const res = await fetch(`${backendUrl}/api/pathways/${id}/`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(data),
+                    });
+                    if (!res.ok) throw new Error("Update failed");
+                    const updated = await res.json();
+                    fetchPathways(user, page, searchQuery);
+                    return updated.id;
+                }}
                 user={user}
-                classroom={classroom}
+                pathway={selectedPathway}
             />
+
         </div>
     )
 }

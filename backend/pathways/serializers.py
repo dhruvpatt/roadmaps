@@ -36,7 +36,7 @@ class QueryRequestSerializer(serializers.Serializer):
     details = serializers.CharField(max_length=1000, allow_blank=True, required=False)
     chapters = serializers.CharField(max_length=1000)
     published = serializers.BooleanField(default=False)
-    classroom = serializers.CharField(required=False, allow_null=True, default="")
+    classroom = serializers.IntegerField(required=False, allow_null=True, default=None)
     # Optional: Add other fields if necessary
     # For example, you can include additional optional parameters here
 

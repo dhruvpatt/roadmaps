@@ -9,7 +9,6 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 import { nodeTypes as defaultNodeTypes } from "@/components/pathways/PathwayNode";
 import FloatingEdge from './FloatingEdge';
-import backendUrl from "@backendUrl";
 
 const isModuleUnlocked = (module, moduleMap) => {
   return (module.prereq || []).every(
@@ -45,22 +44,19 @@ const InnerGraph = ({ data, viewMode = "student", published = false }) => {
     const xSpacing = 280;
     const ySpacing = 200;
     const positions = new Map();
+    const nodesPerRow = 4;
 
     const levels = new Map();
 
     sortedModules.forEach((mod, index) => {
-      const depth = Math.floor(Math.log2(index + 1));
-      const posInLevel = index - (2 ** depth - 1);
-      const nodesInLevel = 2 ** depth;
+      const row = Math.floor(index / nodesPerRow);
+      const col = index % nodesPerRow;
 
-      const x = (posInLevel - (nodesInLevel - 1) / 2) * xSpacing;
-      const y = depth * ySpacing;
+      const x = col * xSpacing - ((nodesPerRow - 1) * xSpacing) / 2;
+      const y = row * ySpacing;
 
       positions.set(mod.id, { x, y });
       positionMap.set(mod.id.toString(), { x, y });
-
-      if (!levels.has(depth)) levels.set(depth, []);
-      levels.get(depth).push(mod);
     });
 
     sortedModules.forEach((mod) => {
@@ -74,8 +70,9 @@ const InnerGraph = ({ data, viewMode = "student", published = false }) => {
       // .map((goal, index) => `${index + 1}. ${goal}`)
       // .join("\n");
       //TODO: Update to use description
+      const unlocked = isModuleUnlocked(mod, moduleMap);
 
-      console.log(mod)
+
       nodes.push({
         id: mod.id.toString(),
         type: "pathwayNode",
@@ -85,7 +82,7 @@ const InnerGraph = ({ data, viewMode = "student", published = false }) => {
           status: mod.status ?? "not_started",
           description: mod.learning_goals || mod.learningGoals || "",
           id: mod.id,
-          unlocked: true,
+          unlocked: unlocked,
         },
         style: {
           backgroundColor: `hsl(${hue}, 70%, ${lightness}%)`,

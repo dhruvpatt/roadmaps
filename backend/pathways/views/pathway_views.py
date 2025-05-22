@@ -60,47 +60,16 @@ def pathway_detail(request, pk):
             with transaction.atomic():
                 module_lookup = {mod.id: mod for mod in Module.objects.filter(chapter__pathway=pathway)}
 
-                # Optional: detect cycles before updating
-                def has_cycle():
-                    visited = set()
-                    stack = set()
-
-                    def dfs(mod_id):
-                        if mod_id in stack:
-                            return True
-                        if mod_id in visited:
-                            return False
-                        visited.add(mod_id)
-                        stack.add(mod_id)
-
-                        mod = module_lookup.get(mod_id)
-                        if not mod:
-                            return False
-                        prereq_ids = set(mod.prerequisites.values_list('id', flat=True))
-                        for pid in prereq_ids:
-                            if dfs(pid):
-                                return True
-                        stack.remove(mod_id)
-                        return False
-
-                    return any(dfs(mid) for mid in module_lookup)
-
-                # Update prerequisites and next_modules
                 for mdata in updated_modules:
                     mod = module_lookup.get(mdata["id"])
                     if not mod:
                         continue
 
-                    prereq_ids = mdata.get("prerequisites", [])
-                    next_ids = mdata.get("next_modules", [])
+                    mod.name = mdata.get("name", mod.name)
+                    mod.learning_goals = mdata.get("learning_goals", mod.learning_goals)
+                    mod.contents.set([])  # optional: clear existing if needed
 
-                    mod.prerequisites.set([module_lookup[pid] for pid in prereq_ids if pid in module_lookup])
-                    mod.next_modules.set([module_lookup[nid] for nid in next_ids if nid in module_lookup])
                     mod.save()
-
-                # Re-check for cycles after changes
-                if has_cycle():
-                    raise ValueError("Circular dependency detected among modules")
 
             serializer = PathwaySerializer(pathway)
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -109,7 +78,7 @@ def pathway_detail(request, pk):
             import traceback
             traceback.print_exc()
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
+
     elif request.method == 'PUT':
         try:
 
@@ -124,15 +93,18 @@ def pathway_detail(request, pk):
             pathway.grade = request.data.get("grade", pathway.grade)
             pathway.learning_goals = request.data.get("learning_goals", pathway.learning_goals)
             pathway.progress = request.data.get("progress", pathway.progress)
-
-            classroom_id = request.data.get("classroom", {}).get("id", None)
-            if classroom_id:
-                try:
-                    from pathways.models import Classroom  # adjust import if needed
-                    classroom = Classroom.objects.get(id=classroom_id)
-                    pathway.classroom = classroom
-                except Classroom.DoesNotExist:
-                    return Response({"error": "Classroom not found"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if request.data.get("classroom", None) is not None:
+                classroom_id = request.data.get("classroom", {}).get("id", None)
+                if classroom_id:
+                    try:
+                        from pathways.models import Classroom  # adjust import if needed
+                        classroom = Classroom.objects.get(id=classroom_id)
+                        pathway.classroom = classroom
+                    except Classroom.DoesNotExist:
+                        return Response({"error": "Classroom not found"}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                pathway.classroom = None
 
             pathway.save()
 
