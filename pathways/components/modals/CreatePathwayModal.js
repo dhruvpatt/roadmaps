@@ -12,9 +12,10 @@ export default function CreatePathwayModal({
   classroom = null,
   pathway = null,
 }) {
+
+  console.log("CreatePathwayModal", { isOpen, onClose, onCreate, onUpdate, user, classroom, pathway });
   const router = useRouter();
   const isEdit = Boolean(pathway);
-
 
   const [form, setForm] = useState({
     title: "",
@@ -140,7 +141,6 @@ export default function CreatePathwayModal({
     setLoading(true);
 
     try {
-      let pathway;
 
       if (isEdit && onUpdate) {
         pathway = await onUpdate(pathway.id, payload);

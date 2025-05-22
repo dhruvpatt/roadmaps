@@ -73,8 +73,7 @@ const Classroom = () => {
             />
 
             <ClassroomTabs
-              classroomCode={classroomCode}
-              classroomId={classroomId}
+              classroom={classroom}
               isTeacher={role === "teacher"}
             />
           </>

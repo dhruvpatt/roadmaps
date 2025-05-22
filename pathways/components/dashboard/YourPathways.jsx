@@ -3,7 +3,7 @@ import backendUrl from "@/backendUrl";
 import HorizontalScroller from "@/components/dashboard/HorizontalScroller";
 import DashboardCard from "@/components/dashboard/DashboardCard";
 
-export default function YourPathways() {
+export default function YourPathways({updatePathwayCount}) {
   const [user, setUser] = useState(null);
   const [pathways, setPathways] = useState([]);
 
@@ -22,6 +22,8 @@ export default function YourPathways() {
 
         const data = await res.json();
         setPathways(data.results || data);
+        updatePathwayCount?.(data.results.length || data.length); // for pathways
+
       } catch (error) {
         console.error("Failed to fetch pathways", error);
       }

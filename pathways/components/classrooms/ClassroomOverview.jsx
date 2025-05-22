@@ -3,14 +3,15 @@ import { Users, BookOpen, BarChart2, CircleCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import backendUrl from "@backendUrl";
 import PathwayGrid from "@components/pathways/PathwayGrid";
+import ClassroomBoard from "@components/classrooms/ClassroomBoard";
 
 
-export default function ClassroomOverview({ isTeacher = false, classroomCode = null, classroomId = null }) {
+export default function ClassroomOverview({ classroom=null }) {
   const router = useRouter();
   const [user, setUser] = useState({});
-  const [classroom, setClassroom] = useState({});
   const [stats, setStats] = useState([]);
   const [pathways, setPathways] = useState([]);
+  const [pathwaysNumber, setPathwaysNumber] = useState(0);
 
   useEffect(() => {
     const usr = JSON.parse(localStorage.getItem("user"));
@@ -19,13 +20,36 @@ export default function ClassroomOverview({ isTeacher = false, classroomCode = n
       return;
     }
     setUser(usr);
-
-    if (classroomId) {
-      fetchClassroom(usr, classroomId)
-    } else {
-      loadMockData();
-    }
   }, []);
+
+  useEffect(() => {
+    if (!classroom?.id) return;
+
+    setStats([
+      {
+        label: "Total Students",
+        value: classroom?.students?.length || 0,
+        icon: Users,
+        bg: "bg-blue-100",
+        text: "text-blue-700",
+      },
+      {
+        label: "Total Pathways",
+        value: pathwaysNumber,
+        icon: BookOpen,
+        bg: "bg-green-100",
+        text: "text-green-700",
+      },
+      {
+        label: "Average Grade",
+        value: "87%",
+        icon: BarChart2,
+        bg: "bg-amber-100",
+        text: "text-amber-700",
+      },
+    ]);
+  }, [pathwaysNumber, classroom]);
+
 
   const fetchClassroom = async (user, id) => {
     try {
@@ -38,32 +62,17 @@ export default function ClassroomOverview({ isTeacher = false, classroomCode = n
       setClassroom(ret || {});
       setPathways(Array.isArray(ret.pathways) ? ret.pathways : []);
 
-      const studentsCount = ret?.students?.length || 0;
-      const pathwayCount = ret.pathways?.length || 0;
 
-      setStats([
-        {
-          label: "Total Students",
-          value: studentsCount,
-          icon: Users,
-          bg: "bg-blue-100",
-          text: "text-blue-700",
-        },
-        {
-          label: "Total Pathways",
-          value: pathwayCount,
-          icon: BookOpen,
-          bg: "bg-green-100",
-          text: "text-green-700",
-        },
-        {
-          label: "Average Grade",
-          value: "87%",
-          icon: BarChart2,
-          bg: "bg-amber-100",
-          text: "text-amber-700",
-        },
-      ]);
+      const studentsCount = ret?.students?.length || 0;
+      setStats((prev) =>
+        prev.map((stat) =>
+          stat.label === "Total Students"
+            ? { ...stat, value: studentsCount }
+            : stat
+        )
+      );
+
+
     } catch (error) {
       console.error("Failed to fetch classroom", error);
       setPathways([]);
@@ -120,10 +129,13 @@ export default function ClassroomOverview({ isTeacher = false, classroomCode = n
         ))}
       </div>
 
+      <ClassroomBoard />
+
       {classroom?.id ? (
         <PathwayGrid
           title={"Class Pathways"}
           classroom={classroom}
+          updatePathwaysNumber={setPathwaysNumber}
         />
       ) : (
         <div className="text-center text-gray-500 text-sm">Loading classroom pathways...</div>

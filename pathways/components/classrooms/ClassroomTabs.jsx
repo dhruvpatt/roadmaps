@@ -1,13 +1,22 @@
 import ClassroomOverview from "./ClassroomOverview";
 import { useEffect, useState } from "react";
 import StudentsComponent from "./ClassroomStudents";
+import ClassroomBoard from "./ClassroomBoard";
+import PathwayGrid from "@/components/pathways/PathwayGrid";
 
 
-export default function ClassroomTabs({ classroomCode, classroomId, isTeacher }) {
+
+export default function ClassroomTabs({ classroom, isTeacher }) {
   const [activeTab, setActiveTab] = useState("overview");
 
-  const tabs = [{ key: "overview", label: "Overview" }];
-  if (isTeacher) tabs.push({ key: "students", label: "Students" });
+  const [pathwaysNumber, setPathwaysNumber] = useState(0);
+
+  const tabs = [
+    { key: "overview", label: "Overview" },
+    ...(isTeacher ? [{ key: "students", label: "Students" }] : []),
+    { key: "board", label: "Board" },
+    { key: "pathways", label: "Pathways" },
+  ];
 
   return (
     <div className="space-y-6">
@@ -17,11 +26,10 @@ export default function ClassroomTabs({ classroomCode, classroomId, isTeacher })
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`text-sm md:text-base font-semibold px-4 py-2 rounded-lg transition-all ${
-              activeTab === tab.key
-                ? "bg-amber-700 text-white"
-                : "text-gray-500 hover:text-black"
-            }`}
+            className={`text-sm md:text-base font-semibold px-4 py-2 rounded-lg transition-all ${activeTab === tab.key
+              ? "bg-amber-700 text-white"
+              : "text-gray-500 hover:text-black"
+              }`}
           >
             {tab.label}
           </button>
@@ -33,12 +41,29 @@ export default function ClassroomTabs({ classroomCode, classroomId, isTeacher })
         {activeTab === "overview" && (
           <ClassroomOverview
             isTeacher={isTeacher}
-            classroomCode={classroomCode}
-            classroomId={classroomId}
+            classroom={classroom}
+            pathwaysNumber={pathwaysNumber}
+            setPathwaysNumber={setPathwaysNumber}
           />
         )}
-        {activeTab === "students" && isTeacher && <StudentsComponent />}
+
+        {activeTab === "students" && isTeacher && <StudentsComponent classroom={classroom} />}
+
+        {activeTab === "board" && (
+          <div>
+            <ClassroomBoard classroom={classroom} />
+          </div>
+        )}
+
+        {activeTab === "pathways" && classroom?.id && (
+          <PathwayGrid
+            title="Class Pathways"
+            classroom={classroom}
+            updatePathwaysNumber={setPathwaysNumber}
+          />
+        )}
       </div>
+
     </div>
   );
 }

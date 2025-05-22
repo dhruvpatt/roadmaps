@@ -17,6 +17,9 @@ const Dashboard = () => {
   const router = useRouter();
   const [user, setUser] = useState({});
 
+  const [classroomCount, setClassroomCount] = useState(0);
+  const [pathwayCount, setPathwayCount] = useState(0);
+
   useEffect(() => {
     const usr = JSON.parse(localStorage.getItem("user"));
     if (!usr) {
@@ -35,10 +38,10 @@ const Dashboard = () => {
       });
 
       const ret = await res.json();
-      if (ret?.pathway){
+      if (ret?.pathway) {
         return ret?.pathway;
       }
-      else{
+      else {
         return ret
       }
     } catch (error) {
@@ -73,9 +76,15 @@ const Dashboard = () => {
             : "Continue your teaching journey"}
         </p>
 
-        <DashboardStats user={user} />
-        <YourPathways />
-        <YourClassrooms />
+        <DashboardStats
+          user={user}
+          classroomCount={classroomCount}
+          pathwayCount={pathwayCount}
+        />
+
+        <YourPathways updatePathwayCount={setPathwayCount} />
+        <YourClassrooms updateClassroomCount={setClassroomCount} />
+
       </div>
 
       {/* Floating + Button */}

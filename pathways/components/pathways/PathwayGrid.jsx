@@ -7,7 +7,7 @@ import { useState, useEffect } from "react"
 import backendUrl from "@/backendUrl"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
-export default function Pathways({ title = "Your Pathways", classroom }) {
+export default function Pathways({ title = "Your Pathways", classroom, updatePathwaysNumber }) {
     const router = useRouter()
     const [showPathwayModal, setShowPathwayModal] = useState(false);
     const [user, setUser] = useState({});
@@ -74,6 +74,8 @@ export default function Pathways({ title = "Your Pathways", classroom }) {
             setPathways(data.results);
             setTotalPages(Math.max(1, Math.ceil(data.count / 15)));
             setPage(pageNum);
+            console.log(data.count)
+            updatePathwaysNumber?.(data.count);
         } catch (err) {
             console.error("Failed to fetch pathways", err);
         } finally {
@@ -201,6 +203,7 @@ export default function Pathways({ title = "Your Pathways", classroom }) {
                 }}
                 user={user}
                 pathway={selectedPathway}
+                classroom={classroom}
             />
 
         </div>

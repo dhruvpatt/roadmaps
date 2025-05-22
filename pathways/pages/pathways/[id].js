@@ -653,7 +653,7 @@ const ViewPathwayPage = () => {
             <div className="flex items-center space-x-3">
               <span className="text-blue-500">📝</span>
               <p className="font-medium text-sm">
-                {currentChapter.required_quiz.name || "Required Quiz"}
+                {currentChapter.required_quiz?.name || "Required Quiz"}
               </p>
             </div>
 

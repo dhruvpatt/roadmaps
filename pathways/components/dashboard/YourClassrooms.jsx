@@ -3,7 +3,7 @@ import backendUrl from "@/backendUrl";
 import HorizontalScroller from "@/components/dashboard/HorizontalScroller";
 import DashboardCard from "@/components/dashboard/DashboardCard";
 
-export default function YourClassrooms() {
+export default function YourClassrooms({updateClassroomCount}) {
   const [user, setUser] = useState(null);
   const [classrooms, setClassrooms] = useState([]);
 
@@ -22,6 +22,8 @@ export default function YourClassrooms() {
 
         const data = await res.json();
         setClassrooms(data.results || data);
+        updateClassroomCount?.(data.results.length || data.length); // for classrooms
+
       } catch (error) {
         console.error("Failed to fetch classrooms", error);
       }

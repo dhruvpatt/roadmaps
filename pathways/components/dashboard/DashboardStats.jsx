@@ -13,21 +13,19 @@ const StatCard = ({ icon: Icon, label, value }) => (
   </div>
 );
 
-const DashboardStats = ({ user }) => {
-  const mockStats = {
-    student: [
-      { label: "Modules Completed", value: 12, icon: BookOpenCheck },
-      { label: "Pathways Enrolled", value: 3, icon: ListChecks },
-      { label: "Classrooms Joined", value: 2, icon: UserCheck },
-    ],
-    teacher: [
-      { label: "Modules Created", value: 18, icon: BookOpenCheck },
-      { label: "Active Classrooms", value: 4, icon: UserCheck },
-      { label: "Students Reached", value: 120, icon: CircleDollarSign },
-    ],
-  };
-
-  const stats = user.role === "teacher" ? mockStats.teacher : mockStats.student;
+const DashboardStats = ({ user, classroomCount = 0, pathwayCount = 0 }) => {
+  const stats =
+    user.role === "teacher"
+      ? [
+          { label: "Modules Created", value: 0, icon: BookOpenCheck },
+          { label: "Active Classrooms", value: classroomCount, icon: UserCheck },
+          { label: "Pathways Created", value: pathwayCount, icon: ListChecks },
+        ]
+      : [
+          { label: "Modules Completed", value: 0, icon: BookOpenCheck },
+          { label: "Pathways Enrolled", value: pathwayCount, icon: ListChecks },
+          { label: "Classrooms Joined", value: classroomCount, icon: UserCheck },
+        ];
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
@@ -37,5 +35,6 @@ const DashboardStats = ({ user }) => {
     </div>
   );
 };
+
 
 export default DashboardStats;
