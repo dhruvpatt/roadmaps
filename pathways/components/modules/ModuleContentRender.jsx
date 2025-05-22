@@ -127,10 +127,12 @@ const getBlockStyles = (type) => {
 export function ModuleContentRenderer({ contents }) {
   const [expanded, setExpanded] = useState({});
   const toggle = (i) => setExpanded((prev) => ({ ...prev, [i]: !prev[i] }));
-
+  const visibleContents = contents.filter(
+    (block) => block.block_type !== "learning_objectives"
+  );
   return (
     <div className="space-y-0 mb-12">
-      {contents.map((block, i) => {
+      {visibleContents.map((block, i) => {
         const blockType = block.block_type;
         const contentType = block.type;
         const { content, transition_text } = block;
