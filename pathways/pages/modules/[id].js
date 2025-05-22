@@ -18,6 +18,7 @@ import { ModuleContentRenderer } from "../../components/modules/ModuleContentRen
 import "katex/dist/katex.min.css";
 import { useRouter } from "next/router";
 import ModuleChat from "../../components/modules/ModuleChat";
+import Back from "@components/Back";
 
 export default function ModulePage() {
   const router = useRouter();
@@ -158,13 +159,7 @@ export default function ModulePage() {
           <Card className="bg-white rounded-xl shadow-lg p-8 w-full">
             {/* Header: Back & Toggle Chat */}
             <div className="flex justify-between items-center mb-4">
-              <button
-                className="flex items-center text-sm text-gray-500 cursor-pointer hover:underline"
-                onClick={() => router.back()}
-              >
-                <ArrowLeft size={16} className="mr-1 text-amber-600" />
-                <span className="text-amber-600">Back to pathway</span>
-              </button>
+              <Back></Back>
 
               {!showChat && (
                 <Button
@@ -296,14 +291,7 @@ export default function ModulePage() {
 
             {/* Module Navigation */}
             <div className="flex justify-between items-center mt-12 pt-6 border-t border-gray-200">
-              <Button
-                variant="outline"
-                className="text-amber-600 border-amber-200 hover:bg-amber-50"
-                onClick={() => router.back()}
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Pathway
-              </Button>
+              <Back></Back>
 
               <Button
                 onClick={markModuleComplete}

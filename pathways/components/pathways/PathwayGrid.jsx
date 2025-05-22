@@ -16,13 +16,12 @@ export default function Pathways({ title = "Your Pathways", classroom }) {
     const [totalPages, setTotalPages] = useState(1);
     const [searchQuery, setSearchQuery] = useState("");
     const [loading, setLoading] = useState(false);
-    const [showEditModal, setShowEditModal] = useState(false);
     const [selectedPathway, setSelectedPathway] = useState(null);
 
 
     const handleEdit = (pathway) => {
         setSelectedPathway(pathway);
-        setShowEditModal(true);
+        setShowPathwayModal(true);
     };
 
     const handleDelete = async (pathway) => {
@@ -176,9 +175,9 @@ export default function Pathways({ title = "Your Pathways", classroom }) {
             </div>
 
             <CreatePathwayModal
-                isOpen={showEditModal}
+                isOpen={showPathwayModal }
                 onClose={() => {
-                    setShowEditModal(false);
+                    setShowPathwayModal(false);
                     setSelectedPathway(null);
                 }}
                 onUpdate={async (id, data) => {
@@ -191,6 +190,14 @@ export default function Pathways({ title = "Your Pathways", classroom }) {
                     const updated = await res.json();
                     fetchPathways(user, page, searchQuery);
                     return updated.id;
+                }}
+                onCreate={async (data) => {
+                    const pathway = await createPathway(data);
+                    if (pathway) {
+                        setShowPathwayModal(false);
+                        fetchPathways(user, page, searchQuery);
+                    }
+                    return pathway;
                 }}
                 user={user}
                 pathway={selectedPathway}

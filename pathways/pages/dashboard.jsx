@@ -35,7 +35,12 @@ const Dashboard = () => {
       });
 
       const ret = await res.json();
-      return ret?.pathway;
+      if (ret?.pathway){
+        return ret?.pathway;
+      }
+      else{
+        return ret
+      }
     } catch (error) {
       console.error("Failed to create pathway", error);
     }

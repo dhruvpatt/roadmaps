@@ -140,11 +140,12 @@ export default function CreatePathwayModal({
     setLoading(true);
 
     try {
-      let pathway_id;
+      let pathway;
+
       if (isEdit && onUpdate) {
-        pathway_id = await onUpdate(pathway.id, payload);
+        pathway = await onUpdate(pathway.id, payload);
       } else {
-        pathway_id = await onCreate(payload);
+        pathway = await onCreate(payload);
       }
 
       onClose();
@@ -159,7 +160,15 @@ export default function CreatePathwayModal({
         chapters: [],
       });
       setError("");
-      router.push(`/pathways/${pathway_id}`);
+
+      // ✅ Updated navigation logic
+      if (typeof pathway === "number") {
+        router.push(`/pathways/${pathway}`);
+      } else if (typeof pathway === "object" && pathway?.id) {
+        router.push(`/pathways/${pathway.id}`);
+      } else {
+        router.push(`/pathways`);
+      }
     } catch (error) {
       console.error("Failed to save pathway", error);
       setError("Failed to save pathway. Please try again.");

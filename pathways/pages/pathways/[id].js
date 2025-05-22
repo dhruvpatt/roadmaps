@@ -8,6 +8,7 @@ import { useRef } from "react";
 
 
 import CreatePathwayModal from "@/components/modals/CreatePathwayModal";
+import Back from "@components/Back";
 
 const ViewPathwayPage = () => {
   const router = useRouter();
@@ -269,13 +270,7 @@ const ViewPathwayPage = () => {
 
   return (
     <div className="min-h-screen bg-white p-6 space-y-6 text-gray-800 w-full">
-      <div
-        className="flex items-center text-sm text-gray-500 cursor-pointer hover:underline"
-        onClick={() => router.back()}
-      >
-        <ArrowLeft size={24} className="mr-1" />
-        Back
-      </div>
+      <Back></Back>
 
       <div>
         <div className="flex space-x-2 justify-between items-center">

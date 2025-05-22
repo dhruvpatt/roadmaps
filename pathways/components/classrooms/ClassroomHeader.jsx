@@ -1,3 +1,4 @@
+import Back from "@components/Back";
 import { ArrowLeft, Copy, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -12,13 +13,7 @@ export default function ClassroomHeader({ title, subtitle, code, onInviteClick }
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
       {/* Left: Back + Title */}
       <div>
-        <button
-          onClick={() => router.push("/classrooms")}
-          className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-black"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to classrooms
-        </button>
+        <Back></Back>
 
         <h1 className="text-3xl font-bold text-gray-900 mt-2">{title}</h1>
         <p className="text-gray-500 text-lg">{subtitle}</p>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import backendUrl from "@/backendUrl";
 import { useRouter } from "next/navigation";
+import Back from "@components/Back";
 
 export default function JoinClassroomPage() {
 
@@ -66,14 +67,7 @@ export default function JoinClassroomPage() {
       {/* Join Classroom Card */}
       <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
         {/* Back Link (now at the top inside the box) */}
-        <div className="mb-4">
-          <Link
-            href="/classrooms"
-            className="text-sm text-amber-600 hover:text-amber-800"
-          >
-            &larr; Back to Classrooms
-          </Link>
-        </div>
+        <Back></Back>
 
         <h1 className="text-xl font-bold text-amber-900 mb-2">
           Join a Classroom

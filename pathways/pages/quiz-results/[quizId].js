@@ -2,6 +2,7 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import backendUrl from "@/backendUrl";
+import Back from "@components/Back";
 
 export default function QuizResultsPage() {
   const router = useRouter();
@@ -88,12 +89,7 @@ export default function QuizResultsPage() {
           >
             Retry Quiz
           </button>
-          <button
-            onClick={() => router.push(`/modules/${moduleId}`)}
-            className="bg-white text-amber-700 border border-amber-400 px-6 py-3 rounded-lg font-medium hover:bg-amber-50 transition-all shadow-sm"
-          >
-            Back to Module
-          </button>
+          <Back></Back>
         </div>
       </div>
     </div>
