@@ -119,6 +119,10 @@ const getBlockStyles = (type) => {
       return `${common} bg-emerald-50 border-emerald-600`;
     case "misconception":
       return `${common} bg-red-50 border-red-600`;
+    case "visual_aid":
+      return `${common} bg-amber-100 border-amber-600`;
+    case "summary":
+      return `${common} bg-blue-50 border-gray-600`;
     default:
       return "rounded-lg p-6 mb-10 bg-white border border-gray-100 shadow-sm";
   }

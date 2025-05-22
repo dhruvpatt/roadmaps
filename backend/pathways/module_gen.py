@@ -90,7 +90,8 @@ class ContentGenerationAgent:
         3. For block_type 'html', DO NOT plan for anything requiring JavaScript or interactivity. Use static visual elements like labeled diagrams, charts, headings, subheadings, and tables. Construct them with semantic HTML.
         4. Be sure to vary the block types to keep the learning experience dynamic.
         5. The blocks should follow a logical flow: from motivation and definitions, through explanations and examples, to review and application.
-
+        6. There should be one video block in the plan either at the start (as an introduction) or end of the content (further the understanding).
+        
         Block-specific guidelines:
         - 'introduction': Provide context and motivation for the topic. Do NOT include the words "Introduction" as a heading.
         - 'learning_objectives': State 3–5 specific skills or outcomes the learner should achieve. Use a bullet or numbered list.
@@ -218,7 +219,8 @@ class ContentGenerationAgent:
 
             BLOCK TYPE GUIDELINES:
             - introduction, learning_objectives, definition, concept_explanation, etc. as before.
-
+            - video: Provide a detailed and specific YouTube search phrase that would return a relevant and high-quality explainer video on the topic. IT MUST BE A QUERY STRING, NOT A URL OR A EXPLANATION OF WHAT TO LOOK UP.
+            - html: Use only static visual elements like labeled diagrams, charts, headings, subheadings, and tables. Construct them with semantic HTML. NO IMAGES.
             GENERAL:
             - Headings (`###`) and display math (`$$…$$`) must be on their own blank lines.
             - Your **content** field must be valid Markdown + LaTeX that `react-markdown + rehype-katex` can parse.
@@ -329,9 +331,11 @@ class EvaluationAgent:
         2. Technical Correctness: Is all factual information accurate?
         3. Readability: Is the content written at an appropriate level for the target audience?
         4. Structure: Is the content well-organized with clear progression?
-        5. Renderability: Will all HTML content render correctly? Check for balanced tags and proper syntax.
+        5. Renderability: Will all HTML or markdown content render correctly? Check for balanced tags and proper syntax.
         6. Video Content: Are video queries specific enough to return relevant results?
         7. Content Diversity: Is there a good mix of content types (text, interactive, video)?
+        8. Are there any images that it is referenceing? If so, automatically INVALIDATE the content.
+        9. Are there any references to external content? This includes links to desmos or articles or textbooks If so, automatically INVALIDATE the content.
 
         For each criterion, assign a score from 1-5 and provide a brief explanation.
         Then provide an overall assessment with one of these verdicts:
@@ -363,10 +367,9 @@ class EvaluationAgent:
             "improvement_suggestions": ["Add more interactive elements", "Expand section on topic X"]
         }}
         """
-
         try:
             response = get_llm_response(prompt, response_model=ContentEvaluation, mode="standard")
-            #print("Response:", response)
+            print("Response:", response)
             return True, response
             if response.overall_verdict == "VALID":
                 return True, response
@@ -465,7 +468,7 @@ class ModuleContentGenerationAPIView(APIView):
 
                     # Log evaluation results for debugging
                     print(f"Evaul Res: {evaluation_result}")
-                    print(f"Content evaluation: {evaluation_result.overall_verdict}")
+                    # print(f"Content evaluation: {evaluation_result.overall_verdict}")
 
                     if is_valid:
                         print("EVALUATION PASSED - Content is valid")
@@ -473,8 +476,10 @@ class ModuleContentGenerationAPIView(APIView):
                         for item in content_list:
                             # Handle video lookup
                             if item['block_type'] == 'video':
+                                print(f"Video block detected: {item}")
                                 query = item['content']
                                 resolved_url = search_youtube_video(query)
+                                print(f"Resolved URL: {resolved_url}")
                                 if resolved_url:
                                     item['content'] = resolved_url
                                 else:
