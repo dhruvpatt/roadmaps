@@ -87,6 +87,7 @@ class ContentEvaluation(BaseModel):
 class ChapterSchema(BaseModel):
     name: str
     next: Optional[str]
+    learning_goals: List[str]
 
 class ModuleItem(BaseModel):
     name: str
@@ -109,6 +110,8 @@ class InsightResponse(BaseModel):
 class ChapterStructure(BaseModel):
     name: str
     next: Optional[str] = None
+    learning_goals: List[str] = Field(default_factory=list)
+    description: Optional[str] = None
 
 class ModuleStructure(BaseModel):
     name: str
