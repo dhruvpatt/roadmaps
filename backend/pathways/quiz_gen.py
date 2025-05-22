@@ -146,11 +146,11 @@ class QuizGenerationAPIView(APIView):
                 ]
                 """
 
-                quiz_data = get_llm_response(prompt, temperature=0.7, response_model=QuizList)
+                quiz_data = get_llm_response(prompt, temperature=0.7, response_model=QuizStructure)
 
 
                 quiz = Quiz.objects.create(user=user)
-                for q in quiz_data['items']:
+                for q in quiz_data['questions']:
                     print(q)
                     if not all(k in q for k in ['question', 'solution', 'type']):
                         continue

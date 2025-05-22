@@ -88,7 +88,7 @@ const QuizContainer = ({ questions, quizId, moduleId }) => {
               data={questionList[currentStep]}
               onAnswer={handleAnswer}
               defaultAnswer={answers[currentStep]?.answer}
-              showNext={!isLastStep && questionList[currentStep].type === "text"}
+              showNext={!isLastStep && questionList[currentStep]?.type === "text"}
             />
 
             <div className="flex justify-between items-center pt-4">
