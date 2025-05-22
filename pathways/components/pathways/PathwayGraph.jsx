@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import ReactFlow, {
   Background,
   Controls,
@@ -25,7 +25,9 @@ const InnerGraph = ({ data, viewMode = "student", published = false }) => {
 
   const { fitView } = useReactFlow();
   const isTeacher = viewMode === "teacher";
-  const [hoveredNodeId, setHoveredNodeId] = React.useState(null);
+
+  const [hoveredNodeId, setHoveredNodeId] = useState(null);
+  const hoverTimeout = useRef(null);
 
 
 
@@ -196,8 +198,18 @@ const InnerGraph = ({ data, viewMode = "student", published = false }) => {
             ? "edge-connected"
             : "",
       }))}
-      onNodeMouseEnter={(_, node) => setHoveredNodeId(node.id)}
-      onNodeMouseLeave={() => setHoveredNodeId(null)}
+      onNodeMouseEnter={(_, node) => {
+        clearTimeout(hoverTimeout.current);
+        hoverTimeout.current = setTimeout(() => {
+          setHoveredNodeId(node.id);
+        }, 20);
+      }}
+      onNodeMouseLeave={() => {
+        clearTimeout(hoverTimeout.current);
+        hoverTimeout.current = setTimeout(() => {
+          setHoveredNodeId(null);
+        }, 50);
+      }}
       nodeTypes={defaultNodeTypes}
       edgeTypes={edgeTypes}
       fitView

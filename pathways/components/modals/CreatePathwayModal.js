@@ -13,7 +13,7 @@ export default function CreatePathwayModal({
   pathway = null,
 }) {
 
-  console.log("CreatePathwayModal", { isOpen, onClose, onCreate, onUpdate, user, classroom, pathway });
+  // console.log("CreatePathwayModal", { isOpen, onClose, onCreate, onUpdate, user, classroom, pathway });
   const router = useRouter();
   const isEdit = Boolean(pathway);
 

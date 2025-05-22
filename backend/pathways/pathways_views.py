@@ -355,13 +355,14 @@ class PathwayGenerationAPIView(APIView):
     serializer_class = QueryRequestSerializer
 
     def post(self, request):
-        # Handle classroom attribute: can be an object or an integer id
-        classroom_data = request.data.get("classroom")
 
-        if isinstance(classroom_data, dict):
-            classroom_id = classroom_data.get("id")
-            if classroom_id is not None:
-                request.data["classroom"] = classroom_id
+        # Preprocess classroom field if it's a dict
+        if isinstance(request.data.get("classroom"), dict):
+            classroom_obj = request.data["classroom"]
+            classroom_id = classroom_obj.get("id")
+            if not classroom_id:
+                return Response({"error": "Classroom object must contain an 'id' field."}, status=status.HTTP_400_BAD_REQUEST)
+            request.data["classroom"] = classroom_id
 
         serializer = self.serializer_class(data=request.data)
         if not serializer.is_valid():
@@ -378,6 +379,7 @@ class PathwayGenerationAPIView(APIView):
             user_chapters = serializer.validated_data.get('chapters')
 
             classroom_data = serializer.validated_data.get('classroom')
+            print(f"Classroom data: {classroom_data}")
             classroom = None
             if classroom_data and isinstance(classroom_data, dict):
                 classroom_id = classroom_data.get("id")
@@ -386,7 +388,11 @@ class PathwayGenerationAPIView(APIView):
                         classroom = Classroom.objects.get(id=classroom_id)
                     except Classroom.DoesNotExist:
                         return Response({"error": "Classroom not found"}, status=status.HTTP_400_BAD_REQUEST)
-
+            elif classroom_data and isinstance(classroom_data, int):
+                try:
+                    classroom = Classroom.objects.get(id=classroom_data)
+                except Classroom.DoesNotExist:
+                    return Response({"error": "Classroom not found"}, status=status.HTTP_400_BAD_REQUEST)            
             user = User.objects.get(pk=user_id)
 
             # Create agent instances
@@ -530,11 +536,24 @@ class PathwayGenerationAPIView(APIView):
 
                                 module_instance.save()
 
-                            # Then augment with linear dependencies (1 -> 2 -> 3) in each chapter
+                            # Helper function to detect cycles using DFS
+                            def has_cycle(start_module, target_module, visited=None):
+                                if visited is None:
+                                    visited = set()
+                                if start_module == target_module:
+                                    return True
+                                visited.add(start_module)
+                                for next_mod in start_module.next_modules.all():
+                                    if next_mod not in visited:
+                                        if has_cycle(next_mod, target_module, visited):
+                                            return True
+                                return False
+
+                            # Then augment with linear dependencies (1 -> 2 -> 3 -> ...) in each chapter
                             for chapter in module_list.chapters:
                                 chapter_modules = [m for m in module_list.modules if m.chapter == chapter.name]
 
-                                # To prevent cycles, enforce strict linear order: 1->2->3->...
+                                # Enforce strict linear order: 1->2->3->...
                                 for i in range(len(chapter_modules) - 1):
                                     current = modules[chapter_modules[i].name]
                                     next_mod = modules[chapter_modules[i + 1].name]
@@ -545,11 +564,12 @@ class PathwayGenerationAPIView(APIView):
                                     if next_mod in current.prerequisites.all():
                                         current.prerequisites.remove(next_mod)
 
-                                    # Now set only the forward dependency
-                                    if next_mod not in current.next_modules.all():
-                                        current.next_modules.add(next_mod)
-                                    if current not in next_mod.prerequisites.all():
-                                        next_mod.prerequisites.add(current)
+                                    # Only add forward dependency if it does not create a cycle
+                                    if not has_cycle(next_mod, current):
+                                        if next_mod not in current.next_modules.all():
+                                            current.next_modules.add(next_mod)
+                                        if current not in next_mod.prerequisites.all():
+                                            next_mod.prerequisites.add(current)
 
                                     current.save()
                                     next_mod.save()
@@ -835,6 +855,11 @@ def publish_pathway_to_classroom(request):
 
         serialized_pathways = PathwaySerializer(created_pathways, many=True).data
         serialized_pathway = PathwaySerializer(pathway).data
+
+        pathway.published = True
+        pathway.save()
+
+
         return Response({
             "message": "Pathway and structure published to classroom successfully.",
             "pathway": serialized_pathway

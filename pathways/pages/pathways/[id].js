@@ -248,7 +248,7 @@ const ViewPathwayPage = () => {
           body: JSON.stringify({
             pathway_id: pathway.id,
             user_id: user.id,
-            classroom_id: pathway.classroom,
+            classroom_id: pathway.classroom.id,
           }),
         });
 
@@ -297,7 +297,7 @@ const ViewPathwayPage = () => {
         <div className="flex space-x-2 justify-between items-center">
           <h1 className="text-5xl font-bold text-gray-900">{pathway?.title || "Pathway"}</h1>
 
-          {pathway.owner == user?.id ? (
+          {pathway?.owner == user?.id ? (
             <div className="flex items-center space-x-3">
               <button
                 onClick={() => setShowEditModal(true)}
