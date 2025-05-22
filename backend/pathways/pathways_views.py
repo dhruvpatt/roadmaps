@@ -22,70 +22,6 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 
-
-# class PerceptionAgent:
-#     def generate_insights(self, topic, learning_goals, grade, user_chapters):
-#         # Build a more detailed prompt based on topic complexity
-#         is_complex = any(word in topic.lower() for word in [
-#             "advanced", "complex", "comprehensive", "in-depth", "quantum", "analysis",
-#             "systems", "theory", "engineering", "calculus", "philosophy"
-#         ])
-#
-#         prompt = f"""
-#         You are a curriculum design expert helping to plan a comprehensive learning pathway.
-#
-#         TOPIC: '{topic}'
-#         GRADE LEVEL: '{grade}'
-#         USER-SUGGESTED CHAPTERS: {user_chapters or "None provided"}
-#
-#         HIGH-LEVEL LEARNING GOALS: {', '.join([f"'{g}'" for g in learning_goals])}
-#
-#         {"This appears to be a complex, advanced topic that will require comprehensive coverage.\n"
-#          "Your insights should address:\n"
-#          "0. Expand and refine the initial learning goals into 8–12 SMART objectives.\n"
-#          "1. The breadth of subtopics needed (suggest at least 5–8 major areas).\n"
-#          "2. The depth required for each subtopic (multiple modules per area).\n"
-#          "3. Necessary scaffolding concepts that must be covered.\n"
-#          "4. Potential interdependencies between concepts.\n"
-#          "5. How to structure progressive difficulty across the curriculum.\n"
-#         if is_complex else ""
-#         }
-#
-#         Next:
-#
-#         Analyze this information deeply and provide strategic insights covering:
-#         1. The full scope of what should be covered to master this topic
-#         2. The logical sequence for introducing concepts (scaffolding)
-#         3. Key focus areas to emphasize based on the learning goals
-#         4. Appropriate depth and breadth given the grade level
-#         5. How complex or multifaceted the topic is and how many distinct chapters/modules would be appropriate
-#         6. Potential challenges students might face and how to address them
-#
-#         Return a JSON object in this form:
-#         {{
-#           "expanded_learning_goals": [
-#             "Goal 1 (SMART-formatted)",
-#             "Goal 2",
-#             … up to 12 …
-#           ],
-#           "insights": "Detailed paragraph with curriculum planning insights",
-#           "estimated_complexity": "LOW|MEDIUM|HIGH|VERY HIGH",
-#           "recommended_structure": {{
-#             "chapters_needed": <number>,
-#             "approximate_modules_needed": <number>,
-#             "key_areas": ["area1", "area2", …]
-#           }}
-#         }}
-#         """
-#
-#         try:
-#             result = get_llm_response(prompt, temperature=0.7, response_model=EnhancedInsightResponse)
-#             print(f"Perception insights: {result}")
-#             return result
-#         except Exception as e:
-#             print(e)
-#             raise ValueError(f"Error generating insights: {e}")
-
 class PerceptionAgent:
     def generate_insights(
         self,
@@ -106,7 +42,7 @@ class PerceptionAgent:
         Follow this step-by-step reasoning process:
 
         **Step 1: Identify Subdomains and Subskills**
-        - Break down the topic into major conceptual areas (e.g., multivariable limits, partial derivatives, vector calculus).
+        - Break down the topic into major conceptual areas.
         - Within each area, identify key subskills that should be taught at increasing levels of depth.
 
         **Step 2: Expand Learning Goals**
@@ -153,14 +89,33 @@ class GenerationAgent:
     def generate_chapters(self, perception_data, topic, learning_goals, grade, mode, user_chapters):
         complexity_guidance = ""
         if topic and (any(word in topic.lower() for word in ["advanced", "complex", "comprehensive", "in-depth"]) or
-                      perception_data['estimated_complexity'] in ['HIGH', 'VERY HIGH']):
+                      perception_data['estimated_complexity'] in ['VERY HIGH']):
             complexity_guidance = """
             This is a complex/advanced topic that requires comprehensive coverage. Please create:
-            - At least 5-8 chapters to cover the breadth of this topic
+            - At least 12-14 chapters to cover the breadth of this topic
             - Ensure proper depth with interconnected prerequisites
+            """
+        elif perception_data['estimated_complexity'] in ['LOW']:
+            complexity_guidance = """
+            This is a basic topic. Please create:
+            - At least 1-5 chapters to cover the essential concepts
+            - Ensure clear connections between chapters
+            """
+        elif perception_data['estimated_complexity'] in ['MEDIUM']:
+            complexity_guidance = """
+            This is a basic/introduction topic. Please create:
+            - At least 5-8 chapters to cover the essential concepts
+            - Ensure clear connections between chapters
+            """
+        else:
+            complexity_guidance = """
+            This is a basic/introduction topic. Please create:
+            - At least 8-12 chapters to cover the essential concepts
+            - Ensure clear connections between chapters
             """
 
         prompt = f"""
+        You are building a textbook for the topic '{topic}' at grade level {grade}.
         You are a cirriculum design expert helping to plan a comprehensive learning roadmap.
         Based on the following insights '{perception_data}', generate a list of chapter names for teaching the topic '{topic}' to students in grade '{grade}', 
         ensuring that the learning goals {', '.join([f"'{goal}'" for goal in learning_goals])} are effectively covered. For each chapter also include a set of learning goals
@@ -175,10 +130,18 @@ class GenerationAgent:
           {{
             "name": "Chapter 1 name",
             "learning_goals": ["Goal 1 of this chapter", "Goal 2 of this chapter"],
-            "next": "Chapter 2 name" }},
+            "next": "Chapter 2 name", learning_goals: ["goal1", "goal2"] }},
           ...
         ]
-        Do not include any additional explanation.
+        GUIDLINES:
+        - Each chapter should have a unique name.
+        - The 'next' field should point to the next chapter in the sequence.
+        - If there is no next chapter, set 'next' to ''.
+        - Do not include any additional explanation.
+        - The audience is {grade} graders.
+        - Chapters should be interconnected and build on each other
+        - Chapters should cover similar amounts of learning goals 
+        - Chapters should should not be on one topic only, but rather on a few topics that are interconnected try your best to group interconnected topics together
         """
 
         result = get_llm_response(
@@ -195,38 +158,51 @@ class GenerationAgent:
                     
         return chapters
 
-    def generate_modules_for_chapter(self, chapter_name, perception_data, topic, learning_goals, grade, mode, complexity_level):
+    def generate_modules_for_chapter(self, chapter_name, perception_data, topic, learning_goals, grade, mode, complexity_level, covered, titles):
         complexity_guidance = ""
         if complexity_level == "HIGH":
             complexity_guidance = """
-                • Include at least 4–6 modules for this chapter.
+                • Include at least 8–12 modules for this chapter.
                 • Each module should dive deep into sub-concepts and include advanced examples.
                 """
         elif complexity_level == "MEDIUM":
             complexity_guidance = """
-                • Include 2–4 modules for this chapter.
+                • Include 4–8 modules for this chapter.
                 • Provide clear explanations and a couple of illustrative examples.
                 """
         else:  # LOW
             complexity_guidance = """
-                • Include 1–2 modules for this chapter.
+                • Include 1–4 modules for this chapter.
                 • Focus on the core definitions only.
                 """
-
         prompt = f"""
-            For the chapter '{chapter_name}', generate detailed modules that address the learning goals…
-            {complexity_guidance} {', '.join([f"'{goal}'" for goal in learning_goals])}.
-        Each module should include:
-        - name: a concise module title
-        - chapter: '{chapter_name}'
-        - learning_goals: a list of specific objectives
-        - module_description: what the module covers
-        - prerequisite_modules: list of module names that must be completed first
-        - next_modules: list of modules that logically follow
+        You are an expert curriculum designer.  
+        Goal: For the chapter '{chapter_name}', generate a JSON array of detailed module objects that together cover these learning goals: {', '.join(learning_goals)}.  
 
-        Use the same JSON format as before and return an array of module objects.
-        The audience is {grade} graders 
-        Do not include explanations.
+        Context:  
+        - Complexity level(not hard requirement but good guidline): {complexity_guidance}  
+        - Already covered goals: {covered}  
+        - Module titles already used across *all previous chapters*: {titles}  
+        - Target audience: Grade {grade} students  
+
+        Uniqueness requirement:  
+        - **Do not** reuse any module title in {titles}.  
+        - Ensure each module is **distinct** in focus and phrasing from those in other chapters.  
+        - If a learning goal overlaps with an earlier chapter’s goal, emphasize the *new* perspective or application unique to this chapter’s content.  
+
+        Each module object must include exactly these fields (in this order):  
+        1. name               – concise, unique title  
+        2. chapter            – '{chapter_name}'  
+        3. learning_goals     – a list of specific objectives (subset of the chapter goals)  
+        4. module_description – a 1–2 sentence summary, highlighting what makes it chapter-specific  
+        5. prerequisite_modules – list of module titles to complete first (if none, use [])  
+        6. next_modules       – list of module titles that logically follow (if none, use [])  
+
+        Requirements:  
+        - Return *only* valid JSON (no extra text).  
+        - Generate at least one module per goal, but no more than two.  
+        - If a proposed module’s title or focus feels too similar to any in {titles}, rename it and shift its emphasis.
+        - Avoid vague or generic titles.  
         """
         result = get_llm_response(
             prompt,
@@ -234,6 +210,7 @@ class GenerationAgent:
             response_model=ModuleListStructure,
             mode="parsed"
         )
+        # print(f"Generated modules for chapter '{chapter_name}': {result}")
         return result.modules
 
     def generate_pathway(self, perception_data, topic, learning_goals, grade, mode, user_chapters, complexity_level="MEDIUM"):
@@ -242,18 +219,28 @@ class GenerationAgent:
         print(f"Generated chapters: {chapters}")
         # Step 2: Generate modules per chapter, one at a time
         all_modules = []
-        count = 0
+        covered_goals = set()
+        existing_titles = set()
+
         for chapter in chapters:
+            # generate only for goals not yet covered
+            new_goals = [g for g in chapter.learning_goals if g not in covered_goals]
             chapter_modules = self.generate_modules_for_chapter(
-                chapter.name,
-                perception_data,
-                topic,
-                learning_goals,
-                grade,
-                mode,
-                complexity_level
+                chapter_name=chapter.name,
+                perception_data=perception_data,
+                topic=topic,
+                learning_goals=new_goals,
+                grade=grade,
+                mode=mode,
+                complexity_level=complexity_level,
+                covered=covered_goals,
+                titles=list(existing_titles),
             )
+
+            # accumulate
             all_modules.extend(chapter_modules)
+            covered_goals.update(chapter.learning_goals)
+            existing_titles.update(m.name for m in chapter_modules)
 
         return PathwayStructure(chapters=chapters, modules=all_modules)
 
@@ -368,9 +355,17 @@ class PathwayGenerationAPIView(APIView):
     serializer_class = QueryRequestSerializer
 
     def post(self, request):
+        # Handle classroom attribute: can be an object or an integer id
+        classroom_data = request.data.get("classroom")
+
+        if isinstance(classroom_data, dict):
+            classroom_id = classroom_data.get("id")
+            if classroom_id is not None:
+                request.data["classroom"] = classroom_id
+
         serializer = self.serializer_class(data=request.data)
         if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"serializer" : serializer.errors, "Error": "serialization problem"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             title = serializer.validated_data['title']
@@ -381,10 +376,16 @@ class PathwayGenerationAPIView(APIView):
             details = serializer.validated_data['details']
             mode = serializer.validated_data.get('mode', 'CASUAL')
             user_chapters = serializer.validated_data.get('chapters')
-            classroomCode = serializer.validated_data.get('classroom')
+
+            classroom_data = serializer.validated_data.get('classroom')
             classroom = None
-            if classroomCode:
-                classroom = Classroom.objects.get(join_id=classroomCode)
+            if classroom_data and isinstance(classroom_data, dict):
+                classroom_id = classroom_data.get("id")
+                if classroom_id:
+                    try:
+                        classroom = Classroom.objects.get(id=classroom_id)
+                    except Classroom.DoesNotExist:
+                        return Response({"error": "Classroom not found"}, status=status.HTTP_400_BAD_REQUEST)
 
             user = User.objects.get(pk=user_id)
 
@@ -503,19 +504,56 @@ class PathwayGenerationAPIView(APIView):
                             )
 
                         # Step 2: Update "prerequisite_modules" and "next_modules"
-                        for module_data in module_list.modules:
-                            module_instance = modules[module_data.name]
+                        if mode.upper() == "CASUAL":
+                            # Remove all dependencies
+                            for module_instance in modules.values():
+                                module_instance.prerequisites.clear()
+                                module_instance.next_modules.clear()
+                                module_instance.save()
+                        else:
+                            # STRICT mode
+                            # First, assign existing dependencies
+                            for module_data in module_list.modules:
+                                module_instance = modules[module_data.name]
 
-                            module_instance.prerequisites.set(
-                                [modules[prerequisite] for prerequisite in module_data.prerequisite_modules if
-                                 prerequisite in modules]
-                            )
+                                # Keep original defined prerequisites
+                                prereq_instances = [
+                                    modules[prerequisite] for prerequisite in module_data.prerequisite_modules if prerequisite in modules
+                                ]
+                                module_instance.prerequisites.set(prereq_instances)
 
-                            module_instance.next_modules.set(
-                                [modules[next_module] for next_module in module_data.next_modules if
-                                 next_module in modules]
-                            )
-                            module_instance.save()
+                                # Keep original defined next_modules
+                                next_instances = [
+                                    modules[next_module] for next_module in module_data.next_modules if next_module in modules
+                                ]
+                                module_instance.next_modules.set(next_instances)
+
+                                module_instance.save()
+
+                            # Then augment with linear dependencies (1 -> 2 -> 3) in each chapter
+                            for chapter in module_list.chapters:
+                                chapter_modules = [m for m in module_list.modules if m.chapter == chapter.name]
+
+                                # To prevent cycles, enforce strict linear order: 1->2->3->...
+                                for i in range(len(chapter_modules) - 1):
+                                    current = modules[chapter_modules[i].name]
+                                    next_mod = modules[chapter_modules[i + 1].name]
+
+                                    # Remove any existing backward dependency to break cycles
+                                    if current in next_mod.next_modules.all():
+                                        next_mod.next_modules.remove(current)
+                                    if next_mod in current.prerequisites.all():
+                                        current.prerequisites.remove(next_mod)
+
+                                    # Now set only the forward dependency
+                                    if next_mod not in current.next_modules.all():
+                                        current.next_modules.add(next_mod)
+                                    if current not in next_mod.prerequisites.all():
+                                        next_mod.prerequisites.add(current)
+
+                                    current.save()
+                                    next_mod.save()
+
 
                         print("CREATED MODULES")
                         return Response({
@@ -658,137 +696,54 @@ def get_pathway_by_id(request, pathway_id):
 @api_view(['POST'])
 def get_user_pathways(request):
     user_id = request.data.get("user_id")
+    classroom_id = request.data.get("classroom_id")
     search_query = request.GET.get("search", "")
 
+    print(request.data)
+    
     try:
         user = User.objects.get(pk=user_id)
-        pathways = Pathway.objects.filter(owner=user, title__icontains=search_query).order_by("id")
+
+        if classroom_id:
+            try:
+                classroom = Classroom.objects.get(pk=classroom_id)
+            except Classroom.DoesNotExist:
+                return Response({"error": "Classroom not found"}, status=status.HTTP_404_NOT_FOUND)
+            # Check membership
+            is_teacher = classroom.teachers.filter(id=user.id).exists()
+            is_student = classroom.students.filter(id=user.id).exists()
+
+
+            all_pathways = Pathway.objects.all()
+            # print("ALL Pathways in DB:")
+            # for p in all_pathways:
+            #     print(f"- ID: {p.id}, Title: {p.title}, Classroom: {p.classroom_id}, Owner: {p.owner_id}")
+
+            if not is_teacher and not is_student:
+                return Response({"error": "You do not belong to this classroom"}, status=status.HTTP_403_FORBIDDEN)
+
+            pathways = Pathway.objects.filter(
+                classroom=classroom,
+                title__icontains=search_query
+            ).order_by("id")
+
+        else:
+            pathways = Pathway.objects.filter(
+                owner=user,
+                title__icontains=search_query
+            ).order_by("id")
+
+        print(pathways)
 
         paginator = PageNumberPagination()
         paginator.page_size = 15
         result_page = paginator.paginate_queryset(pathways, request)
         serializer = PathwaySerializer(result_page, many=True)
-
         return paginator.get_paginated_response(serializer.data)
 
     except User.DoesNotExist:
         return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
-@api_view(['PUT'])
-def update_pathway(request, pathway_id):
-    try:
-        pathway = Pathway.objects.get(pk=pathway_id)
-
-        pathway.title = request.data.get("title", pathway.title)
-        pathway.details = request.data.get("details", pathway.details)
-        pathway.mode = request.data.get("mode", pathway.mode)
-        pathway.grade = request.data.get("grade", pathway.grade)
-        pathway.learning_goals = request.data.get("learning_goals", pathway.learning_goals)
-        pathway.progress = request.data.get("progress", pathway.progress)
-
-        pathway.save()
-
-        serializer = PathwaySerializer(pathway)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    except Pathway.DoesNotExist:
-        return Response({"error": "Pathway not found"}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-# @api_view(['POST'])
-# @transaction.atomic
-# def publish_pathway_to_classroom(request):
-#     pathway_id = request.data.get("pathway_id")
-#     classroom_id = request.data.get("classroom_id")
-#     topic = request.data.get("topic", "Untitled Topic")
-#     master_scaffold = request.data.get("master_scaffold", "")
-
-#     try:
-#         pathway = Pathway.objects.get(pk=pathway_id)
-#         classroom = Classroom.objects.get(pk=classroom_id)
-#         students = classroom.students.all()
-
-#         for student in students:
-#             student_pathway = Pathway.objects.create(
-#                 owner=student,
-#                 title=pathway.title,
-#                 details=pathway.details,
-#                 mode=pathway.mode,
-#                 grade=pathway.grade,
-#                 learning_goals=pathway.learning_goals,
-#                 progress=0,
-#                 published=True
-#             )
-
-#             chapter_map = {}
-#             for chapter in pathway.chapters.all():
-#                 new_chapter = Chapter.objects.create(
-#                     name=chapter.name,
-#                     pathway=student_pathway,
-#                     status='not_started'
-#                 )
-#                 chapter_map[chapter.id] = new_chapter
-
-#             module_map = {}
-#             for chapter in pathway.chapters.all():
-#                 for module in chapter.modules.all():
-#                     # Clone quiz
-#                     new_quiz = None
-#                     if module.practice:
-#                         new_quiz = Quiz.objects.create(user=student)
-#                         for q in module.practice.questions.all():
-#                             new_question = Question.objects.create(
-#                                 question=q.question,
-#                                 solution=q.solution,
-#                                 type=q.type
-#                             )
-#                             new_quiz.questions.add(new_question)
-
-#                     new_module = Module.objects.create(
-#                         name=module.name,
-#                         chapter=chapter_map[chapter.id],
-#                         owner=student,
-#                         yt_video=module.yt_video,
-#                         status='not_started',
-#                         learning_goals=module.learning_goals,
-#                         feedback="",
-#                         practice=new_quiz
-#                     )
-#                     for content in module.content_list.all():
-#                         Content.objects.create(
-#                             type=content.type,
-#                             content=content.content,
-#                             module=new_module
-#                         )
-#                     module_map[module.id] = new_module
-
-#             for module in pathway.chapters.all().prefetch_related('modules'):
-#                 for original_module in module.modules.all():
-#                     new_module = module_map[original_module.id]
-#                     new_module.prerequisites.set([
-#                         module_map[prereq.id] for prereq in original_module.prerequisites.all()
-#                     ])
-#                     new_module.next_modules.set([
-#                         module_map[next.id] for next in original_module.next_modules.all()
-#                     ])
-
-#             Subject.objects.create(
-#                 classroom=classroom,
-#                 topic=topic,
-#                 master_scaffold=master_scaffold,
-#                 progress=0.0,
-#                 student_pathway=student_pathway
-#             )
-
-#         return Response({"message": "Pathway and structure published to classroom successfully."}, status=status.HTTP_201_CREATED)
-
-#     except Pathway.DoesNotExist:
-#         return Response({"error": "Pathway not found"}, status=status.HTTP_404_NOT_FOUND)
-#     except Classroom.DoesNotExist:
-#         return Response({"error": "Classroom not found"}, status=status.HTTP_404_NOT_FOUND)
-#     except Exception as e:
-#         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 @api_view(['POST'])
 @transaction.atomic
 def publish_pathway_to_classroom(request):

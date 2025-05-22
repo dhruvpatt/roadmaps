@@ -5,8 +5,8 @@ from rest_framework.routers import DefaultRouter
 from pathways.views.analytics_views import StudentAnalyticsAPIView, TeacherAnalyticsAPIView
 from pathways.views.user_views import user_list, user_classrooms, create_user, update_user, user_detail, user_pathways, login_with_email, student_list, update_user_preferences
 from pathways.views.pathway_views import pathway_list, pathway_detail, pathway_chapters
-from pathways.views.classroom_views import get_user_classrooms, get_classroom
-from pathways.pathways_views import PathwayGenerationAPIView, get_all_pathways, get_pathway_by_id, update_pathway, \
+from pathways.views.classroom_views import get_user_classrooms, classroom_detail
+from pathways.pathways_views import PathwayGenerationAPIView, get_all_pathways, get_pathway_by_id, \
     delete_pathway, get_all_subjects, get_subject_by_id, create_subject, update_subject, delete_subject, \
     get_all_chapters, get_chapter_by_id, create_chapter, update_chapter, delete_chapter, get_user_pathways, publish_pathway_to_classroom
 from pathways.module_gen import ModuleContentGenerationAPIView, ModuleAssistantAPIView, get_module, create_lecture_materials, update_module_video
@@ -82,9 +82,9 @@ urlpatterns = [
     path('classroom/join/teacher/', join_classroom_as_teacher),
     path('classroom/<int:classroom_id>/analytics/', classroom_analytics),
     path('classroom/<int:classroom_id>/students/', classroom_student_details),
+    path('api/classrooms/<int:pk>/', classroom_detail),
     path('student-classroom-analytics/', student_classroom_analytics),
     path("get-user-classrooms/", get_user_classrooms, name="get-user-classrooms"),
-    path("get-classroom/", get_classroom, name="get-classroom"),
 
 
 ]

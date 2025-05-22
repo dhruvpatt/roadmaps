@@ -1,5 +1,5 @@
 import React from "react"
-import ClassroomCard from "@/components/classrooms/classroom-card"
+import ClassroomCard from "@/components/classrooms/ClassroomCard"
 import CreateClassroomModal from "@/components/modals/CreateClassroomModal"
 import { useState, useEffect } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
@@ -77,6 +77,23 @@ export default function Classrooms() {
     fetchClassrooms(user, 1, query);
   }
 
+  const handleDelete = async (classroomId) => {
+    console.log("delete clicked")
+    try {
+      const response = await fetch(`${backendUrl}/api/classrooms/${classroomId}/`, {
+        method: 'DELETE',
+      });
+      if (response.ok) {
+        // Optionally update UI
+        setClassrooms((prev) => prev.filter((c) => c.id !== classroomId));
+      } else {
+        console.error('Failed to delete classroom');
+      }
+    } catch (error) {
+      console.error('Error deleting classroom:', error);
+    }
+  };
+
   return (
     <div className="flex-1 p-6 text-gray-800">
       <h1 className="text-black text-3xl md:text-4xl font-bold mb-2">
@@ -122,12 +139,13 @@ export default function Classrooms() {
         ) : (
           classrooms.map((classroom) => (
             <ClassroomCard
+              classroomId={classroom.id}
               key={classroom.id}
               title={classroom.name}
               subtitle={classroom.join_id}
               students={classroom.students.length}
               onViewClick={() => router.push(`/classroom/${classroom.id}`)}
-              onDelete={() => { }}
+              onDelete={handleDelete}
             />
           ))
         )}

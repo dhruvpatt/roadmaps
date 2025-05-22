@@ -3,7 +3,6 @@
 from rest_framework import serializers
 from pathways.models import User, Pathway, Chapter, Question, Quiz, Module, Content, Message, Classroom, Subject
 
-
 class QueryRequestSerializer(serializers.Serializer):
     # Topic of the lesson
     topic = serializers.CharField(max_length=255, required=True)
@@ -37,7 +36,7 @@ class QueryRequestSerializer(serializers.Serializer):
     details = serializers.CharField(max_length=1000, allow_blank=True, required=False)
     chapters = serializers.CharField(max_length=1000)
     published = serializers.BooleanField(default=False)
-    classroom = serializers.CharField(required=False, allow_null=True, default="")
+    classroom = serializers.IntegerField(required=False, allow_null=True, default=None)
     # Optional: Add other fields if necessary
     # For example, you can include additional optional parameters here
 
@@ -74,7 +73,15 @@ class UserSerializer(serializers.ModelSerializer):
 class ContentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Content
-        fields = ['id', 'type', 'content', 'module']
+        fields = [
+            'id',
+            'module',
+            'type',
+            'block_type',
+            'content',
+            'transition_text',
+            'styling',
+        ]
 
 class MessageSerializer(serializers.ModelSerializer):
     class Meta:
@@ -99,7 +106,6 @@ class ModuleSerializer(serializers.ModelSerializer):
     chat_history = MessageSerializer(many=True, read_only=True)
     prerequisites = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     next_modules = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-
     class Meta:
         model = Module
         fields = [
@@ -122,15 +128,6 @@ class ChapterSerializer(serializers.ModelSerializer):
         model = Chapter
         fields = ['id', 'name', 'pathway', 'status', 'next_chapters', 'modules', "chapter_learning_goals", 'required_quiz']
 
-class PathwaySerializer(serializers.ModelSerializer):
-    chapters = ChapterSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Pathway
-        fields = [
-            'id', 'owner', 'title', 'details', 'mode', 'grade',
-            'learning_goals', 'progress', 'chapters', 'published', "classroom"
-        ]
 
 class SubjectSerializer(serializers.ModelSerializer):
     class Meta:
@@ -143,7 +140,18 @@ class ClassroomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Classroom
         fields = ['id', 'join_id', 'name', 'teachers', 'students', 'subjects']
-        
+
+class PathwaySerializer(serializers.ModelSerializer):
+    chapters = ChapterSerializer(many=True, read_only=True)
+    classroom = ClassroomSerializer(read_only=True)  # <-- add this line
+
+    class Meta:
+        model = Pathway
+        fields = [
+            'id', 'owner', 'title', 'details', 'mode', 'grade',
+            'learning_goals', 'progress', 'chapters', 'published', 'classroom'
+        ]
+  
 
 class StudentSerializer(serializers.ModelSerializer):
     class Meta:

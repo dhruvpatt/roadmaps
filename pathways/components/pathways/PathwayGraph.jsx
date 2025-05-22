@@ -8,7 +8,6 @@ import ReactFlow, {
 
 import "reactflow/dist/style.css";
 import { nodeTypes as defaultNodeTypes } from "@/components/pathways/PathwayNode";
-
 import FloatingEdge from './FloatingEdge';
 
 const isModuleUnlocked = (module, moduleMap) => {
@@ -22,6 +21,8 @@ const edgeTypes = {
 };
 
 const InnerGraph = ({ data, viewMode = "student", published = false }) => {
+  // console.log("GRAPH DATA:", data)
+
   const { fitView } = useReactFlow();
   const isTeacher = viewMode === "teacher";
   const [hoveredNodeId, setHoveredNodeId] = React.useState(null);
@@ -38,44 +39,39 @@ const InnerGraph = ({ data, viewMode = "student", published = false }) => {
     const chapter = data.chapter;
     const modules = chapter.modules || [];
 
-    const modulesWithFallbackDeps = modules.map((mod, index) => {
-      const prevId = index > 0 ? modules[index - 1].id : null;
-      const augmentedPrereqs = new Set(mod.prerequisites || []);
-      if (prevId) augmentedPrereqs.add(prevId);
-      return { ...mod, prereq: Array.from(augmentedPrereqs) };
-    });
-
-    const sortedModules = [...modulesWithFallbackDeps].sort((a, b) => a.id - b.id);
+    const sortedModules = [...modules].sort((a, b) => a.id - b.id);
 
     const xSpacing = 280;
     const ySpacing = 200;
     const positions = new Map();
+    const nodesPerRow = 4;
 
     const levels = new Map();
 
     sortedModules.forEach((mod, index) => {
-      const depth = Math.floor(Math.log2(index + 1));
-      const posInLevel = index - (2 ** depth - 1);
-      const nodesInLevel = 2 ** depth;
+      const row = Math.floor(index / nodesPerRow);
+      const col = index % nodesPerRow;
 
-      const x = (posInLevel - (nodesInLevel - 1) / 2) * xSpacing;
-      const y = depth * ySpacing;
+      const x = col * xSpacing - ((nodesPerRow - 1) * xSpacing) / 2;
+      const y = row * ySpacing;
 
       positions.set(mod.id, { x, y });
       positionMap.set(mod.id.toString(), { x, y });
-
-      if (!levels.has(depth)) levels.set(depth, []);
-      levels.get(depth).push(mod);
     });
 
     sortedModules.forEach((mod) => {
       const pos = positions.get(mod.id);
       if (!pos) return;
-
       moduleMap.set(mod.id, mod);
 
       const hue = (mod.chapter * 60) % 360;
       const lightness = 80;
+      // const formattedGoals = mod.learning_goals
+      // .map((goal, index) => `${index + 1}. ${goal}`)
+      // .join("\n");
+      //TODO: Update to use description
+      const unlocked = isModuleUnlocked(mod, moduleMap);
+
 
       nodes.push({
         id: mod.id.toString(),
@@ -84,9 +80,9 @@ const InnerGraph = ({ data, viewMode = "student", published = false }) => {
         data: {
           label: mod.name,
           status: mod.status ?? "not_started",
-          description: mod.learning_goals?.[0] || "",
+          description: mod.learning_goals || mod.learningGoals || "",
           id: mod.id,
-          unlocked: true,
+          unlocked: unlocked,
         },
         style: {
           backgroundColor: `hsl(${hue}, 70%, ${lightness}%)`,
@@ -100,8 +96,6 @@ const InnerGraph = ({ data, viewMode = "student", published = false }) => {
       const sourceId = mod.id.toString();
       const sourcePos = positionMap.get(sourceId);
 
-      // Log base source position
-      console.log(`[NODE ${sourceId}] source node position:`, sourcePos);
 
       // Explicit next_modules
       (mod.next_modules || []).forEach((targetId) => {
@@ -118,12 +112,6 @@ const InnerGraph = ({ data, viewMode = "student", published = false }) => {
           const targetPosition = Math.abs(dx) > Math.abs(dy)
             ? dx > 0 ? 'left' : 'right'
             : dy > 0 ? 'top' : 'bottom';
-
-          console.log(`[EDGE] ${sourceId} -> ${targetStr}`);
-          console.log(`  Source:`, sourcePos);
-          console.log(`  Target:`, targetPos);
-          console.log(`  dx = ${dx}, dy = ${dy}`);
-          console.log(`  Handles: source ${sourcePosition}, target ${targetPosition}`);
 
           edges.push({
             id: `e-${sourceId}-${targetStr}`,
@@ -162,12 +150,6 @@ const InnerGraph = ({ data, viewMode = "student", published = false }) => {
           const targetPosition = Math.abs(dx) > Math.abs(dy)
             ? dx > 0 ? 'left' : 'right'
             : dy > 0 ? 'top' : 'bottom';
-
-          console.log(`[FALLBACK EDGE] ${sourceId} -> ${nextId}`);
-          console.log(`  Source:`, sourcePos);
-          console.log(`  Target:`, targetPos);
-          console.log(`  dx = ${dx}, dy = ${dy}`);
-          console.log(`  Handles: source ${sourcePosition}, target ${targetPosition}`);
 
           edges.push({
             id: `e-${sourceId}-${nextId}-fallback`,

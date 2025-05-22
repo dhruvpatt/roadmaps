@@ -1,6 +1,9 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
     "paths": {
+      "@backendUrl": ["./backendUrl.js"],
+      "@components/*": ["./components/*"],
       "@/*": ["./*"]
     }
   }

@@ -1,10 +1,21 @@
+'use client'
+
 import React from "react";
 import { Bell, Search, User } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 
 
 export default function Navbar() {
   const router = useRouter();
+  const [role, setRole] = useState("");
+
+  useEffect(() => {
+    const usr = JSON.parse(localStorage.getItem("user"));
+    if (usr?.role) {
+      setRole(usr.role.charAt(0).toUpperCase() + usr.role.slice(1)); // Capitalize
+    }
+  }, []);
 
   const handleClick = () => {
     router.push("../settings");
@@ -19,19 +30,24 @@ export default function Navbar() {
     <nav className="fixed top-0 left-0 right-0 h-16 z-50 flex items-center justify-between border-b bg-white px-4 shadow">
       {/* Left: Brand */}
       <div className="flex items-center">
-      <button type="button" onClick={handlelogoClick}>
-        <div className="flex items-center gap-1 text-xl font-bold cursor-pointer">
-          <img src="/logo.png" className="h-12 w-auto"></img>
-          <span className="text-amber-600 text-2xl">Path</span>
-              <span className="text-gray-900 text-2xl">ways</span>
-        </div>
-      </button>
+        <button type="button" onClick={handlelogoClick}>
+          <div className="flex items-center gap-1 text-xl font-bold cursor-pointer">
+            <img src="/logo.png" className="h-12 w-auto"></img>
+            <span className="text-amber-600 text-2xl">Path</span>
+            <span className="text-gray-900 text-2xl">ways</span>
+          </div>
+        </button>
 
       </div>
 
-    
+
       {/* Right: Icons */}
       <div className="flex items-center space-x-4">
+        {role && (
+          <span className="text-sm text-gray-600 font-medium bg-gray-100 px-2 py-0.5 rounded">
+            {role}
+          </span>
+        )}
         {/* Notification Bell */}
         <button
           type="button"
