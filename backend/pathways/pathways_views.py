@@ -735,9 +735,9 @@ def get_user_pathways(request):
 
 
             all_pathways = Pathway.objects.all()
-            # print("ALL Pathways in DB:")
-            # for p in all_pathways:
-            #     print(f"- ID: {p.id}, Title: {p.title}, Classroom: {p.classroom_id}, Owner: {p.owner_id}")
+            print("ALL Pathways in DB:")
+            for p in all_pathways:
+                print(f"- ID: {p.id}, Title: {p.title}, Classroom: {p.classroom_id}, Owner: {p.owner_id}")
 
             if not is_teacher and not is_student:
                 return Response({"error": "You do not belong to this classroom"}, status=status.HTTP_403_FORBIDDEN)
@@ -748,6 +748,11 @@ def get_user_pathways(request):
             ).order_by("id")
 
         else:
+            all_pathways = Pathway.objects.all()
+            print("ALL Pathways in DB:")
+            for p in all_pathways:
+                print(f"- ID: {p.id}, Title: {p.title}, Classroom: {p.classroom_id}, Owner: {p.owner_id}")
+
             pathways = Pathway.objects.filter(
                 owner=user,
                 title__icontains=search_query
@@ -778,6 +783,8 @@ def publish_pathway_to_classroom(request):
         students = classroom.students.all()
 
         created_pathways = []
+        if pathway.published:
+            return Response({"message": "Pathway already published."}, status=status.HTTP_200_OK)
 
         for student in students:
             student_pathway = Pathway.objects.create(
@@ -853,12 +860,16 @@ def publish_pathway_to_classroom(request):
 
             created_pathways.append(student_pathway)
 
-        serialized_pathways = PathwaySerializer(created_pathways, many=True).data
-        serialized_pathway = PathwaySerializer(pathway).data
+        refreshed_pathway = Pathway.objects.get(pk=pathway_id)
+        serialized_pathway = PathwaySerializer(refreshed_pathway).data
 
+        # Save published flag
         pathway.published = True
         pathway.save()
 
+        # Re-fetch to ensure serializer has fresh DB state
+        refreshed_pathway = Pathway.objects.get(pk=pathway_id)
+        serialized_pathway = PathwaySerializer(refreshed_pathway).data
 
         return Response({
             "message": "Pathway and structure published to classroom successfully.",

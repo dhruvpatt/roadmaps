@@ -30,6 +30,8 @@ const ViewPathwayPage = () => {
   const [user, setUser] = useState(null)
   const [tempName, setTempName] = useState("");
   const [tempDescription, setTempDescription] = useState("");
+  const [isPublishing, setIsPublishing] = useState(false);
+
 
 
 
@@ -237,44 +239,40 @@ const ViewPathwayPage = () => {
 
 
   const handlePublish = async () => {
+    if (isPublishing) return; // prevent double-click
+    setIsPublishing(true);
     try {
-      console.log("pathway", pathway);
+      const payload = {
+        pathway_id: pathway.id,
+        user_id: user.id,
+      };
+
       if (pathway.classroom !== null) {
+        payload.classroom_id = pathway.classroom.id;
         const res = await fetch(`${backendUrl}/publish-pathway-to-classroom/`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            pathway_id: pathway.id,
-            user_id: user.id,
-            classroom_id: pathway.classroom.id,
-          }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
         });
-
         const ret = await res.json();
-        console.log("published", ret);
         setPathway(ret.pathway);
       } else {
         const res = await fetch(`${backendUrl}/publish-pathway/`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            pathway_id: pathway.id,
-            user_id: user.id,
-          }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
         });
-
         const ret = await res.json();
-        console.log("published", ret);
         setPathway(ret.pathway);
       }
     } catch (error) {
       console.error("Something went wrong", error);
+    } finally {
+      setIsPublishing(false);
     }
-  }; const handleUpdate = async (id, data) => {
+  };
+
+  const handleUpdate = async (id, data) => {
     const res = await fetch(`${backendUrl}/api/pathways/${id}/`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -307,10 +305,11 @@ const ViewPathwayPage = () => {
               </button>
               {(viewMode === "teacher" && !pathway.published) && (
                 <button
+                  disabled={isPublishing}
                   onClick={async () => await handlePublish()}
-                  className="px-3 py-1 text-sm font-medium text-white rounded bg-black hover:bg-amber-600"
+                  className="px-3 py-1 text-sm font-medium text-white rounded bg-black hover:bg-amber-600 disabled:opacity-50"
                 >
-                  Publish
+                  {isPublishing ? "Publishing..." : "Publish"}
                 </button>
               )}
 
@@ -641,40 +640,40 @@ const ViewPathwayPage = () => {
                 </div>
               );
             })}
-            {/* ---------- Required Quiz card ---------- */}
-        {currentChapter && (
-          <div
-            className={`flex items-center justify-between p-3 mb-3 rounded-lg shadow-sm border
+          {/* ---------- Required Quiz card ---------- */}
+          {currentChapter && (
+            <div
+              className={`flex items-center justify-between p-3 mb-3 rounded-lg shadow-sm border
               ${isQuizUnlocked(currentChapterIndex)
-                ? "bg-yellow-50"
-                : "bg-gray-100 text-gray-400"}`}
-          >
-            {/* left side */}
-            <div className="flex items-center space-x-3">
-              <span className="text-blue-500">📝</span>
-              <p className="font-medium text-sm">
-                {currentChapter.required_quiz?.name || "Required Quiz"}
-              </p>
-            </div>
+                  ? "bg-yellow-50"
+                  : "bg-gray-100 text-gray-400"}`}
+            >
+              {/* left side */}
+              <div className="flex items-center space-x-3">
+                <span className="text-blue-500">📝</span>
+                <p className="font-medium text-sm">
+                  {currentChapter.required_quiz?.name || "Required Quiz"}
+                </p>
+              </div>
 
-            {/* right-side button */}
-            {isQuizUnlocked(currentChapterIndex) ? (
-              <button
-                onClick={() => handleStartRequiredQuiz(currentChapter)}
-                className="text-sm px-4 py-1.5 rounded-md bg-black text-white"
-              >
-                Start Quiz
-              </button>
-            ) : (
-              <button
-                disabled
-                className="text-sm px-4 py-1.5 rounded-md bg-gray-300 text-white cursor-not-allowed"
-              >
-                Locked
-              </button>
-            )}
-          </div>
-        )}
+              {/* right-side button */}
+              {isQuizUnlocked(currentChapterIndex) ? (
+                <button
+                  onClick={() => handleStartRequiredQuiz(currentChapter)}
+                  className="text-sm px-4 py-1.5 rounded-md bg-black text-white"
+                >
+                  Start Quiz
+                </button>
+              ) : (
+                <button
+                  disabled
+                  className="text-sm px-4 py-1.5 rounded-md bg-gray-300 text-white cursor-not-allowed"
+                >
+                  Locked
+                </button>
+              )}
+            </div>
+          )}
 
 
         </div>

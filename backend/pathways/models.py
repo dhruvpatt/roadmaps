@@ -82,7 +82,7 @@ class Pathway(models.Model):
     progress = models.IntegerField(default=0)
     published = models.BooleanField(default=False)
     def __str__(self):
-        return f"Pathway by {self.owner.username}"
+        return f"Pathway by {self.owner.id}"
 
 
 

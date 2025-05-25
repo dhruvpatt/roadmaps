@@ -71,6 +71,7 @@ export default function Pathways({ title = "Your Pathways", classroom, updatePat
             });
 
             const data = await res.json();
+            console.log("User", usr)
             setPathways(data.results);
             setTotalPages(Math.max(1, Math.ceil(data.count / 15)));
             setPage(pageNum);
