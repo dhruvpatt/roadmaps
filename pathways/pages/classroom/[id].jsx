@@ -1,88 +1,104 @@
-import ClassroomHeader from "../../components/classrooms/ClassroomHeader";
-import ClassroomTabs from "../../components/classrooms/ClassroomTabs";
+"use client";
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import backendUrl from "@/backendUrl";
+import ClassroomHeader from "../../components/classrooms/classroom-header";
+import ClassroomTabs from "../../components/classrooms/classroom-tabs";
 
-const Classroom = () => {
+// Mock classroom data
+const mockClassroom = {
+  id: "1",
+  name: "Biology 101",
+  subject: "Biology",
+  teacher: "Ms. Johnson",
+  join_id: "ABC123",
+  description:
+    "Introduction to Biology - Exploring the fundamentals of life sciences",
+  students: Array.from({ length: 25 }, (_, i) => ({
+    id: i + 1,
+    name: `Student ${i + 1}`,
+    email: `student${i + 1}@example.com`,
+  })),
+};
+
+// Mock user data
+const mockUser = {
+  id: "teacher1",
+  name: "Ms. Johnson",
+  email: "johnson@school.edu",
+  role: "teacher",
+};
+
+export default function ClassroomPage() {
   const router = useRouter();
-  const [role, setRole] = useState("");
-  const [user, setUser] = useState({});
-  const [classroomId, setClassroomId] = useState(null);
-  const [classroomCode, setClassroomCode] = useState("");
-  const [classroom, setClassroom] = useState({});
-  const [showInviteModal, setShowInviteModal] = useState(false); // used in onInviteClick
+  const [classroom, setClassroom] = useState(mockClassroom);
+  const [user, setUser] = useState(mockUser);
+  const [role, setRole] = useState("teacher");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const { id } = router.query;
-    const classroomId = Array.isArray(id) ? id[0] : id;
+    if (!id) return;
 
-    // Wait until router query is available
-    if (!classroomId) {
-      console.log("Waiting for classroomId...");
-      return;
-    }
+    // TODO: Fetch classroom data from backend
+    // fetchClassroom(id).then(setClassroom)
 
-    const usr = JSON.parse(localStorage.getItem("user"));
-    if (!usr) {
-      console.warn("No user found in localStorage. Redirecting to login...");
-      router.push("/login");
-      return;
-    }
+    // TODO: Get user from localStorage or auth context
+    // const userData = JSON.parse(localStorage.getItem("user") || "{}")
+    // setUser(userData)
+    // setRole(userData.role)
 
-    setUser(usr);
-    setRole(usr.role);
-    setClassroomId(classroomId);
-    fetchClassroom(usr, classroomId);
+    // TODO: Analytics - Track classroom visit
+    // trackUserActivity({
+    //   userId: user.id,
+    //   classroomId: id,
+    //   action: 'visit_classroom',
+    //   timestamp: new Date().toISOString()
+    // })
+
+    setLoading(false);
   }, [router.query]);
 
-  const fetchClassroom = async (user, id) => {
-    if (!id || !user?.id) {
-      console.warn("Missing classroom_id or user_id in fetchClassroom");
-      return;
-    }
-
-    try {
-      const res = await fetch(`${backendUrl}/api/classrooms/${id}/`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      const ret = await res.json();
-      console.log("Fetched classroom:", ret);
-
-      setClassroomCode(ret.join_id);
-      setClassroom(ret);
-      return ret;
-    } catch (error) {
-      console.error("Failed to fetch classroom", error);
-    }
+  const handleInviteClick = () => {
+    // TODO: Open invite modal
+    console.log("Opening invite modal...");
   };
-  return (
-    <div className="flex-1 px-6 md:px-12 py-8 bg-white overflow-y-auto">
-      <div className="max-w-6xl mx-auto">
-        {classroomId && user?.id ? (
-          <>
-            <ClassroomHeader
-              title={classroom.name || "Loading..."}
-              subtitle=""
-              code={classroom.join_id}
-              onInviteClick={() => setShowInviteModal(true)}
-            />
 
-            <ClassroomTabs
-              classroom={classroom}
-              isTeacher={role === "teacher"}
-            />
-          </>
-        ) : (
-          <div className="text-gray-600 text-center py-12">Loading classroom...</div>
-        )}
+  const handleSettingsClick = () => {
+    // TODO: Navigate to classroom settings
+    router.push(`/classroom/${classroom.id}/settings`);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading classroom...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <ClassroomHeader
+        title={classroom.name}
+        subtitle={classroom.description}
+        code={classroom.join_id}
+        teacher={classroom.teacher}
+        subject={classroom.subject}
+        onInviteClick={handleInviteClick}
+        onSettingsClick={handleSettingsClick}
+      />
+
+      <div className="max-w-7xl mx-auto">
+        <ClassroomTabs
+          classroom={classroom}
+          isTeacher={role === "teacher"}
+          user={user}
+        />
       </div>
     </div>
   );
-};
-
-export default Classroom;
+}
