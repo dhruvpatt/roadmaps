@@ -65,7 +65,7 @@ export default function AssignmentEditPage() {
 
   return (
     <div className="max-w-3xl mx-auto py-8">
-      <Card className="border border-gray-200 rounded-lg shadow">
+      <Card className="bg-white border border-gray-200 rounded-lg shadow">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-blue-600" />
