@@ -17,10 +17,10 @@ import {
 
 const mockGradebook = {
   assignments: [
-    { id: 1, name: "Lab Report 1", points: 100, type: "assignment" },
-    { id: 2, name: "Cell Quiz", points: 50, type: "quiz" },
-    { id: 3, name: "Midterm", points: 200, type: "exam" },
-    { id: 4, name: "Participation", points: 25, type: "participation" },
+    { id: 1, name: "Lab Report 1", points: 100, type: "assignment", weight: 20 },
+    { id: 2, name: "Cell Quiz", points: 50, type: "quiz", weight: 15 },
+    { id: 3, name: "Midterm", points: 200, type: "exam", weight: 50 },
+    { id: 4, name: "Participation", points: 25, type: "participation", weight: 15 },
   ],
   students: [
     {
@@ -97,25 +97,39 @@ export default function ClassroomGradebook({ classroom, user }) {
   };
 
   const calculateStudentTotal = (student) => {
-    const totalPts = gradebook.assignments.reduce(
-      (sum, a) => sum + a.points,
-      0
-    );
-    const earned = gradebook.assignments.reduce(
-      (sum, a) => sum + (student.grades[a.id] || 0),
-      0
-    );
+    let weightedTotal = 0;
+    let totalWeight = 0;
+    
+    gradebook.assignments.forEach(assignment => {
+      if (student.grades[assignment.id] !== undefined) {
+        // Calculate percentage for this assignment
+        const percentage = (student.grades[assignment.id] / assignment.points) * 100;
+        // Add weighted percentage to total
+        weightedTotal += percentage * assignment.weight;
+        totalWeight += assignment.weight;
+      }
+    });
+    
+    // Calculate final weighted percentage
+    const weightedPercentage = totalWeight > 0 ? Math.round(weightedTotal / totalWeight) : 0;
+    
     return {
-      earned,
-      total: totalPts,
-      percentage: Math.round((earned / totalPts) * 100),
+      percentage: weightedPercentage,
+      weightedGrade: weightedPercentage
     };
   };
 
   const calculateAssignmentAverage = (aid) => {
-    const grades = gradebook.students.map((s) => s.grades[aid] || 0);
-    const avg = grades.reduce((sum, g) => sum + g, 0) / grades.length;
-    return Math.round(avg * 10) / 10;
+    const assignment = gradebook.assignments.find(a => a.id === aid);
+    if (!assignment) return 0;
+    
+    const percentages = gradebook.students.map(s => {
+      const grade = s.grades[aid] || 0;
+      return (grade / assignment.points) * 100;
+    });
+    
+    const avgPercentage = percentages.reduce((sum, p) => sum + p, 0) / percentages.length;
+    return Math.round(avgPercentage);
   };
 
   const handleAddGrade = () => {
@@ -148,25 +162,25 @@ export default function ClassroomGradebook({ classroom, user }) {
           <div className="flex gap-2">
             <Button
               onClick={() => setShowAddGradeForm(true)}
-              className="px-4 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white"
+              className="px-4 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white cursor-pointer"
             >
               + Add Grade
             </Button>
             <Button
               variant="outline"
-              className="px-4 py-2 rounded-lg border-gray-300"
+              className="px-4 py-2 rounded-lg border-gray-300 cursor-pointer hover:bg-amber-600 hover:text-white"
             >
               <Upload className="w-4 h-4 mr-2" /> Import
             </Button>
             <Button
               variant="outline"
-              className="px-4 py-2 rounded-lg border-gray-300"
+              className="px-4 py-2 rounded-lg border-gray-300 cursor-pointer hover:bg-amber-600 hover:text-white"
             >
               <Download className="w-4 h-4 mr-2" /> Export
             </Button>
             <Button
               variant="outline"
-              className="px-4 py-2 rounded-lg border-gray-300"
+              className="px-4 py-2 rounded-lg border-gray-300 cursor-pointer hover:bg-amber-600 hover:text-white"
             >
               <FileSpreadsheet className="w-4 h-4 mr-2" /> Report
             </Button>
@@ -193,9 +207,9 @@ export default function ClassroomGradebook({ classroom, user }) {
                         studentId: e.target.value,
                       })
                     }
-                    className="mt-1 block w-full rounded-lg border-gray-300"
+                    className="mt-1 block w-full rounded-lg border border-gray-300 h-10"
                   >
-                    <option value="">Select student</option>
+                    <option value="">Select Student</option>
                     {gradebook.students.map((s) => (
                       <option key={s.id} value={s.id}>
                         {s.name}
@@ -215,7 +229,7 @@ export default function ClassroomGradebook({ classroom, user }) {
                         assignmentId: e.target.value,
                       })
                     }
-                    className="mt-1 block w-full rounded-lg border-gray-300"
+                    className="mt-1 block w-full rounded-lg border border-gray-300 h-10"
                   >
                     <option value="">Select assignment</option>
                     {gradebook.assignments.map((a) => (
@@ -246,11 +260,11 @@ export default function ClassroomGradebook({ classroom, user }) {
                 <Button
                   variant="outline"
                   onClick={() => setShowAddGradeForm(false)}
-                  className="rounded-lg"
+                  className="rounded-lg hover:bg-amber-600 hover:text-white cursor-pointer"
                 >
                   Cancel
                 </Button>
-                <Button onClick={handleAddGrade} className="rounded-lg">
+                <Button variant="outline" onClick={handleAddGrade} className="rounded-lg hover:bg-amber-600 hover:text-white cursor-pointer">
                   Save
                 </Button>
               </div>
@@ -271,12 +285,12 @@ export default function ClassroomGradebook({ classroom, user }) {
                     <TableHead key={a.id} className="text-center px-6 py-3">
                       <div className="font-medium">{a.name}</div>
                       <div className="text-xs text-gray-500">
-                        {a.points} pts | Avg: {calculateAssignmentAverage(a.id)}
+                        {a.points} pts | Avg: {calculateAssignmentAverage(a.id)} | Weight: {a.weight}
                       </div>
                     </TableHead>
                   ))}
                   <TableHead className="text-center bg-gray-50 px-6 py-3">
-                    Total
+                    Grade
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -376,23 +390,20 @@ export default function ClassroomGradebook({ classroom, user }) {
                         );
                       })}
                       <TableCell className="text-center bg-gray-50 px-6 py-3">
-                        <div className="font-medium">
-                          {totals.earned}/{totals.total}
-                        </div>
                         <div
                           className={`text-xs ${
-                            totals.percentage >= 90
+                            totals.weightedGrade >= 90
                               ? "text-green-600"
-                              : totals.percentage >= 80
+                              : totals.weightedGrade >= 80
                               ? "text-blue-600"
-                              : totals.percentage >= 70
+                              : totals.weightedGrade >= 70
                               ? "text-yellow-600"
-                              : totals.percentage >= 60
+                              : totals.weightedGrade >= 60
                               ? "text-orange-600"
                               : "text-red-600"
                           }`}
                         >
-                          {totals.percentage}%
+                          {totals.weightedGrade}%
                         </div>
                       </TableCell>
                     </TableRow>
