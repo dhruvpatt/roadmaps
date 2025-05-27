@@ -39,7 +39,7 @@ export default function ClassroomTabs({ classroom, isTeacher, user }) {
               type="button"
               onClick={() => setActiveTab(tab.key)}
               className={cn(
-                "flex-shrink-0 px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap",
+                "flex-shrink-0 px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap cursor-pointer",
                 activeTab === tab.key
                   ? "border-b-2 border-amber-600 text-amber-600"
                   : "border-b-2 border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300"

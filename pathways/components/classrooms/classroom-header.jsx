@@ -53,7 +53,7 @@ export default function ClassroomHeader({
               <h1 className="text-3xl font-bold tracking-tight leading-none">
                 {title}
               </h1>
-              {subtitle && <p className="mt-1 text-blue-200">{subtitle}</p>}
+              {subtitle && <p className="mt-1">{subtitle}</p>}
               {subject && (
                 <Badge className="mt-2 bg-white/20 text-white px-3 py-1 rounded-full text-xs uppercase tracking-wide">
                   {subject}

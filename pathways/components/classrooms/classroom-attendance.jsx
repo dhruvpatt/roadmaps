@@ -24,16 +24,17 @@ import PropTypes from "prop-types";
 
 const mockAttendanceData = {
   sessions: [
-    {
-      id: 1,
-      date: "2025-01-25",
-      topic: "Photosynthesis Introduction",
-      duration: 50,
+    { 
+      id: 1, 
+      date: "2025-01-16", 
+      topic: "Ecology Basics", 
+      duration: 50 
     },
-    { id: 2, date: "2025-01-23", topic: "Cell Structure Lab", duration: 90 },
+    { id: 2, date: "2025-01-18", topic: "Genetics Review", duration: 50 },
     { id: 3, date: "2025-01-20", topic: "Molecular Biology", duration: 50 },
-    { id: 4, date: "2025-01-18", topic: "Genetics Review", duration: 50 },
-    { id: 5, date: "2025-01-16", topic: "Ecology Basics", duration: 50 },
+    { id: 4, date: "2025-01-23", topic: "Cell Structure Lab", duration: 90 },
+    { id: 5, date: "2025-01-25", topic: "Photosynthesis Introduction", duration: 50 },
+    { id: 6, date: "2025-01-26", topic: "Plant Reproduction", duration: 50 },
   ],
   students: [
     {
@@ -45,6 +46,7 @@ const mockAttendanceData = {
         3: "present",
         4: "absent",
         5: "present",
+        6: "present"
       },
     },
     {
@@ -56,6 +58,7 @@ const mockAttendanceData = {
         3: "present",
         4: "present",
         5: "absent",
+        6: "late",
       },
     },
     {
@@ -67,6 +70,7 @@ const mockAttendanceData = {
         3: "present",
         4: "present",
         5: "present",
+        6: "present",
       },
     },
     {
@@ -78,6 +82,19 @@ const mockAttendanceData = {
         3: "late",
         4: "present",
         5: "present",
+        6: "present",
+      },
+    },
+    {
+      id: 5,
+      name: "Edward Jones",
+      attendance: {
+        1: "present",
+        2: "present",
+        3: "present",
+        4: "present",
+        5: "present",
+        6: "present",
       },
     },
   ],
@@ -87,8 +104,9 @@ export default function ClassroomAttendance({ classroom, user }) {
   const [attendanceData, setAttendanceData] = useState(mockAttendanceData);
   const [selectedSession, setSelectedSession] = useState(null);
   const [showCreateSession, setShowCreateSession] = useState(false);
+  const [sessionPage, setSessionPage] = useState(0);
   const [newSession, setNewSession] = useState({
-    date: "",
+    date: new Date().toISOString().split('T')[0],
     topic: "",
     duration: 50,
   });
@@ -123,7 +141,37 @@ export default function ClassroomAttendance({ classroom, user }) {
   };
 
   const exportAttendance = () => {
-    // TODO: CSV export implementation
+    // Create CSV header row with student names and session dates
+    const sortedSessions = [...attendanceData.sessions].sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    let csvContent = "Student,";
+    sortedSessions.forEach(session => {
+      csvContent += `${new Date(session.date + 'T00:00:00').toLocaleDateString()} (${session.topic}),`;
+    });
+    csvContent += "Attendance Rate\n";
+    
+    // Add data for each student
+    attendanceData.students.forEach(student => {
+      csvContent += `${student.name},`;
+      sortedSessions.forEach(session => {
+        const status = student.attendance[session.id] || "present";
+        csvContent += `${status},`;
+      });
+      csvContent += `${calculateAttendanceRate(student.id)}%\n`;
+    });
+    
+    // Create and trigger download
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute("href", url);
+    link.setAttribute("download", "attendance_report.csv");
+    link.style.visibility = "hidden";
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const generateReport = () => {
@@ -179,13 +227,19 @@ export default function ClassroomAttendance({ classroom, user }) {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button className="flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700">
+            <Button 
+              className="flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700 cursor-pointer"
+              onClick={() => {
+                setNewSession(prev => ({...prev, date: new Date().toISOString().split('T')[0]}));
+                setShowCreateSession(true);
+              }}
+            >
               <Calendar /> New Session
             </Button>
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button variant="outline" className="flex items-center gap-2 cursor-pointer hover:bg-amber-600 hover:text-white" onClick={exportAttendance}>
               <Download /> Export
             </Button>
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button variant="outline" className="flex items-center gap-2 cursor-pointer hover:bg-amber-600 hover:text-white">
               <FileSpreadsheet /> Report
             </Button>
           </div>
@@ -197,7 +251,7 @@ export default function ClassroomAttendance({ classroom, user }) {
             <CardHeader>
               <CardTitle>Create Session</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="pt-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="date">Date</Label>
@@ -238,30 +292,31 @@ export default function ClassroomAttendance({ classroom, user }) {
               </div>
               <div className="flex justify-end gap-3">
                 <Button
+                  className="cursor-pointer hover:bg-amber-600 hover:text-white"
                   variant="outline"
                   onClick={() => setShowCreateSession(false)}
                 >
                   Cancel
                 </Button>
-                <Button onClick={createNewSession}>Create</Button>
+                <Button onClick={createNewSession} variant="outline" className="cursor-pointer hover:bg-amber-600 hover:text-white">Create</Button>
               </div>
             </CardContent>
           </Card>
         )}
 
         {/* Session Selector */}
-        <Card className="shadow-md rounded-xl">
-          <CardContent className="flex flex-col md:flex-row items-center justify-between gap-4">
+        <Card className="shadow-md rounded-xl flex items-center">
+          <CardContent className="pt-6 flex flex-col md:flex-row items-center justify-between gap-4 w-full">
             <div className="flex items-center gap-2">
               <Label className="whitespace-nowrap">Select Session:</Label>
               <Select
                 value={selectedSession?.toString() || ""}
                 onValueChange={(val) => setSelectedSession(+val)}
               >
-                <SelectTrigger className="w-72">
+                <SelectTrigger className="w-72 bg-white">
                   <SelectValue placeholder="Choose session" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white">
                   {attendanceData.sessions.map((s) => (
                     <SelectItem key={s.id} value={s.id.toString()}>
                       {s.date} • {s.topic}
@@ -285,7 +340,7 @@ export default function ClassroomAttendance({ classroom, user }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Total */}
           <Card className="shadow hover:shadow-lg transition-shadow rounded-xl">
-            <CardContent className="space-y-2">
+            <CardContent className="pt-6 space-y-2">
               <div className="text-xl font-semibold text-gray-800">
                 {attendanceData.students.length}
               </div>
@@ -294,7 +349,7 @@ export default function ClassroomAttendance({ classroom, user }) {
           </Card>
           {/* Avg Attendance */}
           <Card className="shadow hover:shadow-lg transition-shadow rounded-xl">
-            <CardContent className="space-y-2">
+            <CardContent className="pt-6 space-y-2">
               <div className="text-xl font-semibold text-green-500">
                 {Math.round(
                   attendanceData.students.reduce(
@@ -309,7 +364,7 @@ export default function ClassroomAttendance({ classroom, user }) {
           </Card>
           {/* Sessions */}
           <Card className="shadow hover:shadow-lg transition-shadow rounded-xl">
-            <CardContent className="space-y-2">
+            <CardContent className="pt-6 space-y-2">
               <div className="text-xl font-semibold text-blue-500">
                 {attendanceData.sessions.length}
               </div>
@@ -318,7 +373,7 @@ export default function ClassroomAttendance({ classroom, user }) {
           </Card>
           {/* At Risk */}
           <Card className="shadow hover:shadow-lg transition-shadow rounded-xl">
-            <CardContent className="space-y-2">
+            <CardContent className="pt-6 space-y-2">
               <div className="text-xl font-semibold text-red-500">
                 {
                   attendanceData.students.filter(
@@ -326,28 +381,32 @@ export default function ClassroomAttendance({ classroom, user }) {
                   ).length
                 }
               </div>
-              <div className="text-sm text-gray-500">At Risk (&lt;80%)</div>
+              <div className="text-sm text-gray-500">At Risk (Attendance &lt;80%)</div>
             </CardContent>
           </Card>
         </div>
 
         {/* Attendance Table */}
         <Card className="shadow-md rounded-xl overflow-hidden">
-          <CardContent className="p-0">
-            <div className="overflow-auto">
+          <CardContent className="pt-6 p-0">
+            <div className="overflow-x-auto overflow-y-auto max-h-[500px]">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="sticky left-0 z-10 bg-white px-6 py-3 text-left">
                       Student
                     </th>
-                    {attendanceData.sessions.map((s) => (
+                    {[...attendanceData.sessions]
+                      .sort((a, b) => new Date(b.date) - new Date(a.date))
+                      .slice(sessionPage * 5, sessionPage * 5 + 5)
+                      .map((s) => (
                       <th
                         key={s.id}
-                        className="px-6 py-3 text-center text-sm font-medium text-gray-700"
+                        className="w-[120px] px-2 py-3 text-center text-sm font-medium text-gray-700"
                       >
-                        <div>{new Date(s.date).toLocaleDateString()}</div>
-                        <div className="text-xs text-gray-500 truncate max-w-[100px]">
+                        <div className="text-xs text-gray-500 truncate text-center">
+                          {new Date(s.date + 'T00:00:00').toLocaleDateString()}
+                          <br />
                           {s.topic}
                         </div>
                       </th>
@@ -365,7 +424,10 @@ export default function ClassroomAttendance({ classroom, user }) {
                         <td className="sticky left-0 z-10 bg-white px-6 py-3 font-medium text-gray-800">
                           {student.name}
                         </td>
-                        {attendanceData.sessions.map((s) => {
+                        {[...attendanceData.sessions]
+                          .sort((a, b) => new Date(b.date) - new Date(a.date))
+                          .slice(sessionPage * 5, sessionPage * 5 + 5)
+                          .map((s) => {
                           const st = student.attendance[s.id] || "present";
                           return (
                             <td key={s.id} className="px-6 py-3 text-center">
@@ -380,7 +442,7 @@ export default function ClassroomAttendance({ classroom, user }) {
                                   <SelectTrigger className="h-8 w-20">
                                     <SelectValue />
                                   </SelectTrigger>
-                                  <SelectContent>
+                                  <SelectContent className="bg-white">
                                     <SelectItem value="present">
                                       Present
                                     </SelectItem>
@@ -400,10 +462,10 @@ export default function ClassroomAttendance({ classroom, user }) {
                               rate >= 95
                                 ? "text-green-500"
                                 : rate >= 90
-                                ? "text-blue-500"
-                                : rate >= 80
-                                ? "text-yellow-500"
-                                : "text-red-500"
+                                  ? "text-blue-500"
+                                  : rate >= 80
+                                    ? "text-yellow-500"
+                                    : "text-red-500"
                             }
                           >
                             {rate}%
@@ -414,6 +476,31 @@ export default function ClassroomAttendance({ classroom, user }) {
                   })}
                 </tbody>
               </table>
+              <div className="flex justify-end items-center mb-2">
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    disabled={sessionPage === 0}
+                    onClick={() => setSessionPage(sessionPage - 1)}
+                    className="h-8 w-8 rounded-full"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                  </Button>
+                  <span className="text-sm text-gray-500">
+                    Page {sessionPage + 1}/{Math.ceil(attendanceData.sessions.length / 5)}
+                  </span>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    disabled={(sessionPage + 1) * 5 >= attendanceData.sessions.length}
+                    onClick={() => setSessionPage(sessionPage + 1)}
+                    className="h-8 w-8 rounded-full"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                  </Button>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -436,7 +523,7 @@ export default function ClassroomAttendance({ classroom, user }) {
                       <div className="space-y-1">
                         <div className="text-sm text-gray-600">Date</div>
                         <div className="font-medium text-gray-800">
-                          {new Date(sess.date).toLocaleDateString()}
+                          {new Date(sess.date + 'T00:00:00').toLocaleDateString()}
                         </div>
                       </div>
                       <div className="space-y-1">
