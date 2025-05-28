@@ -61,6 +61,11 @@ export default function ClassroomGradebook({ classroom, user }) {
   const [editingCell, setEditingCell] = useState(null);
   const [editValue, setEditValue] = useState("");
   const [showAddGradeForm, setShowAddGradeForm] = useState(false);
+  const [showImportForm, setShowImportForm] = useState(false);
+  const [showExportForm, setShowExportForm] = useState(false);
+  const [importAssignmentId, setImportAssignmentId] = useState("");
+  const [exportAssignmentId, setExportAssignmentId] = useState("");
+  const [csvData, setCsvData] = useState(null);
   const [newGradeEntry, setNewGradeEntry] = useState({
     studentId: "",
     assignmentId: "",
@@ -147,6 +152,139 @@ export default function ClassroomGradebook({ classroom, user }) {
     setShowAddGradeForm(false);
     setNewGradeEntry({ studentId: "", assignmentId: "", grade: "" });
   };
+  
+  const handleCsvImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    setShowImportForm(true);
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const csvText = event.target.result;
+      const rows = csvText.split('\n').filter(row => row.trim());
+
+      console.log("Raw CSV Data:", rows);
+      
+      // Skip header row and parse data
+      const parsedData = rows.slice(1).map(row => {
+        const columns = row.split(',');
+        return {
+          studentId: columns[0]?.trim(),
+          studentName: columns[1]?.trim(),
+          grade: columns[2]?.trim()
+        };
+      }).filter(item => item.studentId && item.grade);
+
+      console.log("Parsed CSV Data:", parsedData);
+      
+      setCsvData(parsedData);
+    };
+    
+    reader.readAsText(file);
+  };
+  
+  const processImport = () => {
+    if (!csvData || !importAssignmentId) return;
+    
+    const aid = parseInt(importAssignmentId, 10);
+    if (isNaN(aid)) return;
+    
+    // Update gradebook with imported data
+    setGradebook(prev => {
+      const updatedStudents = [...prev.students];
+      
+      csvData.forEach(row => {
+        const studentId = parseInt(row.studentId, 10);
+        const grade = parseFloat(row.grade);
+        
+        if (!isNaN(studentId) && !isNaN(grade)) {
+          const studentIndex = updatedStudents.findIndex(s => s.id === studentId);
+          if (studentIndex !== -1) {
+            updatedStudents[studentIndex] = {
+              ...updatedStudents[studentIndex],
+              grades: {
+                ...updatedStudents[studentIndex].grades,
+                [aid]: grade
+              }
+            };
+          }
+        }
+      });
+      
+      return {
+        ...prev,
+        students: updatedStudents
+      };
+    });
+    
+    // Reset import state
+    setShowImportForm(false);
+    setImportAssignmentId("");
+    setCsvData(null);
+    document.getElementById('csvFileInput').value = '';
+  };
+  
+  const exportFullGradebook = () => {
+    // Create header row with student info and all assignments
+    let csvContent = "Student ID,Student Name,";
+    gradebook.assignments.forEach(a => {
+      csvContent += `${a.name},`;
+    });
+    csvContent += "Total Grade\n";
+    
+    // Add data for each student
+    gradebook.students.forEach(student => {
+      csvContent += `${student.id},${student.name},`;
+      gradebook.assignments.forEach(a => {
+        const grade = student.grades[a.id] !== undefined ? student.grades[a.id] : "";
+        csvContent += `${grade},`;
+      });
+      const total = calculateStudentTotal(student);
+      csvContent += `${total.weightedGrade}%\n`;
+    });
+    
+    // Create and trigger download
+    downloadCsv(csvContent, "Gradebook.csv");
+    setShowExportForm(false);
+  };
+  
+  const exportSingleAssignment = () => {
+    if (!exportAssignmentId) return;
+    
+    const aid = parseInt(exportAssignmentId, 10);
+    if (isNaN(aid)) return;
+    
+    const assignment = gradebook.assignments.find(a => a.id === aid);
+    if (!assignment) return;
+    
+    // Create CSV content
+    let csvContent = "Student ID,Student Name,Grade\n";
+    
+    gradebook.students.forEach(student => {
+      const grade = student.grades[aid] !== undefined ? student.grades[aid] : "";
+      csvContent += `${student.id},${student.name},${grade}\n`;
+    });
+    
+    // Create and trigger download
+    downloadCsv(csvContent, `${assignment.name.replace(/\\s+/g, '_')}_grades.csv`);
+    setShowExportForm(false);
+    setExportAssignmentId("");
+  };
+  
+  const downloadCsv = (content, filename) => {
+    const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    link.style.visibility = "hidden";
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -169,12 +307,21 @@ export default function ClassroomGradebook({ classroom, user }) {
             <Button
               variant="outline"
               className="px-4 py-2 rounded-lg border-gray-300 cursor-pointer hover:bg-amber-600 hover:text-white"
+              onClick={() => document.getElementById('csvFileInput').click()}
             >
               <Upload className="w-4 h-4 mr-2" /> Import
+              <input
+                id="csvFileInput"
+                type="file"
+                accept=".csv"
+                className="hidden"
+                onChange={handleCsvImport}
+              />
             </Button>
             <Button
               variant="outline"
               className="px-4 py-2 rounded-lg border-gray-300 cursor-pointer hover:bg-amber-600 hover:text-white"
+              onClick={() => setShowExportForm(true)}
             >
               <Download className="w-4 h-4 mr-2" /> Export
             </Button>
@@ -186,6 +333,124 @@ export default function ClassroomGradebook({ classroom, user }) {
             </Button>
           </div>
         </div>
+
+        {/* Export Form */}
+        {showExportForm && (
+          <Card className="bg-white rounded-lg border border-gray-200 shadow-sm mb-6">
+            <CardHeader>
+              <CardTitle>Export Grades</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">Export Options</h3>
+                  <div className="space-y-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={exportFullGradebook}
+                      className="w-full justify-start rounded-lg hover:bg-amber-600 hover:text-white cursor-pointer"
+                    >
+                      <Download className="w-4 h-4 mr-2" /> Export Full Gradebook
+                    </Button>
+                    
+                    <div className="pt-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Export Single Assignment
+                      </label>
+                      <div className="flex gap-2">
+                        <select
+                          value={exportAssignmentId}
+                          onChange={(e) => setExportAssignmentId(e.target.value)}
+                          className="block w-full rounded-lg border border-gray-300 h-10"
+                        >
+                          <option value="">Select assignment</option>
+                          {gradebook.assignments.map((a) => (
+                            <option key={a.id} value={a.id}>
+                              {a.name}
+                            </option>
+                          ))}
+                        </select>
+                        <Button 
+                          variant="outline" 
+                          onClick={exportSingleAssignment}
+                          disabled={!exportAssignmentId}
+                          className="rounded-lg hover:bg-amber-600 hover:text-white cursor-pointer"
+                        >
+                          Export
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setShowExportForm(false);
+                            setExportAssignmentId("");
+                          }}
+                          className="rounded-lg hover:bg-amber-600 hover:text-white cursor-pointer"
+                        >
+                          Close
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        
+        {/* Import CSV Form */}
+        {showImportForm && (
+          <Card className="bg-white rounded-lg border border-gray-200 shadow-sm mb-6">
+            <CardHeader>
+              <CardTitle>Import Grades from CSV</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-sm text-gray-600 mb-4">
+                  {csvData ? `${csvData.length} records found in CSV file.` : 'Processing CSV file...'}
+                </p>
+                <p className="text-sm text-gray-600 mb-4">
+                  CSV format: File should have a header row followed by data rows with Student ID, Student Name, and Grade.
+                </p>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Assignment for Import
+                </label>
+                <select
+                  value={importAssignmentId}
+                  onChange={(e) => setImportAssignmentId(e.target.value)}
+                  className="block w-full rounded-lg border border-gray-300 h-10"
+                >
+                  <option value="">Select assignment</option>
+                  {gradebook.assignments.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowImportForm(false);
+                    setCsvData(null);
+                    document.getElementById('csvFileInput').value = '';
+                  }}
+                  className="rounded-lg hover:bg-amber-600 hover:text-white cursor-pointer"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={processImport}
+                  disabled={!csvData || !importAssignmentId}
+                  className="rounded-lg hover:bg-amber-600 hover:text-white cursor-pointer"
+                >
+                  Import Grades
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Add Grade Form */}
         {showAddGradeForm && (
@@ -285,7 +550,7 @@ export default function ClassroomGradebook({ classroom, user }) {
                     <TableHead key={a.id} className="text-center px-6 py-3">
                       <div className="font-medium">{a.name}</div>
                       <div className="text-xs text-gray-500">
-                        {a.points} pts | Avg: {calculateAssignmentAverage(a.id)} | Weight: {a.weight}
+                        {a.points} pts | Avg: {calculateAssignmentAverage(a.id)}% | Weight: {a.weight}
                       </div>
                     </TableHead>
                   ))}
