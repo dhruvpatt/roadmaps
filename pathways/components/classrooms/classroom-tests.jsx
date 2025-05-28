@@ -192,7 +192,7 @@ export default function ClassroomTests({ classroom, isTeacher, user }) {
           {isTeacher && (
             <Button
               onClick={() => setShowForm(true)}
-              className="flex items-center gap-2 bg-blue-600 text-white"
+              className="flex items-center gap-2 bg-blue-600 text-white cursor-pointer hover:bg-blue-700 transition-colors"
             >
               <Plus />
               Create Test
@@ -269,11 +269,17 @@ export default function ClassroomTests({ classroom, isTeacher, user }) {
                 </div>
               </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={resetForm}>
-                  Cancel
+                <Button 
+                  variant="outline"  
+                  className = "text-gray-800 hover:bg-gray-200 transition-colors cursor-pointer"
+                  onClick={resetForm}>
+                    Cancel
                 </Button>
-                <Button onClick={editingId ? handleUpdate : handleCreate}>
-                  {editingId ? "Update" : "Create"}
+                <Button 
+                  onClick={editingId ? handleUpdate : handleCreate} 
+                  variant="outline"
+                  className="bg-blue-600 text-white hover:bg-blue-700 transition-colors cursor-pointer">
+                    {editingId ? "Update" : "Create"}
                 </Button>
               </div>
             </CardContent>
@@ -299,12 +305,15 @@ export default function ClassroomTests({ classroom, isTeacher, user }) {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleEdit(test.id)}
+                        className="text-blue-600 hover:bg-blue-50 cursor-pointer"
                       >
                         <Edit />
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
+                        className="text-red-600 hover:bg-red-50 cursor-pointer"
+                        aria-label="Delete Test"
                         onClick={() => handleDelete(test.id)}
                       >
                         <Trash2 />
@@ -324,12 +333,12 @@ export default function ClassroomTests({ classroom, isTeacher, user }) {
                 </span>
                 <span>{test.points} points</span>
                 <span
-                  className={`${isOverdue(test.dueDate) ? "text-red-600" : ""}`}
+                  className={`${isOverdue(test.dueDate) ? "text-red-600" : ""} flex items-center`}
                 >
-                  Due {formatDate(test.dueDate)}
                   {isOverdue(test.dueDate) && (
                     <AlertCircle className="w-4 h-4 text-red-600 ml-1" />
                   )}
+                  <span>&nbsp; Due {formatDate(test.dueDate)}</span>
                 </span>
               </div>
               {!isTeacher ? (
@@ -367,18 +376,23 @@ export default function ClassroomTests({ classroom, isTeacher, user }) {
                     variant="outline"
                     size="sm"
                     onClick={() => handleEditQuestions(test.id)}
+                    className="flex items-center gap-2 bg-blue-600 text-white cursor-pointer hover:bg-blue-700 transition-colors"
                   >
                     Edit Questions
                   </Button>
                   {test.status === "draft" ? (
-                    <Button size="sm" onClick={() => handlePublish(test.id)}>
-                      Publish
+                    <Button 
+                      size="sm" 
+                      onClick={() => handlePublish(test.id)}
+                      className="flex items-center gap-2 bg-green-600 text-white cursor-pointer hover:bg-green-700 transition-colors">
+                        Publish
                     </Button>
                   ) : (
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleViewResults(test.id)}
+                      className="cursor-pointer hover:bg-gray-200"
                     >
                       <Eye className="mr-1" /> Results ({test.attempts})
                     </Button>

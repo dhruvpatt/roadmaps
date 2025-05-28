@@ -242,7 +242,7 @@ export default function ClassroomMaterials({ classroom, isTeacher, user }) {
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white">
                     <SelectItem value="document">Document</SelectItem>
                     <SelectItem value="video">Video</SelectItem>
                     <SelectItem value="image">Image</SelectItem>
@@ -256,11 +256,17 @@ export default function ClassroomMaterials({ classroom, isTeacher, user }) {
                 </div>
               )}
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={resetForm}>
-                  Cancel
+                <Button 
+                  variant="outline" 
+                  onClick={resetForm}
+                  className="hover:bg-gray-200 cursor-pointer">
+                    Cancel
                 </Button>
-                <Button onClick={editingId ? handleUpdate : handleUpload}>
-                  {editingId ? "Update" : "Upload"}
+                <Button 
+                  onClick={editingId ? handleUpdate : handleUpload}
+                  className="bg-blue-600 text-white hover:bg-blue-700 cursor-pointer"
+                  variant="outline">
+                    {editingId ? "Update" : "Upload"}
                 </Button>
               </div>
             </CardContent>
@@ -292,6 +298,7 @@ export default function ClassroomMaterials({ classroom, isTeacher, user }) {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleEdit(mat.id)}
+                      className="text-blue-600 hover:bg-blue-50 cursor-pointer"
                     >
                       <Edit />
                     </Button>
@@ -299,6 +306,7 @@ export default function ClassroomMaterials({ classroom, isTeacher, user }) {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDelete(mat.id)}
+                      className="text-red-600 hover:bg-red-50 cursor-pointer"
                     >
                       <Trash2 />
                     </Button>
@@ -310,11 +318,11 @@ export default function ClassroomMaterials({ classroom, isTeacher, user }) {
                 <div>{formatDate(mat.uploadedAt)}</div>
               </div>
               <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
-                <span>
+                <span className="text-blue-600">
                   <Eye className="inline w-4 h-4 mr-1" />
                   {mat.views}
                 </span>
-                <span>
+                <span className="text-amber-600">
                   <Download className="inline w-4 h-4 mr-1" />
                   {mat.downloads}
                 </span>
@@ -324,7 +332,7 @@ export default function ClassroomMaterials({ classroom, isTeacher, user }) {
                   variant="outline"
                   size="sm"
                   onClick={() => handleView(mat.id)}
-                  className="flex-1"
+                  className="flex-1 cursor-pointer hover:bg-gray-200"
                 >
                   View
                 </Button>
@@ -332,7 +340,7 @@ export default function ClassroomMaterials({ classroom, isTeacher, user }) {
                   variant="outline"
                   size="sm"
                   onClick={() => handleDownload(mat.id)}
-                  className="flex-1"
+                  className="flex-1 cursor-pointer hover:bg-amber-600"
                 >
                   Download
                 </Button>
