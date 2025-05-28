@@ -111,7 +111,7 @@ export default function ClassroomStream({ classroom, isTeacher, user }) {
             {!showCreatePost ? (
               <Button
                 variant="outline"
-                className="w-full justify-start text-gray-600"
+                className="w-full justify-start text-gray-600 cursor-pointer hover:bg-amber-600 hover:text-white"
                 onClick={() => setShowCreatePost(true)}
               >
                 <Plus className="mr-2" /> Share something...
@@ -127,11 +127,14 @@ export default function ClassroomStream({ classroom, isTeacher, user }) {
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="outline"
+                    className="cursor-pointer hover:bg-amber-600 hover:text-white w-24"
                     onClick={() => setShowCreatePost(false)}
                   >
                     Cancel
                   </Button>
                   <Button
+                    variant="outline"
+                    className="cursor-pointer hover:bg-amber-600 hover:text-white w-24"
                     onClick={() => {
                       const post = {
                         id: Date.now(),
@@ -211,7 +214,7 @@ export default function ClassroomStream({ classroom, isTeacher, user }) {
                 {showComments[post.id] && (
                   <div className="mt-4 space-y-3">
                     {/* existing comments */}
-                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                    <div className="space-y-2 max-h-40 overflow-y-auto p-1">
                       {post.comments.map((c) => (
                         <div key={c.id} className="flex items-start gap-3">
                           <Avatar className="w-6 h-6 ring-1 ring-gray-300">
@@ -247,6 +250,8 @@ export default function ClassroomStream({ classroom, isTeacher, user }) {
                       />
                       <Button
                         size="sm"
+                        variant="outline"
+                        className="cursor-pointer"
                         onClick={() => handleAddComment(post.id)}
                       >
                         Comment
