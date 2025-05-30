@@ -4,17 +4,18 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from pathways.views.analytics_views import StudentAnalyticsAPIView, TeacherAnalyticsAPIView
 from pathways.views.user_views import user_list, user_classrooms, create_user, update_user, user_detail, user_pathways, login_with_email, student_list, update_user_preferences
-from pathways.views.pathway_views import pathway_list, pathway_detail, pathway_chapters
-from pathways.views.classroom_views import get_user_classrooms, classroom_detail
-from pathways.pathways_views import PathwayGenerationAPIView, get_all_pathways, get_pathway_by_id, \
-    delete_pathway, get_all_subjects, get_subject_by_id, create_subject, update_subject, delete_subject, \
-    get_all_chapters, get_chapter_by_id, create_chapter, update_chapter, delete_chapter, get_user_pathways, publish_pathway_to_classroom
+
+from pathways.views.classroom_views import get_user_classrooms, classroom_detail, classroom_analytics, classroom_student_details, join_classroom_as_student, \
+    join_classroom_as_teacher, create_classroom, student_classroom_analytics
+
+from pathways.views.pathway_views import PathwayGenerationAPIView, \
+    publish_pathway_to_classroom, pathway_detail, pathway_chapters, subject_detail
+
+from pathways.views.chapter_views import chapter_detail
+
 from pathways.module_gen import ModuleContentGenerationAPIView, ModuleAssistantAPIView, get_module, create_lecture_materials, update_module_video
 from pathways.quiz_gen import QuizGenerationAPIView, QuizEvaluationAPIView, get_quiz_results
-from pathways.classroom_views import classroom_analytics, classroom_student_details, join_classroom_as_student, \
-    join_classroom_as_teacher, create_classroom, student_classroom_analytics
 from pathways.views.module_views import mark_module_completed
-from pathways.views.pathway_views import assign_pathway_to_user
 from pathways.views.quiz_views import QuizDetailAPIView
 
 from django.contrib import admin
@@ -24,6 +25,8 @@ router = DefaultRouter()
 urlpatterns = [
     # ViewSet URLs
     path('admin/', admin.site.urls),
+    path('', include(router.urls)),
+
     path('generate-pathway/', PathwayGenerationAPIView.as_view(), name='generate-pathway'),
     path('generate-module/', ModuleContentGenerationAPIView.as_view(), name='generate-module'),
     path('module-assistant/', ModuleAssistantAPIView.as_view(), name='module-assistant'),
@@ -51,40 +54,32 @@ urlpatterns = [
     path('api/get-all-students/', student_list, name='student-list'),
 
 
-    path('api/pathways/', pathway_list, name='pathway-list'),
+    # Pathway CRUD
+    path('api/pathways/', pathway_detail, name='pathway-list'),
     path('api/pathways/<int:pk>/', pathway_detail, name='pathway-detail'),
     path('api/pathways/<int:pk>/chapters/', pathway_chapters, name='pathway-chapters'),
-
-    path('get-user-pathways/', get_user_pathways),
-    path("publish-pathway-to-classroom/", publish_pathway_to_classroom),
-    path("publish-pathway/", assign_pathway_to_user, name="publish-pathway"),
-
-    path("mark-module-completed/", mark_module_completed, name="mark-module-as-complete"),
+    path('api/publish-pathway-to-classroom/', publish_pathway_to_classroom, name='publish-pathway-to-classroom'),
 
 
     # Subject CRUD
-    path('subjects/', get_all_subjects),
-    path('subjects/<int:subject_id>/', get_subject_by_id),
-    path('subjects/create/', create_subject),
-    path('subjects/<int:subject_id>/update/', update_subject),
-    path('subjects/<int:subject_id>/delete/', delete_subject),
+    path('api/subjects/', subject_detail, name='subject-list'),
+    path('api/subjects/<int:subject_id>/', subject_detail, name='subject-detail'),
 
     # Chapter CRUD
-    path('chapters/', get_all_chapters),
-    path('chapters/<int:chapter_id>/', get_chapter_by_id),
-    path('chapters/create/', create_chapter),
-    path('chapters/<int:chapter_id>/update/', update_chapter),
-    path('chapters/<int:chapter_id>/delete/', delete_chapter),
+    path('api/chapters/', chapter_detail, name='chapter-list'),
+    path('api/chapters/<int:chapter_id>/', chapter_detail, name='chapter-detail'),
 
     # Classroom endpoints
-    path('classroom/create/', create_classroom),
-    path('classroom/join/student/', join_classroom_as_student),
-    path('classroom/join/teacher/', join_classroom_as_teacher),
-    path('classroom/<int:classroom_id>/analytics/', classroom_analytics),
-    path('classroom/<int:classroom_id>/students/', classroom_student_details),
-    path('api/classrooms/<int:pk>/', classroom_detail),
-    path('student-classroom-analytics/', student_classroom_analytics),
-    path("get-user-classrooms/", get_user_classrooms, name="get-user-classrooms"),
+    path('api/classroom/create/', create_classroom, name='create-classroom'),
+    path('api/classroom/join/student/', join_classroom_as_student, name='join-classroom-student'),
+    path('api/classroom/join/teacher/', join_classroom_as_teacher, name='join-classroom-teacher'),
+    path('api/classroom/<int:classroom_id>/analytics/', classroom_analytics, name='classroom-analytics'),
+    path('api/classroom/<int:classroom_id>/students/', classroom_student_details, name='classroom-students'),
+    path('api/classrooms/<int:pk>/', classroom_detail, name='classroom-detail'),
+    path('api/student-classroom-analytics/', student_classroom_analytics, name='student-classroom-analytics'),
+    path('api/get-user-classrooms/', get_user_classrooms, name='get-user-classrooms'),
+    path('api/mark-module-completed/', mark_module_completed, name='mark-module-as-complete'),
+
 
 
 ]

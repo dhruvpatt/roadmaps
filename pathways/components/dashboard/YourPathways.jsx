@@ -14,7 +14,7 @@ export default function YourPathways({updatePathwayCount}) {
 
     const fetchPathways = async () => {
       try {
-        const res = await fetch(`${backendUrl}/get-user-pathways/`, {
+        const res = await fetch(`${backendUrl}/pathways/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ user_id: usr.id })

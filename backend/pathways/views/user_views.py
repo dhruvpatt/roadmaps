@@ -50,10 +50,6 @@ def update_user(request, pk):
     except User.DoesNotExist:
         return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
-    # Remove the email field from the request data to prevent it from being updated
-    # if 'email' in request.data:
-    #     del request.data['email']
-
     serializer = UserSerializer(user, data=request.data)
 
     if serializer.is_valid():
@@ -65,7 +61,6 @@ def update_user(request, pk):
 
 @api_view(['POST'])
 def login_with_email(request):
-    print("HERE AT LOGIN")
     email = request.data.get("email")
     password = request.data.get("password")
 
@@ -74,8 +69,6 @@ def login_with_email(request):
 
     try:
         user = User.objects.get(email=email)
-        print("user", user.email, user.password)
-        print("email, pass", email, password)
         if user and user.password == password:
             return Response({
                 "message": "Login successful",

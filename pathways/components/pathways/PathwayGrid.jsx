@@ -64,7 +64,7 @@ export default function Pathways({ title = "Your Pathways", classroom, updatePat
                 body.classroom_id = classroom.id;
             }
 
-            const res = await fetch(`${backendUrl}/get-user-pathways/?page=${pageNum}&search=${query}`, {
+            const res = await fetch(`${backendUrl}/pathways/?page=${pageNum}&search=${query}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body),

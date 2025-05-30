@@ -35,27 +35,53 @@ def chapter_list(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['GET', 'PUT', 'DELETE'])
-def chapter_detail(request, pk):
-    try:
-        chapter = Chapter.objects.get(pk=pk)
-    except Chapter.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-
+@api_view(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])
+def chapter_detail(request, chapter_id=None):
     if request.method == 'GET':
-        serializer = ChapterSerializer(chapter)
-        return Response(serializer.data)
+        if chapter_id:
+            try:
+                chapter = Chapter.objects.get(pk=chapter_id)
+                serializer = ChapterSerializer(chapter)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except Chapter.DoesNotExist:
+                return Response({"error": "Chapter not found"}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            pathway_id = request.data.get('pathway') or request.query_params.get('pathway')
+            if pathway_id:
+                chapters = Chapter.objects.filter(pathway_id=pathway_id)
+                serializer = ChapterSerializer(chapters, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                chapters = Chapter.objects.all()
+                serializer = ChapterSerializer(chapters, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
 
-    elif request.method == 'PUT':
-        serializer = ChapterSerializer(chapter, data=request.data)
+    elif request.method == 'POST':
+        serializer = ChapterSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    elif request.method in ['PUT', 'PATCH']:
+        try:
+            chapter = Chapter.objects.get(pk=chapter_id)
+            serializer = ChapterSerializer(
+                chapter, data=request.data, partial=(request.method == 'PATCH'))
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Chapter.DoesNotExist:
+            return Response({"error": "Chapter not found"}, status=status.HTTP_404_NOT_FOUND)
+
     elif request.method == 'DELETE':
-        chapter.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            chapter = Chapter.objects.get(pk=chapter_id)
+            chapter.delete()
+            return Response({"message": "Chapter deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+        except Chapter.DoesNotExist:
+            return Response({"error": "Chapter not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
 @api_view(['GET'])
