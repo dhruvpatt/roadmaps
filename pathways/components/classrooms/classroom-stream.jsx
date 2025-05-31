@@ -101,7 +101,7 @@ export default function ClassroomStream({ classroom, isTeacher, user }) {
   };
 
   return (
-    <div className="bg-white min-h-screen py-2">
+    <div className="bg-white">
       <div className="max-w-2xl mx-auto space-y-6 ">
         {/* Create Post */}
         <Card className=" border-gray-200 hover:bg-gray-50 transition-colors">
@@ -165,7 +165,7 @@ export default function ClassroomStream({ classroom, isTeacher, user }) {
             <Card
               key={post.id}
               className={cn(
-                "rounded-lg border p-2 shadow-sm transition-colors hover:bg-gray-50",
+                "rounded-lg border shadow-sm transition-colors hover:bg-gray-50 ",
                 post.type === "announcement"
                   ? "bg-indigo-50 border-indigo-200"
                   : post.type === "assignment"
@@ -193,7 +193,7 @@ export default function ClassroomStream({ classroom, isTeacher, user }) {
               </CardHeader>
               <CardContent className="pt-0">
                 <p className="text-gray-700 mb-4">{post.content}</p>
-                <div className="flex items-center gap-6 text-gray-500">
+                <div className="flex items-center gap-3 text-gray-500">
                   <Button
                     variant="ghost"
                     size="sm"

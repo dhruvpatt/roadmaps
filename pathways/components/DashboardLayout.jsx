@@ -6,11 +6,7 @@ export default function DashboardLayout({ children }) {
     <>
       <Navbar />
       <Sidebar />
-      <div className="pt-16 pl-64 min-h-screen bg-gray-100">
-        <main className="min-h-screen w-full p-6 bg-animated-gradient">
-          {children}
-        </main>
-      </div>
+      <div className="pt-16 pl-64 min-h-screen bg-gray-100">{children}</div>
     </>
   );
 }

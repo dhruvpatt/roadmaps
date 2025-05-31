@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import PropTypes from "prop-types";
+import Link from "next/link";
 import {
   Plus,
   FileQuestion,
@@ -14,11 +15,8 @@ import {
   Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 
 // Mock tests data
 const mockTests = [
@@ -26,7 +24,7 @@ const mockTests = [
     id: 1,
     title: "Photosynthesis Quiz",
     description:
-      "Test your understanding of photosynthesis process and its components",
+      "Test your understanding of the photosynthesis process and its components. Covering light-dependent reactions, Calvin Cycle, and photosynthetic pigments.",
     questions: 15,
     timeLimit: 30,
     dueDate: "2025-01-30T23:59:00Z",
@@ -45,7 +43,7 @@ const mockTests = [
     id: 2,
     title: "Cell Structure Test",
     description:
-      "Comprehensive test on plant and animal cell structures and organelles",
+      "Comprehensive test on plant and animal cell structures and organelles. Identify functions of nucleus, mitochondria, chloroplasts, ER, and Golgi apparatus.",
     questions: 25,
     timeLimit: 45,
     dueDate: "2025-02-05T23:59:00Z",
@@ -58,7 +56,8 @@ const mockTests = [
   {
     id: 3,
     title: "Midterm Exam",
-    description: "Comprehensive midterm covering chapters 1-5",
+    description:
+      "Comprehensive midterm covering chapters 1–5: Biochemistry, Cell Structure, Genetics, Evolution, and Ecology.",
     questions: 50,
     timeLimit: 90,
     dueDate: "2025-02-15T23:59:00Z",
@@ -72,330 +71,241 @@ const mockTests = [
 
 export default function ClassroomTests({ classroom, isTeacher, user }) {
   const [tests, setTests] = useState(mockTests);
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [newTest, setNewTest] = useState({
-    title: "",
-    description: "",
-    questions: 10,
-    timeLimit: 30,
-    points: 50,
-    dueDate: "",
-  });
 
-  const resetForm = () => {
-    setNewTest({
-      title: "",
-      description: "",
-      questions: 10,
-      timeLimit: 30,
-      points: 50,
-      dueDate: "",
-    });
-    setEditingId(null);
-    setShowForm(false);
-  };
-
-  const handleCreate = () => {
-    const id = Date.now();
-    const test = {
-      id,
-      ...newTest,
-      status: "draft",
-      attempts: 0,
-      totalStudents: 25,
-      studentAttempt: null,
-    };
-    setTests([test, ...tests]);
-    resetForm();
-  };
-
-  const handleEdit = (id) => {
-    const t = tests.find((x) => x.id === id);
-    if (!t) return;
-    setNewTest({
-      title: t.title,
-      description: t.description,
-      questions: t.questions,
-      timeLimit: t.timeLimit,
-      points: t.points,
-      dueDate: t.dueDate.slice(0, 16),
-    });
-    setEditingId(id);
-    setShowForm(true);
-  };
-
-  const handleUpdate = () => {
-    setTests(tests.map((x) => (x.id === editingId ? { ...x, ...newTest } : x)));
-    resetForm();
-  };
-
-  const handleDelete = (id) => {
+  // Delete a test
+  const handleDeleteTest = (id) => {
     if (confirm("Delete this test?")) {
-      setTests(tests.filter((x) => x.id !== id));
+      setTests((prev) => prev.filter((x) => x.id !== id));
     }
   };
 
-  const handleStart = (id) => console.log("Start test", id);
-  const handlePublish = (id) =>
-    setTests(
-      tests.map((x) => (x.id === id ? { ...x, status: "published" } : x))
+  // Teacher publishes a draft
+  const handlePublishTest = (id) => {
+    setTests((prev) =>
+      prev.map((x) => (x.id === id ? { ...x, status: "published" } : x))
     );
-  const handleViewResults = (id) => console.log("View results", id);
-  const handleEditQuestions = (id) => console.log("Edit questions", id);
+  };
 
+  // Student starts a test
+  const handleStartTest = (id) => {
+    console.log("Start test", id);
+  };
+
+  // Teacher views results
+  const handleViewResults = (id) => {
+    console.log("View results", id);
+  };
+
+  // Badge logic with amber theme
   const getBadge = (t) => {
     if (isTeacher) {
       if (t.status === "draft")
-        return <Badge className="rounded-lg">Draft</Badge>;
+        return (
+          <Badge className="bg-amber-100 text-amber-800 border-amber-200">
+            Draft
+          </Badge>
+        );
       return (
-        <Badge className="rounded-lg">
+        <Badge className="bg-cream-100 text-amber-900 border-amber-200">
           {t.attempts}/{t.totalStudents} completed
         </Badge>
       );
     }
-    if (t.studentAttempt?.completed)
+    if (t.studentAttempt?.completed) {
       return (
-        <Badge className="bg-green-100 text-green-800 rounded-lg">
+        <Badge className="bg-green-100 text-green-800 border-green-200">
           Completed
         </Badge>
       );
-    if (t.status === "published")
-      return <Badge className="rounded-lg">Available</Badge>;
+    }
+    if (t.status === "published") {
+      return <Badge className="bg-amber-500 text-white">Available</Badge>;
+    }
     return (
-      <Badge className="rounded-lg" variant="outline">
+      <Badge className="bg-red-100 text-red-800 border-red-200">
         Not Available
       </Badge>
     );
   };
 
+  // Format ISO date → "Mon DD, YYYY HH:MM"
   const formatDate = (dt) =>
     new Date(dt).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
+      year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     });
+
   const isOverdue = (d) => new Date(d) < new Date();
 
   return (
-    <section className="bg-gray-50 min-h-screen py-6">
-      <div className="max-w-4xl mx-auto px-6 space-y-6">
+    <section className="bg-gradient-to-br bg-white py-8">
+      <div className="max-w-4xl mx-auto px-6 space-y-8">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h2 className="text-2xl font-medium">Tests & Quizzes</h2>
-            <p className="text-gray-600">
-              Assess student understanding and progress
-            </p>
+            <h2 className="text-3xl font-bold text-black mb-2">
+              Tests & Quizzes
+            </h2>
           </div>
           {isTeacher && (
-            <Button
-              onClick={() => setShowForm(true)}
-              className="flex items-center gap-2 bg-blue-600 text-white cursor-pointer hover:bg-blue-700 transition-colors"
-            >
-              <Plus />
-              Create Test
-            </Button>
+            <Link href="/create-test">
+              <Button className="flex items-center gap-2 bg-amber-600 text-white hover:bg-amber-700 focus:ring-2 focus:ring-offset-1 focus:ring-amber-400 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200">
+                <Plus className="w-5 h-5" /> Create Test
+              </Button>
+            </Link>
           )}
         </div>
-        {/* Form */}
-        {showForm && isTeacher && (
-          <Card className="shadow rounded-xl">
-            <CardHeader>
-              <CardTitle>{editingId ? "Edit Test" : "Create Test"}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label>Title</Label>
-                <Input
-                  value={newTest.title}
-                  onChange={(e) =>
-                    setNewTest({ ...newTest, title: e.target.value })
-                  }
-                />
-              </div>
-              <div>
-                <Label>Description</Label>
-                <Textarea
-                  value={newTest.description}
-                  onChange={(e) =>
-                    setNewTest({ ...newTest, description: e.target.value })
-                  }
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Questions</Label>
-                  <Input
-                    type="number"
-                    value={newTest.questions}
-                    onChange={(e) =>
-                      setNewTest({ ...newTest, questions: +e.target.value })
-                    }
-                  />
-                </div>
-                <div>
-                  <Label>Time (min)</Label>
-                  <Input
-                    type="number"
-                    value={newTest.timeLimit}
-                    onChange={(e) =>
-                      setNewTest({ ...newTest, timeLimit: +e.target.value })
-                    }
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Points</Label>
-                  <Input
-                    type="number"
-                    value={newTest.points}
-                    onChange={(e) =>
-                      setNewTest({ ...newTest, points: +e.target.value })
-                    }
-                  />
-                </div>
-                <div>
-                  <Label>Due Date</Label>
-                  <Input
-                    type="datetime-local"
-                    value={newTest.dueDate}
-                    onChange={(e) =>
-                      setNewTest({ ...newTest, dueDate: e.target.value })
-                    }
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button 
-                  variant="outline"  
-                  className = "text-gray-800 hover:bg-gray-200 transition-colors cursor-pointer"
-                  onClick={resetForm}>
-                    Cancel
-                </Button>
-                <Button 
-                  onClick={editingId ? handleUpdate : handleCreate} 
-                  variant="outline"
-                  className="bg-blue-600 text-white hover:bg-blue-700 transition-colors cursor-pointer">
-                    {editingId ? "Update" : "Create"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-        {/* Tests List */}
+
+        {/* List of Tests */}
         <div className="space-y-6">
           {tests.map((test) => (
-            <Card key={test.id} className="shadow rounded-xl p-6 bg-white">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-start gap-3">
-                  <FileQuestion className="w-6 h-6 text-purple-600 mt-1" />
-                  <div>
-                    <h3 className="font-medium text-gray-900">{test.title}</h3>
-                    <p className="text-gray-700 mt-1">{test.description}</p>
+            <Card
+              key={test.id}
+              className="
+                border border-gray-200 
+                rounded-2xl shadow-lg 
+                p-6 bg-white
+                hover:shadow-xl hover:-translate-y-1
+                transition-all duration-300
+                backdrop-blur-sm
+              "
+            >
+              {/* Header Row: Title + Badge + (Edit/Delete if teacher) */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+                <div className="flex items-center gap-3 w-full sm:w-2/3">
+                  <div className="p-2 bg-amber-100 rounded-xl">
+                    <FileQuestion className="w-6 h-6 text-amber-700" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-black line-clamp-1 mb-1">
+                      {test.title}
+                    </h3>
+                    <p className="text-gray-500 line-clamp-2 leading-relaxed">
+                      {test.description}
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+
+                <div className="flex items-center gap-3 mt-3 sm:mt-0">
                   {getBadge(test)}
                   {isTeacher && (
-                    <div className="flex gap-1">
+                    <div className="flex items-center gap-1">
+                      <Link href={`/create-test?edit=${test.id}`}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-amber-700 hover:bg-amber-100 rounded-lg"
+                          aria-label="Edit Test"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </Link>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleEdit(test.id)}
-                        className="text-blue-600 hover:bg-blue-50 cursor-pointer"
-                      >
-                        <Edit />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-600 hover:bg-red-50 cursor-pointer"
+                        onClick={() => handleDeleteTest(test.id)}
+                        className="text-red-600 hover:bg-red-50 rounded-lg"
                         aria-label="Delete Test"
-                        onClick={() => handleDelete(test.id)}
                       >
-                        <Trash2 />
+                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   )}
                 </div>
               </div>
-              <div className="flex flex-wrap gap-4 text-gray-600 mb-4">
-                <span className="flex items-center gap-1">
+
+              {/* Metadata Row */}
+              <div className="flex flex-wrap items-center gap-3 mb-4">
+                <div className="flex items-center gap-2 bg-amber-100 px-3 py-2 rounded-full text-sm font-medium text-amber-800">
                   <FileQuestion className="w-4 h-4" />
-                  {test.questions} questions
-                </span>
-                <span className="flex items-center gap-1">
+                  <span>{test.questions} Questions</span>
+                </div>
+                <div className="flex items-center gap-2 bg-amber-100 px-3 py-2 rounded-full text-sm font-medium text-amber-800">
                   <Clock className="w-4 h-4" />
-                  {test.timeLimit} min
-                </span>
-                <span>{test.points} points</span>
-                <span
-                  className={`${isOverdue(test.dueDate) ? "text-red-600" : ""} flex items-center`}
+                  <span>{test.timeLimit} minutes</span>
+                </div>
+                <div className="flex items-center gap-2 bg-amber-100 px-3 py-2 rounded-full text-sm font-medium text-amber-800">
+                  <span>{test.points} points</span>
+                </div>
+                <div
+                  className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium ${
+                    isOverdue(test.dueDate)
+                      ? "bg-red-100 text-red-700"
+                      : "bg-amber-100 text-amber-800"
+                  }`}
                 >
                   {isOverdue(test.dueDate) && (
-                    <AlertCircle className="w-4 h-4 text-red-600 ml-1" />
+                    <AlertCircle className="w-4 h-4" />
                   )}
-                  <span>&nbsp; Due {formatDate(test.dueDate)}</span>
-                </span>
-              </div>
-              {!isTeacher ? (
-                <div className="border-t pt-4">
-                  {test.studentAttempt?.completed ? (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-green-600">
-                        <CheckCircle />
-                        <span>
-                          Completed on{" "}
-                          {formatDate(test.studentAttempt.completedAt)}
-                        </span>
-                      </div>
-                      <div>
-                        Score:{" "}
-                        <span className="text-blue-600">
-                          {test.studentAttempt.score}/{test.points}
-                        </span>
-                      </div>
-                      <div className="text-gray-600">
-                        Time: {test.studentAttempt.timeSpent} min
-                      </div>
-                    </div>
-                  ) : test.status === "published" ? (
-                    <Button onClick={() => handleStart(test.id)}>
-                      <Play className="mr-2" /> Start Test
-                    </Button>
-                  ) : (
-                    <div className="text-gray-500">Not available</div>
-                  )}
+                  <span>Due {formatDate(test.dueDate)}</span>
                 </div>
-              ) : (
-                <div className="border-t pt-4 flex gap-2">
+              </div>
+
+              {/* Action Row */}
+              {isTeacher ? (
+                <div className="border-t border-amber-200 pt-4 flex flex-wrap gap-3">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleEditQuestions(test.id)}
-                    className="flex items-center gap-2 bg-blue-600 text-white cursor-pointer hover:bg-blue-700 transition-colors"
+                    onClick={() => console.log("Edit questions", test.id)}
+                    className="bg-amber-600 text-white hover:bg-amber-700 focus:ring-amber-400 border-amber-600 rounded-lg"
                   >
                     Edit Questions
                   </Button>
                   {test.status === "draft" ? (
-                    <Button 
-                      size="sm" 
-                      onClick={() => handlePublish(test.id)}
-                      className="flex items-center gap-2 bg-green-600 text-white cursor-pointer hover:bg-green-700 transition-colors">
-                        Publish
+                    <Button
+                      size="sm"
+                      onClick={() => handlePublishTest(test.id)}
+                      className="bg-green-600 text-white hover:bg-green-700 focus:ring-green-400 rounded-lg"
+                    >
+                      Publish
                     </Button>
                   ) : (
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleViewResults(test.id)}
-                      className="cursor-pointer hover:bg-gray-200"
+                      className="hover:bg-amber-50 border-amber-300 text-amber-700 rounded-lg"
                     >
-                      <Eye className="mr-1" /> Results ({test.attempts})
+                      <Eye className="w-4 h-4 mr-2" /> Results ({test.attempts})
                     </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="border-t border-amber-200 pt-4">
+                  {test.studentAttempt?.completed ? (
+                    <div className="flex flex-col gap-3 p-4 bg-green-50 rounded-xl border border-green-200">
+                      <div className="flex items-center gap-2 text-green-700 font-medium">
+                        <CheckCircle className="w-5 h-5" />
+                        <span>
+                          Completed on{" "}
+                          {formatDate(test.studentAttempt.completedAt)}
+                        </span>
+                      </div>
+                      <div className="text-amber-900">
+                        Score:{" "}
+                        <span className="font-bold text-amber-700">
+                          {test.studentAttempt.score}/{test.points}
+                        </span>
+                      </div>
+                      <div className="text-amber-700">
+                        Time Spent: {test.studentAttempt.timeSpent} minutes
+                      </div>
+                    </div>
+                  ) : test.status === "published" ? (
+                    <Button
+                      onClick={() => handleStartTest(test.id)}
+                      className="flex items-center gap-2 bg-amber-600 text-white hover:bg-amber-700 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                    >
+                      <Play className="w-4 h-4" /> Start Test
+                    </Button>
+                  ) : (
+                    <div className="text-amber-600 font-medium p-3 bg-amber-50 rounded-lg border border-amber-200">
+                      Not Available
+                    </div>
                   )}
                 </div>
               )}
@@ -410,5 +320,5 @@ export default function ClassroomTests({ classroom, isTeacher, user }) {
 ClassroomTests.propTypes = {
   classroom: PropTypes.object,
   isTeacher: PropTypes.bool,
-  user: PropTypes.object,
+  user: PropTypes.shape({ name: PropTypes.string }),
 };
