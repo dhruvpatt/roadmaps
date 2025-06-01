@@ -17,7 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
+import { useRouter } from "next/navigation"; // instead of next/router
 // Mock tests data
 const mockTests = [
   {
@@ -71,6 +71,7 @@ const mockTests = [
 
 export default function ClassroomTests({ classroom, isTeacher, user }) {
   const [tests, setTests] = useState(mockTests);
+  const router = useRouter();
 
   // Delete a test
   const handleDeleteTest = (id) => {
@@ -93,7 +94,7 @@ export default function ClassroomTests({ classroom, isTeacher, user }) {
 
   // Teacher views results
   const handleViewResults = (id) => {
-    console.log("View results", id);
+    router.push(`/test-results/${id}`);
   };
 
   // Badge logic with amber theme
@@ -270,7 +271,7 @@ export default function ClassroomTests({ classroom, isTeacher, user }) {
                       onClick={() => handleViewResults(test.id)}
                       className="hover:bg-amber-50 border-amber-300 text-amber-700 rounded-lg"
                     >
-                      <Eye className="w-4 h-4 mr-2" /> Results ({test.attempts})
+                      Results ({test.attempts})
                     </Button>
                   )}
                 </div>
