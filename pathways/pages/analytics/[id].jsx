@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import RecommendedActions from "@components/analytics/RecommendedActions";
 import Back from "@components/Back";
+import StudentStatsCarousel from "@components/analytics/StudentStatsCarousel";
 
 // Mock function to simulate fetching
 const fetchStudentAnalytics = (id) => {
@@ -189,6 +190,9 @@ export default function StudentAnalyticsPage() {
                         </CardContent>
                     </Card>
                 </div>
+
+                <StudentStatsCarousel />
+
 
                 {/* Recommended Actions */}
                 <RecommendedActions title="Overall Recommended Actions" />
