@@ -5,8 +5,8 @@ from rest_framework.routers import DefaultRouter
 from pathways.views.analytics_views import StudentAnalyticsAPIView, TeacherAnalyticsAPIView
 from pathways.views.user_views import user_list, user_classrooms, create_user, update_user, user_detail, user_pathways, login_with_email, student_list, update_user_preferences
 
-from pathways.views.classroom_views import get_user_classrooms, classroom_detail, classroom_analytics, classroom_student_details, join_classroom_as_student, \
-    join_classroom_as_teacher, create_classroom, student_classroom_analytics
+from pathways.views.classroom_views import classroom_detail, classroom_analytics, classroom_student_details, join_classroom_as_student, \
+    join_classroom_as_teacher, student_classroom_analytics
 
 from pathways.views.pathway_views import PathwayGenerationAPIView, \
     publish_pathway_to_classroom, pathway_detail, pathway_chapters, subject_detail
@@ -55,7 +55,7 @@ urlpatterns = [
 
 
     # Pathway CRUD
-    path('api/pathways/', pathway_detail, name='pathway-list'),
+    path('api/pathways', pathway_detail, name='pathway-list'),
     path('api/pathways/<int:pk>/', pathway_detail, name='pathway-detail'),
     path('api/pathways/<int:pk>/chapters/', pathway_chapters, name='pathway-chapters'),
     path('api/publish-pathway-to-classroom/', publish_pathway_to_classroom, name='publish-pathway-to-classroom'),
@@ -70,14 +70,17 @@ urlpatterns = [
     path('api/chapters/<int:chapter_id>/', chapter_detail, name='chapter-detail'),
 
     # Classroom endpoints
-    path('api/classroom/create/', create_classroom, name='create-classroom'),
+
+    path('api/classrooms', classroom_detail, name='classroom-list'),
+    path('api/classrooms/<int:pk>/', classroom_detail, name='classroom-detail'),
+
     path('api/classroom/join/student/', join_classroom_as_student, name='join-classroom-student'),
     path('api/classroom/join/teacher/', join_classroom_as_teacher, name='join-classroom-teacher'),
+    
     path('api/classroom/<int:classroom_id>/analytics/', classroom_analytics, name='classroom-analytics'),
-    path('api/classroom/<int:classroom_id>/students/', classroom_student_details, name='classroom-students'),
-    path('api/classrooms/<int:pk>/', classroom_detail, name='classroom-detail'),
     path('api/student-classroom-analytics/', student_classroom_analytics, name='student-classroom-analytics'),
-    path('api/get-user-classrooms/', get_user_classrooms, name='get-user-classrooms'),
+
+    path('api/classroom/<int:classroom_id>/students/', classroom_student_details, name='classroom-students'),
     path('api/mark-module-completed/', mark_module_completed, name='mark-module-as-complete'),
 
 

@@ -487,47 +487,55 @@ class PathwayViewSet(ModelViewSet):
 
 @api_view(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])
 def pathway_detail(request, pk=None):
+    print("Request data:", request.data)
     if request.method == 'GET':
+        user_id = request.GET.get("user_id") or request.data.get("user_id")
+        classroom_id = request.GET.get("classroom_id") or request.data.get("classroom_id")
+        search_query = request.GET.get("search", "").strip()
+
+        if not user_id:
+            return Response({"error": "user_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
         if pk is not None:
             try:
                 pathway = Pathway.objects.get(pk=pk)
+                if pathway.owner.id != user.id:
+                    return Response({"error": "You do not have permission to access this pathway"}, status=status.HTTP_403_FORBIDDEN)
                 serializer = PathwaySerializer(pathway)
                 return Response(serializer.data, status=status.HTTP_200_OK)
             except Pathway.DoesNotExist:
                 return Response({"error": "Pathway not found"}, status=status.HTTP_404_NOT_FOUND)
-        else:
-            user_id = request.data.get("user_id")
-            classroom_id = request.data.get("classroom_id")
-            search_query = request.GET.get("search", "")
 
-            try:
-                user = User.objects.get(pk=user_id)
+        # If no pk: list pathways for user
+        try:
+            if classroom_id:
+                classroom = Classroom.objects.get(pk=classroom_id)
+                if not classroom.teachers.filter(id=user.id).exists() and not classroom.students.filter(id=user.id).exists():
+                    return Response({"error": "You do not belong to this classroom"}, status=status.HTTP_403_FORBIDDEN)
 
-                if classroom_id:
-                    classroom = Classroom.objects.get(pk=classroom_id)
-                    if not classroom.teachers.filter(id=user.id).exists() and not classroom.students.filter(id=user.id).exists():
-                        return Response({"error": "You do not belong to this classroom"}, status=status.HTTP_403_FORBIDDEN)
+                pathways = Pathway.objects.filter(
+                    classroom=classroom,
+                    title__icontains=search_query
+                ).order_by("id")
+            else:
+                pathways = Pathway.objects.filter(
+                    owner=user,
+                    title__icontains=search_query
+                ).order_by("id")
 
-                    pathways = Pathway.objects.filter(
-                        classroom=classroom,
-                        title__icontains=search_query
-                    ).order_by("id")
-                else:
-                    pathways = Pathway.objects.filter(
-                        owner=user,
-                        title__icontains=search_query
-                    ).order_by("id")
+            paginator = PageNumberPagination()
+            paginator.page_size = 15
+            result_page = paginator.paginate_queryset(pathways, request)
+            serializer = PathwaySerializer(result_page, many=True)
+            return paginator.get_paginated_response(serializer.data)
 
-                paginator = PageNumberPagination()
-                paginator.page_size = 15
-                result_page = paginator.paginate_queryset(pathways, request)
-                serializer = PathwaySerializer(result_page, many=True)
-                return paginator.get_paginated_response(serializer.data)
-
-            except User.DoesNotExist:
-                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-            except Classroom.DoesNotExist:
-                return Response({"error": "Classroom not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Classroom.DoesNotExist:
+            return Response({"error": "Classroom not found"}, status=status.HTTP_404_NOT_FOUND)
 
     elif request.method == 'POST':
         serializer = PathwaySerializer(data=request.data)

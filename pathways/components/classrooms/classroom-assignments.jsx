@@ -100,7 +100,7 @@ export default function ClassroomAssignments({ classroom, isTeacher }) {
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3">
                     <FileText className={`w-6 h-6 ${statusColor(a.status)}`} />
-                    <span className="text-lg font-medium text-gray-900">
+                    <span className="text-lg font-medium text-black">
                       {a.title}
                     </span>
                   </div>

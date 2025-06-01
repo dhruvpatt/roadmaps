@@ -184,7 +184,7 @@ export default function ClassroomTests({ classroom, isTeacher, user }) {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h2 className="text-2xl font-medium">Tests & Quizzes</h2>
+            <h2 className="text-2xl font-medium text-black">Tests & Quizzes</h2>
             <p className="text-gray-600">
               Assess student understanding and progress
             </p>

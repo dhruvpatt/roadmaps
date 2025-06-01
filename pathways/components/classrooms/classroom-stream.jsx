@@ -111,7 +111,7 @@ export default function ClassroomStream({ classroom, isTeacher, user }) {
             {!showCreatePost ? (
               <Button
                 variant="outline"
-                className="w-full justify-start text-gray-600 cursor-pointer hover:bg-amber-600 hover:text-white"
+                className="w-full justify-start bg-white text-gray-600 cursor-pointer hover:bg-amber-600 hover:text-white"
                 onClick={() => setShowCreatePost(true)}
               >
                 <Plus className="mr-2" /> Share something...

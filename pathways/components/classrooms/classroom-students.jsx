@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useRouter } from "next/navigation";
 
 // Mock data for students
 const mockStudents = [
@@ -85,6 +86,9 @@ export default function ClassroomStudents({ classroom, user }) {
   const [currentPage, setCurrentPage] = useState(1);
   const studentsPerPage = 10;
 
+  const router = useRouter();
+
+
   const toggleRow = (id) => {
     setExpandedRows((prev) => ({ ...prev, [id]: !prev[id] }));
   };
@@ -124,7 +128,7 @@ export default function ClassroomStudents({ classroom, user }) {
   };
 
   const handleViewAnalytics = (id) => {
-    console.log("View analytics:", id);
+    router.push(`/analytics/${id}`);
   };
 
   const getBadge = (score) => {
@@ -189,7 +193,7 @@ export default function ClassroomStudents({ classroom, user }) {
               <div className="text-xl font-bold">
                 {Math.round(
                   students.reduce((a, s) => a + s.analytics.averageGrade, 0) /
-                    students.length
+                  students.length
                 )}
                 %
               </div>

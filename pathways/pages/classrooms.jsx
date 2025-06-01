@@ -35,12 +35,11 @@ export default function Classrooms() {
     if (pageNum < 1 || pageNum > totalPages) return;
     setLoading(true);
     try {
-      const res = await fetch(`${backendUrl}/get-user-classrooms/?page=${pageNum}&search=${query}`, {
-        method: "POST",
+      const res = await fetch(`${backendUrl}/api/classrooms?user_id=${usr.id}&page=${pageNum}&search=${query}`, {
+        method: "GET",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ user_id: usr.id })
       });
 
       if (!res.ok) return;

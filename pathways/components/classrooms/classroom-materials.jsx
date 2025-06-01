@@ -170,7 +170,7 @@ export default function ClassroomMaterials({ classroom, isTeacher, user }) {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h2 className="text-3xl font-bold">Materials</h2>
+            <h2 className="text-3xl font-bold text-black">Materials</h2>
             <p className="text-gray-600">Course resources and files</p>
           </div>
           {isTeacher && (
