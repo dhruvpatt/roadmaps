@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import RecommendedActions from "@components/analytics/ReccomendedActions";
+import RecommendedActions from "@components/analytics/RecommendedActions";
 import Back from "@components/Back";
 
 // Mock function to simulate fetching

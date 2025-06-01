@@ -2,7 +2,7 @@ import React from "react";
 
 export default function RecommendedActions({title="Recommended Actions"}) {
   return (
-    <div className="bg-gray-50 p-6 rounded-lg shadow-inner space-y-6">
+    <div className="bg-amber-50 p-6 rounded-lg shadow-inner space-y-6">
       <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
