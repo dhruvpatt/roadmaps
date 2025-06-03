@@ -119,10 +119,6 @@ export default function ClassroomStudents({ classroom, user }) {
     console.log("Message:", id);
   };
 
-  const handleCall = (id) => {
-    console.log("Call:", id);
-  };
-
   const handleViewAnalytics = (id) => {
     console.log("View analytics:", id);
   };
@@ -341,13 +337,6 @@ export default function ClassroomStudents({ classroom, user }) {
                       onClick={() => handleMessage(student.id)}
                     >
                       <MessageSquare /> Message
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleCall(student.id)}
-                    >
-                      <Phone /> Call
                     </Button>
                     <Button
                       variant="outline"
