@@ -81,7 +81,7 @@ export default function ClassroomPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <ClassroomHeader
         title={classroom.name}
         subtitle={classroom.description}
@@ -92,13 +92,11 @@ export default function ClassroomPage() {
         onSettingsClick={handleSettingsClick}
       />
 
-      <div className="max-w-7xl mx-auto">
-        <ClassroomTabs
-          classroom={classroom}
-          isTeacher={role === "teacher"}
-          user={user}
-        />
-      </div>
+      <ClassroomTabs
+        classroom={classroom}
+        isTeacher={role === "teacher"}
+        user={user}
+      />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import {
   Clock,
   Download,
   FileSpreadsheet,
+  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -123,6 +124,10 @@ export default function ClassroomAttendance({ classroom, user }) {
           : student
       ),
     }));
+  };
+
+  const resetAttendance = () => {
+    setSelectedSession(null);
   };
 
   const createNewSession = () => {
@@ -313,17 +318,22 @@ export default function ClassroomAttendance({ classroom, user }) {
                 value={selectedSession?.toString() || ""}
                 onValueChange={(val) => setSelectedSession(+val)}
               >
-                <SelectTrigger className="w-72 bg-white">
+                <SelectTrigger className="w-72 bg-white cursor-pointer">
                   <SelectValue placeholder="Choose session" />
                 </SelectTrigger>
                 <SelectContent className="bg-white">
                   {attendanceData.sessions.map((s) => (
-                    <SelectItem key={s.id} value={s.id.toString()}>
+                    <SelectItem key={s.id} value={s.id.toString()} className="cursor-pointer hover:bg-gray-100">
                       {s.date} • {s.topic}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {selectedSession && (
+                <Button variant="outline" className="flex items-center gap-2 cursor-pointer text-white bg-blue-600" onClick={resetAttendance}>
+                  <RotateCcw />Reset
+                </Button>
+              )}
             </div>
             {selectedSession && (
               <div className="text-sm text-gray-700">
@@ -391,7 +401,7 @@ export default function ClassroomAttendance({ classroom, user }) {
           <CardContent className="pt-6 p-0">
             <div className="overflow-x-auto overflow-y-auto max-h-[500px]">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-100">
                   <tr>
                     <th className="sticky left-0 z-10 bg-white px-6 py-3 text-left">
                       Student
@@ -439,15 +449,17 @@ export default function ClassroomAttendance({ classroom, user }) {
                                     updateAttendance(student.id, s.id, val)
                                   }
                                 >
-                                  <SelectTrigger className="h-8 w-20">
+                                  <SelectTrigger className="h-8 w-20 cursor-pointer">
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent className="bg-white">
-                                    <SelectItem value="present">
+                                    <SelectItem value="present" className="cursor-pointer hover:bg-gray-100">
                                       Present
                                     </SelectItem>
-                                    <SelectItem value="late">Late</SelectItem>
-                                    <SelectItem value="absent">
+                                    <SelectItem value="late" className="cursor-pointer hover:bg-gray-100">
+                                      Late
+                                    </SelectItem>
+                                    <SelectItem value="absent" className="cursor-pointer hover:bg-gray-100">
                                       Absent
                                     </SelectItem>
                                   </SelectContent>
@@ -483,7 +495,7 @@ export default function ClassroomAttendance({ classroom, user }) {
                     size="icon"
                     disabled={sessionPage === 0}
                     onClick={() => setSessionPage(sessionPage - 1)}
-                    className="h-8 w-8 rounded-full"
+                    className="h-8 w-8 rounded-full cursor-pointer"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                   </Button>
@@ -495,7 +507,7 @@ export default function ClassroomAttendance({ classroom, user }) {
                     size="icon"
                     disabled={(sessionPage + 1) * 5 >= attendanceData.sessions.length}
                     onClick={() => setSessionPage(sessionPage + 1)}
-                    className="h-8 w-8 rounded-full"
+                    className="h-8 w-8 rounded-full cursor-pointer"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
                   </Button>
