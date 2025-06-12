@@ -17,14 +17,14 @@ const DashboardStats = ({ user, classroomCount = 0, pathwayCount = 0 }) => {
   const stats =
     user.role === "teacher"
       ? [
-          { label: "Modules Created", value: 0, icon: BookOpenCheck },
+          // { label: "Modules Created", value: 0, icon: BookOpenCheck },
           { label: "Active Classrooms", value: classroomCount, icon: UserCheck },
-          { label: "Pathways Created", value: pathwayCount, icon: ListChecks },
+          // { label: "Pathways Created", value: pathwayCount, icon: ListChecks },
         ]
       : [
-          { label: "Modules Completed", value: 0, icon: BookOpenCheck },
+          // { label: "Modules Completed", value: 0, icon: BookOpenCheck },
           { label: "Pathways Enrolled", value: pathwayCount, icon: ListChecks },
-          { label: "Classrooms Joined", value: classroomCount, icon: UserCheck },
+          // { label: "Classrooms Joined", value: classroomCount, icon: UserCheck },
         ];
 
   return (

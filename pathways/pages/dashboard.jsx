@@ -11,6 +11,7 @@ import CreateClassroomModal from "@/components/modals/CreateClassroomModal";
 import CreatePathwayModal from "@/components/modals/CreatePathwayModal";
 import withAuth from "@/lib/with_auth";
 
+
 const Dashboard = ({user}) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showClassroomModal, setShowClassroomModal] = useState(false);
@@ -57,7 +58,7 @@ const Dashboard = ({user}) => {
   return (
     <>
       <div className="max-w-6xl w-full mx-auto px-4">
-        <h1 className="text-black text-3xl md:text-4xl font-bold text-center md:text-left">
+        <h1 className="text-black text-3xl md:text-4xl mt-5 font-bold text-center md:text-left">
           Welcome Back {user?.first_name}
         </h1>
         <p className="text-gray-600 text-lg md:text-2xl text-center md:text-left mb-6">
@@ -69,10 +70,9 @@ const Dashboard = ({user}) => {
         <DashboardStats
           user={user}
           classroomCount={classroomCount}
-          pathwayCount={pathwayCount}
         />
 
-        <YourPathways updatePathwayCount={setPathwayCount} />
+        {/* <YourPathways updatePathwayCount={setPathwayCount} /> */}
         <YourClassrooms updateClassroomCount={setClassroomCount} />
 
       </div>
@@ -149,7 +149,7 @@ const Dashboard = ({user}) => {
               )}
 
               {/* Create Pathway */}
-              <div
+              {/* <div
                 onClick={() => {
                   setDrawerOpen(false);
                   setShowPathwayModal(true);
@@ -165,7 +165,7 @@ const Dashboard = ({user}) => {
                     <p className="text-xs text-gray-500">Build a new Pathway</p>
                   </div>
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
@@ -179,12 +179,12 @@ const Dashboard = ({user}) => {
         user={user}
       />
 
-      <CreatePathwayModal
+      {/* <CreatePathwayModal
         isOpen={showPathwayModal}
         onClose={() => setShowPathwayModal(false)}
         onCreate={async (data) => await createPathway(data)}
         user={user}
-      />
+      /> */}
     </>
   );
 };

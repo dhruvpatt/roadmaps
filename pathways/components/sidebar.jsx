@@ -23,13 +23,13 @@ const Sidebar = ({user}) => {
           <Home className="w-5 h-5 text-gray-600" />
           <span className="text-gray-700">Dashboard</span>
         </Link>
-        <Link
+        {/* <Link
           href="/pathways"
           className="flex items-center space-x-2 p-2 rounded-md hover:bg-amber-50"
         >
           <BookOpen className="w-5 h-5 text-gray-600" />
           <span className="text-gray-700">Pathways</span>
-        </Link>
+        </Link> */}
         <Link
           href="/classrooms"
           className="flex items-center space-x-2 p-2 rounded-md hover:bg-amber-50"
