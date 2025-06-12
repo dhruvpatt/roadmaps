@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import { Plus, BookOpenText, Map } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { getCookie } from "../lib/csrf";
 import backendUrl from "@/backendUrl";
 import emitter from "@/mitt";
 
@@ -11,7 +12,7 @@ import CreateClassroomModal from "@/components/modals/CreateClassroomModal";
 import CreatePathwayModal from "@/components/modals/CreatePathwayModal";
 import withAuth from "@/lib/with_auth";
 
-const Dashboard = ({user}) => {
+const Dashboard = ({ user }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showClassroomModal, setShowClassroomModal] = useState(false);
   const [showPathwayModal, setShowPathwayModal] = useState(false);
@@ -30,9 +31,8 @@ const Dashboard = ({user}) => {
       const ret = await res.json();
       if (ret?.pathway) {
         return ret?.pathway;
-      }
-      else {
-        return ret
+      } else {
+        return ret;
       }
     } catch (error) {
       console.error("Failed to create pathway", error);
@@ -41,13 +41,21 @@ const Dashboard = ({user}) => {
 
   const createClassroom = async (data) => {
     try {
-      const res = await fetch(`${backendUrl}/classroom/create/`, {
+      const crsfToken = getCookie("csrftoken");
+      console.log("CSRF Token:", crsfToken);
+      const res = await fetch(`${backendUrl}/api/classroom/create/`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": crsfToken,
+        },
         body: JSON.stringify(data),
       });
 
       const ret = await res.json();
+      console.log("Classroom created:", ret);
+
       emitter.emit("update-classrooms");
     } catch (error) {
       console.error("Failed to create classroom", error);
@@ -74,7 +82,6 @@ const Dashboard = ({user}) => {
 
         <YourPathways updatePathwayCount={setPathwayCount} />
         <YourClassrooms updateClassroomCount={setClassroomCount} />
-
       </div>
 
       {/* Floating + Button */}

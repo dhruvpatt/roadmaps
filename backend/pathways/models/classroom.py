@@ -23,7 +23,10 @@ class Classroom(models.Model):
     name = models.CharField(max_length=255)
     stream = models.ManyToManyField(Material, blank=True)
     analytics = models.OneToOneField(Analytics, on_delete=models.CASCADE, null=True, blank=True)
-
+    join_id = models.CharField(max_length=20, unique=True)
+    students = models.ManyToManyField(User, related_name='joined_classrooms', blank=True)
+    teachers = models.ManyToManyField(User, related_name='teaching_classrooms', blank=True)
+    
 class Unit(models.Model):
     name = models.CharField(max_length=255)
     classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name='units')

@@ -25,8 +25,6 @@ class UserView(APIView):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
 
-
-
     def patch(self, request):
         serializer = UserSerializer(
             request.user, data=request.data, partial=True)
@@ -41,7 +39,7 @@ class UserView(APIView):
 
 
 class UserSignupView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = UserSerializer(data=request.data)

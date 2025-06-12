@@ -2,27 +2,37 @@ import React, { useEffect, useState } from "react";
 import backendUrl from "@/backendUrl";
 import HorizontalScroller from "@/components/dashboard/HorizontalScroller";
 import DashboardCard from "@/components/dashboard/DashboardCard";
-
-export default function YourClassrooms({updateClassroomCount}) {
+import { fetchCurrentUser } from "@/lib/auth";
+import { getCookie } from "@/lib/csrf";
+export default function YourClassrooms({ updateClassroomCount }) {
   const [user, setUser] = useState(null);
   const [classrooms, setClassrooms] = useState([]);
 
   useEffect(() => {
-    const usr = JSON.parse(localStorage.getItem("user"));
-    if (!usr) return;
+    const usr = fetchCurrentUser();
+    console.log("Current user:", usr);
     setUser(usr);
+    if (!usr) {
+      console.error("User not found");
+      // window.location.href = "/login"; // Redirect to login if user is not found
+      return;
+    }
 
     const fetchClassrooms = async () => {
       try {
-        const res = await fetch(`${backendUrl}/api/classrooms?user_id=${usr.id}`, {
+        const res = await fetch(`${backendUrl}/api/classroom`, {
           method: "GET",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken"),
+          },
+          credentials: "include",
         });
 
         const data = await res.json();
+        console.log("Fetched classrooms:", data);
         setClassrooms(data.results || data);
         updateClassroomCount?.(data.results.length || data.length); // for classrooms
-
       } catch (error) {
         console.error("Failed to fetch classrooms", error);
       }
