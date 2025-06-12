@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { Plus, BookOpenText, Map } from "lucide-react";
 import { useRouter } from "next/navigation";
 import backendUrl from "@/backendUrl";
@@ -9,25 +9,15 @@ import YourPathways from "@/components/dashboard/YourPathways";
 import YourClassrooms from "@/components/dashboard/YourClassrooms";
 import CreateClassroomModal from "@/components/modals/CreateClassroomModal";
 import CreatePathwayModal from "@/components/modals/CreatePathwayModal";
+import withAuth from "@/lib/with_auth";
 
-const Dashboard = () => {
+const Dashboard = ({user}) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showClassroomModal, setShowClassroomModal] = useState(false);
   const [showPathwayModal, setShowPathwayModal] = useState(false);
   const router = useRouter();
-  const [user, setUser] = useState({});
-
   const [classroomCount, setClassroomCount] = useState(0);
   const [pathwayCount, setPathwayCount] = useState(0);
-
-  useEffect(() => {
-    const usr = JSON.parse(localStorage.getItem("user"));
-    if (!usr) {
-      router.push("/login");
-    } else {
-      setUser(usr);
-    }
-  }, []);
 
   const createPathway = async (data) => {
     try {
@@ -68,10 +58,10 @@ const Dashboard = () => {
     <>
       <div className="max-w-6xl w-full mx-auto px-4">
         <h1 className="text-black text-3xl md:text-4xl font-bold text-center md:text-left">
-          Welcome Back {user.first_name}
+          Welcome Back {user?.first_name}
         </h1>
         <p className="text-gray-600 text-lg md:text-2xl text-center md:text-left mb-6">
-          {user.role === "student"
+          {user?.role === "student"
             ? "Continue your learning journey"
             : "Continue your teaching journey"}
         </p>
@@ -117,7 +107,7 @@ const Dashboard = () => {
 
             <div className="space-y-4">
               {/* Create Classroom */}
-              {user.role === "teacher" && (
+              {user?.role === "teacher" && (
                 <div
                   onClick={() => {
                     setDrawerOpen(false);
@@ -138,7 +128,7 @@ const Dashboard = () => {
                   </div>
                 </div>
               )}
-              {user.role === "student" && (
+              {user?.role === "student" && (
                 <div
                   onClick={() => {
                     setDrawerOpen(false);
@@ -199,4 +189,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default withAuth(Dashboard);

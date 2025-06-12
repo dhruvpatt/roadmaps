@@ -670,34 +670,34 @@ class ModuleFeedbackAPIView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@api_view(['GET'])
-def pathway_progress(request, pathway_id):
-    try:
-        pathway = Pathway.objects.get(pk=pathway_id)
-        chapters = pathway.chapters.all()
-        total_modules = sum(ch.modules.count() for ch in chapters)
-        completed_modules = sum(ch.modules.filter(status='completed').count() for ch in chapters)
+# @api_view(['GET'])
+# def pathway_progress(request, pathway_id):
+#     try:
+#         pathway = Pathway.objects.get(pk=pathway_id)
+#         chapters = pathway.chapters.all()
+#         total_modules = sum(ch.modules.count() for ch in chapters)
+#         completed_modules = sum(ch.modules.filter(status='completed').count() for ch in chapters)
 
-        progress = (completed_modules / total_modules) * 100 if total_modules > 0 else 0
-        return Response({"progress_percent": round(progress, 2)}, status=status.HTTP_200_OK)
+#         progress = (completed_modules / total_modules) * 100 if total_modules > 0 else 0
+#         return Response({"progress_percent": round(progress, 2)}, status=status.HTTP_200_OK)
 
-    except Pathway.DoesNotExist:
-        return Response({"error": "Pathway not found"}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#     except Pathway.DoesNotExist:
+#         return Response({"error": "Pathway not found"}, status=status.HTTP_404_NOT_FOUND)
+#     except Exception as e:
+#         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@api_view(['GET'])
-def pathway_chapter_count(request, pathway_id):
-    try:
-        pathway = Pathway.objects.get(pk=pathway_id)
-        chapter_count = pathway.chapters.count()
-        return Response({"chapter_count": chapter_count}, status=status.HTTP_200_OK)
+# @api_view(['GET'])
+# def pathway_chapter_count(request, pathway_id):
+#     try:
+#         pathway = Pathway.objects.get(pk=pathway_id)
+#         chapter_count = pathway.chapters.count()
+#         return Response({"chapter_count": chapter_count}, status=status.HTTP_200_OK)
 
-    except Pathway.DoesNotExist:
-        return Response({"error": "Pathway not found"}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#     except Pathway.DoesNotExist:
+#         return Response({"error": "Pathway not found"}, status=status.HTTP_404_NOT_FOUND)
+#     except Exception as e:
+#         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['POST'])

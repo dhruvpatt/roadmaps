@@ -4,16 +4,19 @@ import React from "react";
 import { Bell, Search, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import { useAuth } from "@/contexts/useAuth";
+import withAuth from "@/lib/with_auth";
 
 
-export default function Navbar() {
+const Navbar = ({user}) => {
   const router = useRouter();
   const [role, setRole] = useState("");
 
+  
+
   useEffect(() => {
-    const usr = JSON.parse(localStorage.getItem("user"));
-    if (usr?.role) {
-      setRole(usr.role.charAt(0).toUpperCase() + usr.role.slice(1)); // Capitalize
+    if (user?.role) {
+      setRole(user.role.charAt(0).toUpperCase() + user.role.slice(1)); // Capitalize
     }
   }, []);
 
@@ -70,3 +73,5 @@ export default function Navbar() {
     </nav>
   );
 }
+
+export default withAuth(Navbar);

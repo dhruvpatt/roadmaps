@@ -27,7 +27,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = True
 
 ALLOWED_HOSTS = []
-AUTH_USER_MODEL = 'pathways.User'
 env_path = os.path.join(os.path.dirname(__file__), '../.env')
 if os.path.exists(env_path):
     dotenv_path = env_path
@@ -47,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework.authtoken',
     'pathways',
     'corsheaders'
 ]
@@ -55,12 +55,21 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    "corsheaders.middleware.CorsMiddleware",
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}
 
 ROOT_URLCONF = 'backend.urls'
 AUTH_USER_MODEL = 'pathways.User'
@@ -83,7 +92,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'backend.wsgi.application'
-CORS_ALLOW_ALL_ORIGINS = True
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
@@ -136,3 +144,20 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# --- CORS Settings ---
+CORS_ALLOW_CREDENTIALS = True  # Required to allow cookies (sessionid, csrftoken) to be sent
+CORS_ALLOW_ALL_ORIGINS = False  # Must be False when using credentials
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # Frontend origin
+]
+
+# --- CSRF & Session Cookie Settings ---
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",  # Ensures CSRF validation works across origins
+]
+
+CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
+CSRF_COOKIE_HTTPONLY = False  # Allows JavaScript access to read csrftoken (needed for X-CSRFToken header)
+CSRF_COOKIE_SAMESITE = "Lax"  # Allows POSTs from localhost:3000 → localhost:8000
+SESSION_COOKIE_SAMESITE = "Lax"  # SameSite policy for session cookie (allows login sessions across localhost ports)

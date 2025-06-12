@@ -2,8 +2,9 @@ import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { Home, BookOpen, Users, LogOut, Settings } from "lucide-react"; // add Settings icon
+import withAuth from "@/lib/with_auth";
 
-export default function Sidebar() {
+const Sidebar = ({user}) => {
   const router = useRouter();
 
   const handleLogout = () => {
@@ -64,3 +65,5 @@ export default function Sidebar() {
     </aside>
   );
 }
+
+export default withAuth(Sidebar);

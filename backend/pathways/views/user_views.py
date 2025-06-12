@@ -1,174 +1,85 @@
-# user_views.py
-
-from rest_framework import status
-from rest_framework.views import APIView
-from rest_framework.decorators import api_view, action
+# views.py
+from django.contrib.auth import authenticate, login, logout
+from django.views.decorators.csrf import ensure_csrf_cookie
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from rest_framework import status, permissions
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
-from django.shortcuts import get_object_or_404
-from ..models import User
-from ..serializers import UserSerializer, PathwaySerializer, ClassroomSerializer
+from rest_framework.views import APIView
+from pathways.serializers.user_serializer import UserSerializer
 
 
-class UserViewSet(ModelViewSet):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
+from django.middleware.csrf import get_token
 
-    @action(detail=True, methods=['get'])
-    def pathways(self, request, pk=None):
-        user = self.get_object()
-        pathways = user.pathways.all()
-        serializer = PathwaySerializer(pathways, many=True)
-        return Response(serializer.data)
+@api_view(["GET"])
+@permission_classes([AllowAny])
+@ensure_csrf_cookie
+def get_csrf_token(request):
+    return Response({"detail": "CSRF cookie set"})
 
-    @action(detail=True, methods=['get'])
-    def classrooms(self, request, pk=None):
-        user = self.get_object()
-        if user.role == User.TEACHER:
-            classrooms = user.teaching_classrooms.all()
-        else:
-            classrooms = user.enrolled_classrooms.all()
-        serializer = ClassroomSerializer(classrooms, many=True)
+
+
+class UserView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    def get(self, request):
+        serializer = UserSerializer(request.user)
         return Response(serializer.data)
 
 
-@api_view(['POST'])
-def create_user(request):
-    serializer = UserSerializer(data=request.data)
 
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['PUT'])
-def update_user(request, pk):
-    try:
-        user = User.objects.get(pk=pk)
-    except User.DoesNotExist:
-        return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
-
-    serializer = UserSerializer(user, data=request.data)
-
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['POST'])
-def login_with_email(request):
-    email = request.data.get("email")
-    password = request.data.get("password")
-
-    if not email or not password:
-        return Response({"error": "Email and password are required."}, status=status.HTTP_400_BAD_REQUEST)
-
-    try:
-        user = User.objects.get(email=email)
-        if user and user.password == password:
-            return Response({
-                "message": "Login successful",
-                "user": {
-                    "id": user.id,
-                    "first_name": user.first_name,
-                    "last_name": user.last_name,
-                    "email": user.email,
-                    "role": user.role
-                }
-            }, status=status.HTTP_200_OK)
-        else:
-            return Response({"error": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED)
-    except User.DoesNotExist:
-        return Response({"error": "User with this email does not exist."}, status=status.HTTP_404_NOT_FOUND)
-
-
-@api_view(['GET'])
-def user_list(request):
-    if request.method == 'GET':
-        users = User.objects.all()
-        serializer = UserSerializer(users, many=True)
-        return Response(serializer.data)
-
-
-@api_view(['GET'])
-def student_list(request):
-    if request.method == 'GET':
-        students = User.objects.filter(role='student')
-        serializer = UserSerializer(students, many=True)
-        return Response(serializer.data)
-
-
-@api_view(['GET', 'POST'])
-def user_detail(request, pk):
-    try:
-        user = User.objects.get(pk=pk)
-    except User.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-
-    if request.method == 'GET':
-        serializer = UserSerializer(user)
-        return Response(serializer.data)
-
-    elif request.method == 'POST':
-        serializer = UserSerializer(user, data=request.data)
+    def patch(self, request):
+        serializer = UserSerializer(
+            request.user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-@api_view(['GET'])
-def user_pathways(request, pk):
-    try:
-        user = User.objects.get(pk=pk)
-    except User.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-
-    pathways = user.pathways.all()
-    serializer = PathwaySerializer(pathways, many=True)
-    return Response(serializer.data)
+    def delete(self, request):
+        request.user.delete()
+        return Response({"detail": "User deleted"}, status=status.HTTP_204_NO_CONTENT)
 
 
-@api_view(['GET'])
-def user_classrooms(request, pk):
-    try:
-        user = User.objects.get(pk=pk)
-    except User.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+class UserSignupView(APIView):
+    permission_classes = [permissions.AllowAny]
 
-    if user.role == User.TEACHER:
-        classrooms = user.teaching_classrooms.all()
-    else:
-        classrooms = user.enrolled_classrooms.all()
+    def post(self, request):
+        serializer = UserSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
 
-    serializer = ClassroomSerializer(classrooms, many=True)
-    return Response(serializer.data)
+        errors = serializer.errors
+        custom_errors = {}
+
+        if 'username' in errors:
+            custom_errors['username'] = "This username is already taken."
+        if 'email' in errors:
+            custom_errors['email'] = "An account with this email already exists."
+
+        if not custom_errors:
+            custom_errors = errors
+
+        return Response(custom_errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['PATCH'])
-def update_user_preferences(request):
-    user_id = request.data.get("user_id")
-    preferences = request.data.get("preferences")
+class LoginView(APIView):
+    permission_classes = [AllowAny]
 
-    if not user_id:
-        return Response({"error": "user_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+    def post(self, request):
+        username = request.data.get("username")
+        password = request.data.get("password")
 
-    try:
-        user = User.objects.get(id=user_id)
-        user.preferences = preferences
-        user.save()
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            request.session.save()
+            serialized = UserSerializer(user)
+            return Response({"detail": "Logged in", "user": serialized.data}, status=status.HTTP_200_OK)
+        return Response({"detail": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
 
-        serialized = UserSerializer(user)
-        return Response({
-            "message": "User preferences updated",
-            "user": serialized.data
-        }, status=status.HTTP_200_OK)
 
-    except User.DoesNotExist:
-        return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+class LogoutView(APIView):
+    def post(self, request):
+        logout(request)
+        return Response({"detail": "Logged out"}, status=status.HTTP_200_OK)

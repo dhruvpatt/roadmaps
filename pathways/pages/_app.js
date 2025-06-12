@@ -1,6 +1,7 @@
 import DashboardLayout from "../components/DashboardLayout";
 import "../styles/globals.css";
 import { useRouter } from "next/router";
+import { AuthProvider } from "@/contexts/useAuth";
 
 export default function App({ Component, pageProps }) {
   const router = useRouter();
@@ -12,7 +13,9 @@ export default function App({ Component, pageProps }) {
 
   return (
     <div className="min-h-screen w-full bg-animated-gradient">
-      {shouldUseLayout ? <DashboardLayout>{Page}</DashboardLayout> : Page}
+      <AuthProvider>
+        {shouldUseLayout ? <DashboardLayout>{Page}</DashboardLayout> : Page}
+      </AuthProvider>
     </div>
   );
 }
