@@ -58,6 +58,21 @@
   }
 }
 
+.react-calendar {
+  color: #1f2937; /* tailwind's gray-800 */
+  font-size: 0.875rem; /* text-sm */
+}
+
+.react-calendar abbr {
+  text-decoration: none;
+  color: #1f2937;
+}
+
+.react-calendar__tile--active {
+  background-color: #facc15 !important; /* amber-400 */
+  color: #111827 !important; /* gray-900 */
+}
+
 /* KaTeX styling */
 .katex-display {
   margin: 1.5rem 0;

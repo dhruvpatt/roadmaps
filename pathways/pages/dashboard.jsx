@@ -1,33 +1,15 @@
 import { useState } from "react";
-import { BookOpenText } from "lucide-react";
-import { useRouter } from "next/navigation";
-import backendUrl from "@/backendUrl";
-import emitter from "@/mitt";
 
 import DashboardStats from "@/components/dashboard/DashboardStats";
 // import YourPathways from "@/components/dashboard/YourPathways";
 import ClassroomList from "@/components/classrooms/ClassroomList";
-import CreateClassroomModal from "@/components/modals/CreateClassroomModal";
 import withAuth from "@/lib/with_auth";
-import fetchWithAuth from "@/lib/fetch_with_auth";
+import QuickActions from "@/components/dashboard/DashboardQuickActions";
+import RecentActivity from "@/components/dashboard/DashboardRecentActivity";
 
 const Dashboard = ({ user }) => {
-  const [showClassroomModal, setShowClassroomModal] = useState(false);
   const [classroomCount, setClassroomCount] = useState(0);
-  const router = useRouter();
 
-  const createClassroom = async (data) => {
-    try {
-      const res = await fetchWithAuth("api/classroom/create/", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
-      await res.json();
-      emitter.emit("update-classrooms");
-    } catch (error) {
-      console.error("Failed to create classroom", error);
-    }
-  };
 
   return (
     <>
@@ -41,7 +23,13 @@ const Dashboard = ({ user }) => {
             : "Continue your teaching journey"}
         </p>
 
-        <DashboardStats user={user} classroomCount={classroomCount} />
+        {classroomCount > 0 && (
+          <>
+            <DashboardStats user={user} classroomCount={classroomCount} />
+            <QuickActions user={user} />
+            <RecentActivity />
+          </>
+        )}
 
         <ClassroomList
           user={user}
@@ -122,7 +110,7 @@ const Dashboard = ({ user }) => {
         </div>
       )}
       */}
-{/* 
+      {/* 
       <CreateClassroomModal
         isOpen={showClassroomModal}
         onClose={() => setShowClassroomModal(false)}
