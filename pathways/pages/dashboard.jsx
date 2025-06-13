@@ -1,54 +1,28 @@
-import { useState, useEffect, useContext } from "react";
-import { Plus, BookOpenText, Map } from "lucide-react";
+import { useState } from "react";
+import { BookOpenText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import backendUrl from "@/backendUrl";
 import emitter from "@/mitt";
 
 import DashboardStats from "@/components/dashboard/DashboardStats";
-import YourPathways from "@/components/dashboard/YourPathways";
-import YourClassrooms from "@/components/dashboard/YourClassrooms";
+// import YourPathways from "@/components/dashboard/YourPathways";
+import ClassroomList from "@/components/classrooms/ClassroomList";
 import CreateClassroomModal from "@/components/modals/CreateClassroomModal";
-import CreatePathwayModal from "@/components/modals/CreatePathwayModal";
 import withAuth from "@/lib/with_auth";
+import fetchWithAuth from "@/lib/fetch_with_auth";
 
-
-const Dashboard = ({user}) => {
-  const [drawerOpen, setDrawerOpen] = useState(false);
+const Dashboard = ({ user }) => {
   const [showClassroomModal, setShowClassroomModal] = useState(false);
-  const [showPathwayModal, setShowPathwayModal] = useState(false);
-  const router = useRouter();
   const [classroomCount, setClassroomCount] = useState(0);
-  const [pathwayCount, setPathwayCount] = useState(0);
-
-  const createPathway = async (data) => {
-    try {
-      const res = await fetch(`${backendUrl}/generate-pathway/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-
-      const ret = await res.json();
-      if (ret?.pathway) {
-        return ret?.pathway;
-      }
-      else {
-        return ret
-      }
-    } catch (error) {
-      console.error("Failed to create pathway", error);
-    }
-  };
+  const router = useRouter();
 
   const createClassroom = async (data) => {
     try {
-      const res = await fetch(`${backendUrl}/classroom/create/`, {
+      const res = await fetchWithAuth("api/classroom/create/", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-
-      const ret = await res.json();
+      await res.json();
       emitter.emit("update-classrooms");
     } catch (error) {
       console.error("Failed to create classroom", error);
@@ -67,17 +41,15 @@ const Dashboard = ({user}) => {
             : "Continue your teaching journey"}
         </p>
 
-        <DashboardStats
+        <DashboardStats user={user} classroomCount={classroomCount} />
+
+        <ClassroomList
           user={user}
-          classroomCount={classroomCount}
+          updateClassroomCount={setClassroomCount}
         />
-
-        {/* <YourPathways updatePathwayCount={setPathwayCount} /> */}
-        <YourClassrooms updateClassroomCount={setClassroomCount} />
-
       </div>
 
-      {/* Floating + Button */}
+      {/*
       <button
         onClick={() => setDrawerOpen(true)}
         className="fixed bottom-6 right-6 z-40 bg-amber-600 hover:bg-amber-700 text-white rounded-full p-4 shadow-lg"
@@ -85,7 +57,6 @@ const Dashboard = ({user}) => {
         <Plus className="w-6 h-6" />
       </button>
 
-      {/* Slide-Out Drawer */}
       {drawerOpen && (
         <div
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/30"
@@ -106,7 +77,6 @@ const Dashboard = ({user}) => {
             </div>
 
             <div className="space-y-4">
-              {/* Create Classroom */}
               {user?.role === "teacher" && (
                 <div
                   onClick={() => {
@@ -147,42 +117,16 @@ const Dashboard = ({user}) => {
                   </div>
                 </div>
               )}
-
-              {/* Create Pathway */}
-              {/* <div
-                onClick={() => {
-                  setDrawerOpen(false);
-                  setShowPathwayModal(true);
-                }}
-                className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-amber-50 transition"
-              >
-                <div className="flex items-center gap-3">
-                  <Map className="w-6 h-6 text-amber-700" />
-                  <div>
-                    <p className="text-sm font-semibold text-amber-900">
-                      Pathway
-                    </p>
-                    <p className="text-xs text-gray-500">Build a new Pathway</p>
-                  </div>
-                </div>
-              </div> */}
             </div>
           </div>
         </div>
       )}
-
-      {/* Popups */}
+      */}
+{/* 
       <CreateClassroomModal
         isOpen={showClassroomModal}
         onClose={() => setShowClassroomModal(false)}
-        onCreate={async (data) => await createClassroom(data)}
-        user={user}
-      />
-
-      {/* <CreatePathwayModal
-        isOpen={showPathwayModal}
-        onClose={() => setShowPathwayModal(false)}
-        onCreate={async (data) => await createPathway(data)}
+        onCreate={createClassroom}
         user={user}
       /> */}
     </>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import mockStudents from "../../data/mockStudents";
+import emitter from "@/mitt";
 
 export default function CreateClassroomModal({ isOpen, onClose, onCreate, user }) {
   const [form, setForm] = useState({ name: "", details: "" });
@@ -34,8 +35,8 @@ export default function CreateClassroomModal({ isOpen, onClose, onCreate, user }
     const classroom = {
       name: form.name.trim(),
       details: form.details.trim(),
-      teacher_id: user.id,
     };
+    emitter.emit("update-classrooms");
 
     onCreate(classroom);
     onClose();

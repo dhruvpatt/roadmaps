@@ -8,7 +8,8 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        default: "bg-orange-600 hover:bg-orange-700 text-white shadow-md shadow-orange-300 rounded-2xl border border-orange-800"
+,
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
@@ -33,7 +34,7 @@ const buttonVariants = cva(
 );
 
 const Button = forwardRef(function Button(
-  { className, variant, size, asChild = false, ...props },
+  { className, variant="default", size="lg", asChild = false, ...props },
   ref
 ) {
   const Comp = asChild ? Slot : "button";

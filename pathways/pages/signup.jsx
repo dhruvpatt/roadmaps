@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { useAuth } from "../contexts/useAuth";
 
-
 export default function SignupPage() {
   const [formData, setFormData] = useState({
     first_name: "",
@@ -30,7 +29,6 @@ export default function SignupPage() {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: undefined }));
-
   };
 
   const handleRoleChange = (e) => {
@@ -56,6 +54,7 @@ export default function SignupPage() {
 
     try {
       const user = await signup(payload);
+      print(user);
       if (user.role === "teacher") {
         router.push("/dashboard");
       } else {
@@ -67,11 +66,12 @@ export default function SignupPage() {
         const errorData = await err.json();
         setErrors(errorData || {});
       } else {
-        setErrors({ general: "An unexpected error occurred. Please try again." });
+        setErrors({
+          general: "An unexpected error occurred. Please try again.",
+        });
       }
     }
   };
-
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-amber-50 px-6 py-24 text-black">
@@ -93,10 +93,14 @@ export default function SignupPage() {
         </div>
 
         <div className="bg-white p-8 rounded-xl shadow">
-          <h1 className="text-3xl font-bold text-amber-900 mb-6">Create your account</h1>
+          <h1 className="text-3xl font-bold text-amber-900 mb-6">
+            Create your account
+          </h1>
 
           {error && (
-            <div className="bg-red-100 text-red-700 px-4 py-3 rounded mb-4 text-sm">{error}</div>
+            <div className="bg-red-100 text-red-700 px-4 py-3 rounded mb-4 text-sm">
+              {error}
+            </div>
           )}
 
           {errors.general && (
@@ -108,7 +112,10 @@ export default function SignupPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Username */}
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="username"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Username
               </label>
               <input
@@ -128,7 +135,10 @@ export default function SignupPage() {
 
             {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Email*
               </label>
               <input
@@ -149,7 +159,10 @@ export default function SignupPage() {
             {/* First/Last Name */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="first_name"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   First Name*
                 </label>
                 <input
@@ -164,7 +177,10 @@ export default function SignupPage() {
                 />
               </div>
               <div>
-                <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="last_name"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Last Name*
                 </label>
                 <input
@@ -182,7 +198,10 @@ export default function SignupPage() {
 
             {/* Grade */}
             <div>
-              <label htmlFor="grade" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="grade"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Grade*
               </label>
               <input
@@ -201,7 +220,10 @@ export default function SignupPage() {
 
             {/* Age */}
             <div>
-              <label htmlFor="age" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="age"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Age*
               </label>
               <input
@@ -216,12 +238,12 @@ export default function SignupPage() {
               />
             </div>
 
-
-
-
             {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Password*
               </label>
               <input
@@ -238,7 +260,10 @@ export default function SignupPage() {
 
             {/* Confirm Password */}
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="confirmPassword"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Confirm Password*
               </label>
               <input
@@ -255,10 +280,15 @@ export default function SignupPage() {
 
             {/* Role */}
             <div>
-              <span className="block text-sm font-medium text-gray-700 mb-2">I am a:*</span>
+              <span className="block text-sm font-medium text-gray-700 mb-2">
+                I am a:*
+              </span>
               <div className="flex space-x-6">
                 {["student", "teacher"].map((role) => (
-                  <label key={role} className="flex items-center space-x-2 text-sm text-gray-700">
+                  <label
+                    key={role}
+                    className="flex items-center space-x-2 text-sm text-gray-700"
+                  >
                     <input
                       type="radio"
                       name="role"
@@ -285,7 +315,10 @@ export default function SignupPage() {
 
           <p className="mt-6 text-sm text-center text-amber-700">
             Already have an account?{" "}
-            <Link href="/login" className="text-amber-600 hover:text-amber-800 font-medium">
+            <Link
+              href="/login"
+              className="text-amber-600 hover:text-amber-800 font-medium"
+            >
               Log in
             </Link>
           </p>

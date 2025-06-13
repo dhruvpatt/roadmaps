@@ -70,7 +70,7 @@ export default function CreatePathwayModal({
   useEffect(() => {
     const fetchClassrooms = async () => {
       try {
-        const res = await fetch(`${backendUrl}/api/classrooms?$user_id=${user.id}`, {
+        const res = await fetch(`${backendUrl}/api/classroom?$user_id=${user.id}`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
         });

@@ -53,7 +53,7 @@ export default function ClassroomOverview({ classroom=null }) {
 
   const fetchClassroom = async (user, id) => {
     try {
-      const res = await fetch(`${backendUrl}/api/classrooms/${id}/`, {
+      const res = await fetch(`${backendUrl}/api/classroom/${id}/`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
