@@ -13,7 +13,7 @@ from django.shortcuts import get_object_or_404
 
 from pathways.models.classroom import Classroom
 from pathways.serializers import ClassroomSerializer, CreateClassroomSerializer
-
+from pathways.views.create_mock_data import populate_mock_data_for_classroom
 
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 15
@@ -83,6 +83,7 @@ class ClassroomCreateView(APIView):
         try:
             if serializer.is_valid(raise_exception=True):
                 classroom = serializer.save()
+                # populate_mock_data_for_classroom(classroom.id)
                 return Response(
                     ClassroomSerializer(classroom, context={"request": request}).data,
                     status=status.HTTP_201_CREATED
