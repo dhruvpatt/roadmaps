@@ -15,7 +15,7 @@ from pathways.views.classroom_views import (
     get_announcements_view,
     create_announcement_view
 )
-
+from pathways.views.curriculum_builder import create_curriculum, process_pdf_curriculum, upload_csv_curriculum, get_classroom_curriculum
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -37,5 +37,11 @@ urlpatterns = [
     # API endpoints for Classroom Stream
     path('classrooms/<int:classroom_id>/announcements/', get_announcements_view, name='get_announcements'),
     path('classrooms/<int:classroom_id>/announcements/create/', create_announcement_view, name='create_announcement'),
+
+    # API endpoints for Curriculum Builder
+    path('api/curriculum/process-pdf/', process_pdf_curriculum, name='process_pdf_curriculum'),
+    path('api/curriculum/upload/', upload_csv_curriculum, name='upload_csv_curriculum'),
+    path('api/curriculum/create/', create_curriculum, name='create_curriculum'),
+    path('api/curriculum/<int:classroom_id>/', get_classroom_curriculum, name='get_classroom_curriculum'),
 ]
 

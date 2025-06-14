@@ -87,7 +87,7 @@ class ClassroomCreateView(APIView):
                 
                 attach_mock_students_to_classroom(classroom, number_of_students=10)
 
-                populate_mock_data_for_classroom(classroom.id)
+                # populate_mock_data_for_classroom(classroom.id)
                 return Response(
                     ClassroomSerializer(classroom, context={"request": request}).data,
                     status=status.HTTP_201_CREATED
