@@ -7,7 +7,7 @@ import ClassroomTabs from "../../components/classrooms/classroom-tabs";
 import fetchWithAuth from "@/lib/fetch_with_auth";
 import withAuth from "@/lib/with_auth";
 
-const ClassroomPage = ({user}) => {
+const ClassroomPage = ({ user }) => {
   const router = useRouter();
   const { id } = router.query;
 
@@ -18,7 +18,7 @@ const ClassroomPage = ({user}) => {
   useEffect(() => {
     if (!id) return;
 
-    const fetchClassroomAndUser = async () => {
+    const fetchClassroom = async () => {
       setLoading(true);
       try {
         // Fetch classroom data
@@ -27,8 +27,9 @@ const ClassroomPage = ({user}) => {
           throw new Error("Failed to load classroom");
         }
         const data = await res.json();
+        console.log("Fetched classroom data:", data);
         setClassroom(data);
-              setRole(user.role);
+        setRole(user.role);
 
 
         // Track analytics (optional)
@@ -41,7 +42,7 @@ const ClassroomPage = ({user}) => {
       }
     };
 
-    fetchClassroomAndUser();
+    fetchClassroom();
   }, [id]);
 
   const handleInviteClick = () => {

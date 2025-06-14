@@ -7,15 +7,10 @@ from rest_framework.generics import ListAPIView
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from django.db.models import Q
-from pathways.utils import attach_mock_students_to_classroom
-
-
-
+from pathways.utils import attach_mock_students_to_classroom, populate_mock_data_for_classroom
 from django.shortcuts import get_object_or_404
-
 from pathways.models.classroom import Classroom
 from pathways.serializers import ClassroomSerializer, CreateClassroomSerializer
-from pathways.views.create_mock_data import populate_mock_data_for_classroom
 
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 15
@@ -86,10 +81,9 @@ class ClassroomCreateView(APIView):
             if serializer.is_valid(raise_exception=True):
                 classroom = serializer.save()
                 
-                # 🔽 Add mock students here
                 attach_mock_students_to_classroom(classroom, number_of_students=10)
 
-                # populate_mock_data_for_classroom(classroom.id)
+                populate_mock_data_for_classroom(classroom.id)
                 return Response(
                     ClassroomSerializer(classroom, context={"request": request}).data,
                     status=status.HTTP_201_CREATED
