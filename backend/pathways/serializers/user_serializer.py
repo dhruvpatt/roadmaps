@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from pathways.models import Attendance
+from pathways.models import Attendance, MissedDeliverable, Classroom
 
 User = get_user_model()
 
@@ -18,10 +18,21 @@ class UserSerializer(serializers.ModelSerializer):
         user.save()
         return user
 
+class MissedDeliverableSerializer(serializers.ModelSerializer):
+    deliverable_repr = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MissedDeliverable
+        fields = ["id", "deliverable_repr", "content_type", "object_id"]
+
+    def get_deliverable_repr(self, obj):
+        return str(obj.deliverable)
+
 class AttendanceSerializer(serializers.ModelSerializer):
     student = UserSerializer(read_only=True)
-    missed_deliverables = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    classroom = serializers.PrimaryKeyRelatedField(queryset=Classroom.objects.all())
+    missed_items = MissedDeliverableSerializer(many=True, read_only=True)
 
     class Meta:
         model = Attendance
-        fields = "__all__"
+        fields = ["id", "student", "classroom", "status", "date", "missed_items"]

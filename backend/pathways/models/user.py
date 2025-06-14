@@ -47,7 +47,12 @@ class Attendance(models.Model):
     ]
 
     student = models.ForeignKey(User, on_delete=models.CASCADE)
+    classroom = models.ForeignKey('Classroom', on_delete=models.CASCADE, related_name='attendance_records')
     status = models.CharField(max_length=10, choices=STATUS_CHOICES)
     date = models.DateField()
-    
+
     missed_items = GenericRelation(MissedDeliverable)
+
+    class Meta:
+        unique_together = ('student', 'classroom', 'date')
+

@@ -15,7 +15,7 @@ import json
 import time
 from pathways.serializers import ModuleSerializer
 import requests
-from .utils import get_llm_response
+from .utils.generation import get_llm_response
 from .schemas import *
 
 yt_key = getattr(settings, 'YT_API_KEY')

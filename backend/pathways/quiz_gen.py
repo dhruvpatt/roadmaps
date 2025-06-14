@@ -11,7 +11,7 @@ from .models import Module, User, Quiz, Question
 from pathways.serializers import QuizSerializer
 from django.conf import settings
 import json
-from .utils import get_llm_response
+from .utils.generation import get_llm_response
 from .schemas import *
 
 

@@ -7,6 +7,8 @@ from rest_framework.generics import ListAPIView
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from django.db.models import Q
+from pathways.utils import attach_mock_students_to_classroom
+
 
 
 from django.shortcuts import get_object_or_404
@@ -83,6 +85,10 @@ class ClassroomCreateView(APIView):
         try:
             if serializer.is_valid(raise_exception=True):
                 classroom = serializer.save()
+                
+                # 🔽 Add mock students here
+                attach_mock_students_to_classroom(classroom, number_of_students=10)
+
                 return Response(
                     ClassroomSerializer(classroom, context={"request": request}).data,
                     status=status.HTTP_201_CREATED
@@ -98,7 +104,6 @@ class ClassroomCreateView(APIView):
                 {"detail": "Something went wrong.", "error": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
 
 class ClassroomDetailView(APIView):
     permission_classes = [IsAuthenticated]

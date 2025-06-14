@@ -104,7 +104,7 @@ export default function ClassroomList({
 
 
             {!loading && classrooms.length === 0 ? (
-                <div className="flex flex-col items-center justify-center mt-12 space-y-6 px-6">
+                <div className="flex flex-col items-center justify-center mt-2 space-y-6 px-6">
                     {/* Mascot */}
                     <img src="/confused.png" alt="No Classrooms" width={160} height={160} />
 
@@ -126,19 +126,21 @@ export default function ClassroomList({
 
                     {/* CTA */}
                     {isTeacher && (
-                        <Button
-                            variant="default"
-                            size="lg"
-                            onClick={() => {
-                                if (setDrawerOpen) {
-                                    setDrawerOpen(true);
-                                } else {
-                                    setShowModal(true);
-                                }
-                            }}
-                        >
-                            Create a Classroom
-                        </Button>
+                        <div className="mb-4">
+                            <Button
+                                variant="default"
+                                size="lg"
+                                onClick={() => {
+                                    if (setDrawerOpen) {
+                                        setDrawerOpen(true);
+                                    } else {
+                                        setShowModal(true);
+                                    }
+                                }}
+                            >
+                                Create a Classroom
+                            </Button>
+                        </div>
                     )}
                 </div>
             ) : (
