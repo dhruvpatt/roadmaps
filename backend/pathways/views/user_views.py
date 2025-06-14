@@ -62,7 +62,7 @@ class UserSignupView(APIView):
 
 
 class LoginView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
         username = request.data.get("username")

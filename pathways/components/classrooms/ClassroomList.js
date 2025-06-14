@@ -55,19 +55,6 @@ export default function ClassroomList({
         }
     };
 
-    const createClassroom = async (data) => {
-        try {
-            const res = await fetchWithAuth("api/classroom/create/", {
-                method: "POST",
-                body: JSON.stringify(data),
-            });
-            await res.json();
-            await fetchClassrooms(1, searchQuery);
-        } catch (error) {
-            console.error("Failed to create classroom", error);
-        }
-    };
-
     const handleSearch = (e) => {
         const query = e.target.value;
         setSearchQuery(query);
@@ -227,7 +214,6 @@ export default function ClassroomList({
                 <CreateClassroomModal
                     isOpen={showModal}
                     onClose={() => setShowModal(false)}
-                    onCreate={createClassroom}
                     user={user}
                 />
             )}

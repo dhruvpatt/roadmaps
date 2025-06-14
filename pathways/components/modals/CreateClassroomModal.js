@@ -2,8 +2,9 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import mockStudents from "../../data/mockStudents";
 import emitter from "@/mitt";
+import fetchWithAuth from "@/lib/fetch_with_auth";
 
-export default function CreateClassroomModal({ isOpen, onClose, onCreate, user }) {
+export default function CreateClassroomModal({ isOpen, onClose, user }) {
   const [form, setForm] = useState({ name: "", details: "" });
   const [search, setSearch] = useState("");
   const [selectedStudents, setSelectedStudents] = useState([]);
@@ -13,22 +14,17 @@ export default function CreateClassroomModal({ isOpen, onClose, onCreate, user }
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const filteredStudents = mockStudents.filter(
-    (student) =>
-      student.role === "student" &&
-      `${student.firstName} ${student.lastName}`
-        .toLowerCase()
-        .includes(search.toLowerCase()) &&
-      !selectedStudents.find((s) => s.id === student.id)
-  );
-
-  const handleSelectStudent = (student) => {
-    setSelectedStudents((prev) => [...prev, student]);
-    setSearch(""); // Clear input after selection
-  };
-
-  const handleRemoveStudent = (id) => {
-    setSelectedStudents((prev) => prev.filter((s) => s.id !== id));
+  const createClassroom = async (data) => {
+    try {
+      const res = await fetchWithAuth("api/classroom/create/", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+      await res.json();
+      emitter.emit("update-classrooms");
+    } catch (error) {
+      console.error("Failed to create classroom", error);
+    }
   };
 
   const handleSubmit = () => {
@@ -36,14 +32,12 @@ export default function CreateClassroomModal({ isOpen, onClose, onCreate, user }
       name: form.name.trim(),
       details: form.details.trim(),
     };
-    emitter.emit("update-classrooms");
-
-    onCreate(classroom);
+    createClassroom(classroom);
     onClose();
     setForm({ name: "", details: "" });
     setSelectedStudents([]);
     setSearch("");
-    
+
   };
 
   if (!isOpen) return null;

@@ -1,6 +1,6 @@
 import { Plus, Megaphone, FileText } from "lucide-react";
 
-export default function QuickActions({ user }) {
+export default function QuickActions({ user, onCreateClassroomClick }) {
   if (user.role !== "teacher") return null;
 
   const actions = [
@@ -17,7 +17,7 @@ export default function QuickActions({ user }) {
     {
       label: "Add Classroom",
       icon: Plus,
-      onClick: () => alert("Open Create Classroom Modal"),
+      onClick: onCreateClassroomClick, // 💡 Connect it here
     },
   ];
 
@@ -39,3 +39,4 @@ export default function QuickActions({ user }) {
     </div>
   );
 }
+

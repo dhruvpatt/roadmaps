@@ -14,6 +14,12 @@ const mockDeadlines = [
   { date: new Date(2025, 5, 14), title: "Math Homework Due", type: "homework" },
   { date: new Date(2025, 5, 16), title: "Science Quiz", type: "test" },
   { date: new Date(2025, 5, 18), title: "History Presentation", type: "assignment" },
+  { date: new Date(2025, 5, 14), title: "Math Homework Due", type: "homework" },
+  { date: new Date(2025, 5, 16), title: "Science Quiz", type: "test" },
+  { date: new Date(2025, 5, 18), title: "History Presentation", type: "assignment" },
+  { date: new Date(2025, 5, 14), title: "Math Homework Due", type: "homework" },
+  { date: new Date(2025, 5, 16), title: "Science Quiz", type: "test" },
+  { date: new Date(2025, 5, 18), title: "History Presentation", type: "assignment" },
 ];
 
 const getTypeIcon = (type) => {
@@ -82,7 +88,7 @@ const DashboardStats = ({ user, classroomCount = 0 }) => {
       icon: BookOpenCheck,
       color: "bg-violet-100 text-violet-700",
     },
-      {
+    {
       key: "check-ins",
       label: "Check-Ins Awaiting Review",
       value: 3,
@@ -161,18 +167,19 @@ const DashboardStats = ({ user, classroomCount = 0 }) => {
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-4 mb-8 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-4 mb-8 items-stretch">
         {/* Stats Grid Left Column */}
-        <div>
+        <div >
           <StatGrid stats={stats} openModal={openModal} />
         </div>
 
         {/* Deadlines List Right Column */}
-        <div className="bg-white rounded-xl shadow p-6 h-full min-h-[260px]">
+        <div className="bg-white rounded-xl shadow p-6 max-h-[290px] flex flex-col">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">
             Upcoming Deadlines
           </h2>
-          <ul className="space-y-3">
+
+          <ul className="space-y-3 overflow-y-auto pr-2">
             {mockDeadlines.map((event, idx) => {
               const now = new Date();
               const daysLeft = Math.ceil((event.date - now) / (1000 * 60 * 60 * 24));
@@ -202,6 +209,7 @@ const DashboardStats = ({ user, classroomCount = 0 }) => {
             })}
           </ul>
         </div>
+
 
       </div>
 
