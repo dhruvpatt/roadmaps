@@ -82,12 +82,20 @@ class CreateClassroomSerializer(serializers.ModelSerializer):
 
 
 class ClassroomSerializer(serializers.ModelSerializer):
-    """
-    Read-only serializer including join_id, students, and teachers.
-    """
-    teachers = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-    students = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    teachers = UserSerializer(many=True, read_only=True)
+    students = UserSerializer(many=True, read_only=True)
+    stream = MaterialSerializer(many=True, read_only=True)
+    units = UnitSerializer(many=True, read_only=True)
 
     class Meta:
         model = Classroom
-        fields = ['id', 'name', 'join_id', 'teachers', 'students']
+        fields = [
+            "id",
+            "name",
+            "join_id",
+            "details",
+            "teachers",
+            "students",
+            "stream",
+            "units",
+        ]

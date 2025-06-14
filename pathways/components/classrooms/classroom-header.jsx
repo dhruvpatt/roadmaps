@@ -10,10 +10,11 @@ import { ToastProvider } from "@/components/ui/toast";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function ClassroomHeader({
+  classroom,
   title,
   subtitle,
   code,
-  teacher,
+  teachers,
   subject,
   onInviteClick,
   onSettingsClick,
@@ -85,7 +86,12 @@ export default function ClassroomHeader({
         </div>
         <div className="border-t border-white/30 py-3">
           <div className="max-w-7xl mx-auto px-8 text-sm text-white/80">
-            Teacher: <span className="font-medium text-white">{teacher}</span>
+            Teacher(s):{" "}
+            <span className="font-medium text-white">
+              {teachers
+                ?.map(t => `${t.first_name[0]}. ${t.last_name}`)
+                .join(", ")}
+            </span>
           </div>
         </div>
       </header>
@@ -106,6 +112,6 @@ ClassroomHeader.propTypes = {
 ClassroomHeader.defaultProps = {
   subtitle: "",
   subject: "",
-  onInviteClick: () => {},
-  onSettingsClick: () => {},
+  onInviteClick: () => { },
+  onSettingsClick: () => { },
 };

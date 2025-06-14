@@ -68,10 +68,11 @@ const ClassroomPage = ({ user }) => {
   return (
     <div className="min-h-screen bg-white">
       <ClassroomHeader
+        classroom={classroom}
         title={classroom.name}
         subtitle={classroom.details || classroom.description}
         code={classroom.join_id}
-        teacher={classroom.teachers?.[0]?.first_name || "Instructor"}
+        teachers={classroom.teachers || ["Instructor"]}
         onInviteClick={handleInviteClick}
         onSettingsClick={handleSettingsClick}
       />
