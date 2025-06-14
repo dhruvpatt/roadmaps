@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import {
   Plus,
@@ -54,6 +54,90 @@ export default function ClassroomStream({ classroom, isTeacher, user }) {
   const [attachments, setAttachments] = useState([]);
   const [commentInput, setCommentInput] = useState({});
   const [showComments, setShowComments] = useState({});
+
+  useEffect(() => {
+    async function fetchAnnouncements() {
+      try {
+        const res = await fetch(
+          `/api/classrooms/${classroom.id}/announcements/`
+        );
+        const data = await res.json();
+        console.log("Fetched announcements:", data);
+        const postsFromBackend = data.announcements.map((a) => ({
+          id: a.id,
+          author: a.created_by,
+          content: a.details,
+          timestamp: a.created_at,
+          likes: 0,
+          liked: false,
+          comments: [],
+          attachments: [],
+          type: "announcement",
+        }));
+        setPosts(postsFromBackend);
+        console.log("Posts set from backend:", posts);
+      } catch (error) {
+        console.error("Failed to fetch announcements:", error);
+      }
+    }
+
+    fetchAnnouncements();
+  }, [classroom.id]);
+
+  async function createPost({ classroomId, content, userId }) {
+    try {
+      const res = await fetch(
+        `/api/classrooms/${classroomId}/announcements/create/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            title: "Announcement",
+            details: content,
+            creator_user_id: userId,
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to create announcement");
+      }
+
+      const created = await res.json();
+      console.log("Post created:", created);
+      return {
+        id: created.id,
+        author: "You", // fallback, update if backend returns name
+        content: content,
+        timestamp: new Date().toISOString(),
+        likes: 0,
+        liked: false,
+        comments: [],
+        attachments: [],
+        type: "announcement",
+      };
+    } catch (err) {
+      console.error("createPost error:", err.message);
+      return null;
+    }
+  }
+
+  const handlePost = async () => {
+    const newPostData = await createPost({
+      classroomId: classroom.id,
+      content: newPost,
+      userId: user.id,
+    });
+
+    if (newPostData) {
+      setPosts((prev) => [newPostData, ...prev]);
+      setNewPost("");
+      setShowCreatePost(false);
+    }
+  };
 
   const formatDate = (timestamp) =>
     new Date(timestamp).toLocaleString("en-US", {
@@ -135,21 +219,7 @@ export default function ClassroomStream({ classroom, isTeacher, user }) {
                   <Button
                     variant="outline"
                     className="cursor-pointer hover:bg-amber-600 hover:text-white w-24"
-                    onClick={() => {
-                      const post = {
-                        id: Date.now(),
-                        author: user.name,
-                        content: newPost,
-                        timestamp: new Date().toISOString(),
-                        likes: 0,
-                        liked: false,
-                        comments: [],
-                        attachments: [],
-                      };
-                      setPosts([post, ...posts]);
-                      setNewPost("");
-                      setShowCreatePost(false);
-                    }}
+                    onClick={handlePost}
                   >
                     Post
                   </Button>

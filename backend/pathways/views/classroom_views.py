@@ -6,11 +6,15 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.generics import ListAPIView
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
+from django.http import JsonResponse
 from django.db.models import Q
-from pathways.utils import attach_mock_students_to_classroom, populate_mock_data_for_classroom
 from django.shortcuts import get_object_or_404
-from pathways.models.classroom import Classroom
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+from pathways.utils import attach_mock_students_to_classroom, populate_mock_data_for_classroom
+from pathways.models.classroom import Classroom, Material, User
 from pathways.serializers import ClassroomSerializer, CreateClassroomSerializer
+import json
 
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 15
@@ -185,3 +189,57 @@ def join_classroom_teacher(request):
             {"detail": "Could not join classroom", "error": str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+
+@require_http_methods(["GET"])
+def get_announcements_view(request, classroom_id):
+    try:
+        classroom = Classroom.objects.get(id=classroom_id)
+        announcements = classroom.stream.filter(type="announcement").order_by("-id")
+        data = [
+            {
+                "id": a.id,
+                "title": a.title,
+                "details": a.details,
+                "created_by": a.created_by.username,
+                "created_at": a.created_by.date_joined.strftime('%Y-%m-%d'),
+            }
+            for a in announcements
+        ]
+        return JsonResponse({"announcements": data})
+    except Classroom.DoesNotExist:
+        return JsonResponse({"error": "Classroom not found"}, status=404)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def create_announcement_view(request, classroom_id):
+    try:
+        body = json.loads(request.body)
+        title = body.get("title")
+        details = body.get("details")
+        user_id = body.get("creator_user_id")
+
+        if not all([title, details, user_id]):
+            return JsonResponse({"error": "Missing fields"}, status=400)
+
+        classroom = Classroom.objects.get(id=classroom_id)
+        creator = User.objects.get(id=user_id)
+
+        announcement = Material.objects.create(
+            type="announcement",
+            title=title,
+            details=details,
+            created_by=creator
+        )
+        classroom.stream.add(announcement)
+
+        return JsonResponse({
+            "id": announcement.id,
+            "message": "Announcement created successfully"
+        })
+
+    except (Classroom.DoesNotExist, User.DoesNotExist):
+        return JsonResponse({"error": "Invalid classroom or user"}, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
