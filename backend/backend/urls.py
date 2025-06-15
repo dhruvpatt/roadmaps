@@ -35,9 +35,6 @@ urlpatterns = [
     path('api/classrooms/materials/<int:material_id>/comments/', comment_view, name='material-comments'),
     path('api/classrooms/comments/<int:comment_id>/', comment_view, name='comment-detail'),
 
-    # API endpoints for Classroom Stream
-    path('classrooms/<int:classroom_id>/announcements/', get_announcements_view, name='get_announcements'),
-    path('classrooms/<int:classroom_id>/announcements/create/', create_announcement_view, name='create_announcement'),
 
     # API endpoints for Curriculum Builder
     path('api/curriculum/process-pdf/', process_pdf_curriculum, name='process_pdf_curriculum'),

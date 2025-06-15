@@ -87,7 +87,7 @@ export default function ClassroomStream({ classroom, isTeacher, user }) {
     const matchesSearch = post.content
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
-const matchesType = typeFilter === "all" || post.type === typeFilter;
+    const matchesType = typeFilter === "all" || post.type === typeFilter;
     return matchesSearch && matchesType;
   });
 
@@ -182,19 +182,19 @@ const matchesType = typeFilter === "all" || post.type === typeFilter;
       <div className="max-w-2xl mx-auto space-y-6">
 
 
-<SearchAndFilterBar
-  searchQuery={searchQuery}
-  setSearchQuery={setSearchQuery}
-  filterType={typeFilter}
-  setFilterType={setTypeFilter}
-  filterOptions={[
-    { value: "announcement", label: "Announcements" },
-    { value: "file", label: "Files" },
-    { value: "url", label: "Links" },
-    { value: "general", label: "General" },
-  ]}
-  placeholder="Search stream..."
-/>
+        <SearchAndFilterBar
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          filterType={typeFilter}
+          setFilterType={setTypeFilter}
+          filterOptions={[
+            { value: "announcement", label: "Announcements" },
+            { value: "file", label: "Files" },
+            { value: "url", label: "Links" },
+            { value: "general", label: "General" },
+          ]}
+          placeholder="Search stream..."
+        />
 
 
         {/* Posts */}
