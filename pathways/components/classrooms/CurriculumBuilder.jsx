@@ -1,11 +1,12 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import fetchWithAuth from "@/lib/fetch_with_auth";
 
 const CurriculumBuilder = ({
   classroomId,
   onCurriculumCreated,
   onCancel,
-  hasExistingUnits,
+  hasExistingUnits = false,
+  initialUnits = [],
 }) => {
   const [activeTab, setActiveTab] = useState("upload");
   const [uploading, setUploading] = useState(false);
@@ -16,6 +17,14 @@ const CurriculumBuilder = ({
   const [dragActive, setDragActive] = useState(false);
 
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (initialUnits.length > 0) {
+      setUnits(initialUnits);
+      setShowUnitsEditor(true);
+      setActiveTab("manual");
+    }
+  }, [initialUnits]);
 
   const handleDrag = (e) => {
     e.preventDefault();

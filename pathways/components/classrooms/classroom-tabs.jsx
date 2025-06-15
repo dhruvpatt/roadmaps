@@ -10,6 +10,8 @@ import ClassroomTests from "./classroom-tests";
 import ClassroomGradebook from "./classroom-gradebook";
 import ClassroomStudents from "./classroom-students";
 import ClassroomAttendance from "./classroom-attendance";
+import CurriculumBuilder from "./CurriculumBuilder";
+import CurriculumEditPage from "./CurriculumEditPage";
 
 export default function ClassroomTabs({ classroom, isTeacher, user }) {
   const [activeTab, setActiveTab] = useState("stream");
@@ -24,6 +26,7 @@ export default function ClassroomTabs({ classroom, isTeacher, user }) {
           { key: "gradebook", label: "Gradebook" },
           { key: "students", label: "Students" },
           { key: "attendance", label: "Attendance" },
+          { key: "curriculum", label: "Curriculum Builder" },
         ]
       : []),
   ];
@@ -89,6 +92,11 @@ export default function ClassroomTabs({ classroom, isTeacher, user }) {
         )}
         {activeTab === "attendance" && isTeacher && (
           <ClassroomAttendance classroom={classroom} user={user} />
+        )}
+        {activeTab === "curriculum" && isTeacher && (
+          <div className="text-center">
+            <CurriculumEditPage classroomId={classroom.id} />
+          </div>
         )}
       </div>
     </div>
