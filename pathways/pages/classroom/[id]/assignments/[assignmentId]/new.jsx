@@ -78,7 +78,7 @@ export default function NewAssignmentPage() {
 
   return (
     <div className="max-w-3xl mx-auto py-8">
-      <Card className="border border-gray-200 rounded-lg shadow-sm">
+      <Card className="shadow-sm border border-gray-200 rounded-lg shadow-sm">
         <CardHeader>
           <CardTitle className="text-2xl">New Assignment</CardTitle>
         </CardHeader>

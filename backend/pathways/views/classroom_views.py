@@ -13,9 +13,34 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from pathways.utils import attach_mock_students_to_classroom, populate_mock_data_for_classroom
 from pathways.models.classroom import Classroom, Material, User, Comment
-from pathways.serializers import ClassroomSerializer, CreateClassroomSerializer
+from pathways.serializers import ClassroomSerializer, CreateClassroomSerializer, MaterialSerializer
 import json
-from pathways.serializers import CommentSerializer, CreateCommentSerializer
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+from rest_framework.parsers import MultiPartParser, FormParser
+
+from rest_framework import generics, permissions
+from pathways.models import Material
+from rest_framework.exceptions import PermissionDenied
+
+
+ALLOWED_MIME_TYPES = {
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/plain",
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/svg+xml",
+    "video/mp4",
+    "video/quicktime",
+    "video/x-msvideo",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+}
+MAX_FILE_SIZE_MB = 10
+
 
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 15
@@ -141,6 +166,55 @@ class ClassroomDetailView(APIView):
             )
 
 
+class FileUploadView(APIView):
+    parser_classes = [MultiPartParser, FormParser]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, format=None):
+        file = request.FILES.get("file")
+        if not file:
+            return Response({"error": "No file provided."}, status=400)
+
+        if file.content_type not in ALLOWED_MIME_TYPES:
+            return Response({"error": "Unsupported file type."}, status=400)
+
+        if file.size > MAX_FILE_SIZE_MB * 1024 * 1024:
+            return Response({"error": "File too large (max 10MB)."}, status=400)
+
+        # Generate a unique filename
+        ext = file.name.split(".")[-1]
+        filename = f"{uuid.uuid4()}.{ext}"
+        path = default_storage.save(f"uploads/materials/{filename}", ContentFile(file.read()))
+        file_url = default_storage.url(path)
+
+        return Response({"url": file_url, "filename": file.name})
+
+
+class MaterialListCreateView(generics.ListCreateAPIView):
+    queryset = Material.objects.all().order_by("-id")
+    serializer_class = MaterialSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+class MaterialRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Material.objects.all()
+    serializer_class = MaterialSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_update(self, serializer):
+        material = self.get_object()
+        if material.created_by != self.request.user:
+            raise PermissionDenied("You cannot edit this material.")
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        if instance.created_by != self.request.user:
+            raise PermissionDenied("You cannot delete this material.")
+        instance.delete()
+
+
 @api_view(['GET', 'POST', 'PATCH', 'DELETE'])
 @permission_classes([IsAuthenticated])
 def comment_view(request, material_id=None, comment_id=None):
@@ -199,7 +273,6 @@ def comment_view(request, material_id=None, comment_id=None):
             {"error": "Comment operation failed", "detail": str(e)},
             status=500
         )
-
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])

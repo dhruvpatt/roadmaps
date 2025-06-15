@@ -25,16 +25,16 @@ export default function SearchAndFilterBar({
           placeholder={placeholder}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full sm:w-64 ring-1 ring-gray-200 rounded-lg focus:ring-blue-300 pr-10"
+          className="w-full sm:w-64 ring-1 shadow-sm border border-gray-200 ring-gray-200 rounded-lg focus:ring-blue-300 pr-10"
         />
         <Search className="absolute right-3 text-gray-400 w-5 h-5 pointer-events-none" />
       </div>
       <div className="flex items-center space-x-3">
         <Select value={filterType} onValueChange={setFilterType}>
-          <SelectTrigger className="w-48 ring-1 ring-gray-200 rounded-lg hover:ring-gray-300 focus:ring-blue-300">
+          <SelectTrigger className="w-48 ring-1  shadow-sm border border-gray-200 ring-gray-200 rounded-lg hover:ring-gray-300 focus:ring-blue-300">
             <SelectValue placeholder="No Filter" />
           </SelectTrigger>
-          <SelectContent className="bg-white border border-gray-200 rounded-lg shadow-sm">
+          <SelectContent className="bg-white shadow-sm border border-gray-200 rounded-lg shadow-sm">
             <SelectItem
               value="all"
               className="hover:bg-gray-100 cursor-pointer"

@@ -348,7 +348,7 @@ export default function ComprehensiveTestCreator() {
       className={`flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-all ${
         isActive
           ? "bg-amber-600 text-white shadow-md"
-          : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
+          : "bg-white text-gray-600 hover:bg-gray-50 shadow-sm border border-gray-200"
       }`}
     >
       <Icon className="w-4 h-4" />
@@ -371,7 +371,7 @@ export default function ComprehensiveTestCreator() {
       "bg-gray-100 text-gray-800";
 
     return (
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
         <div className="p-6">
           {/* Question Header */}
           <div className="flex items-start justify-between mb-4">
@@ -707,7 +707,7 @@ export default function ComprehensiveTestCreator() {
         {/* Test Details Tab */}
         {activeTab === "details" && (
           <div className="space-y-6">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+            <div className="bg-white rounded-2xl shadow-lg shadow-sm border border-gray-200 p-6">
               <div className="flex items-center gap-3 mb-6">
                 <BookOpen className="w-6 h-6 text-amber-600" />
                 <h2 className="text-2xl font-bold text-gray-800">
@@ -918,7 +918,7 @@ export default function ComprehensiveTestCreator() {
 
         {/* AI Import Tab */}
         {activeTab === "import" && (
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+          <div className="bg-white rounded-2xl shadow-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center gap-3 mb-6">
               <Zap className="w-6 h-6 text-amber-600" />
               <h2 className="text-2xl font-bold text-gray-800">
@@ -1027,7 +1027,7 @@ export default function ComprehensiveTestCreator() {
         {activeTab === "questions" && (
           <div className="space-y-6">
             {/* Question Controls */}
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+            <div className="bg-white rounded-2xl shadow-lg shadow-sm border border-gray-200 p-6">
               <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
                 <div className="flex items-center gap-3">
                   <FileQuestion className="w-6 h-6 text-amber-600" />
@@ -1049,7 +1049,7 @@ export default function ComprehensiveTestCreator() {
                       <Plus className="w-4 h-4" />
                       Add Question
                     </button>
-                    <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+                    <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg shadow-sm border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
                       <div className="p-2">
                         {QUESTION_TYPES.map((type) => (
                           <button
@@ -1119,7 +1119,7 @@ export default function ComprehensiveTestCreator() {
         {/* Analytics Tab */}
         {activeTab === "analytics" && (
           <div className="space-y-6">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+            <div className="bg-white rounded-2xl shadow-lg shadow-sm border border-gray-200 p-6">
               <div className="flex items-center gap-3 mb-6">
                 <Target className="w-6 h-6 text-amber-600" />
                 <h2 className="text-2xl font-bold text-gray-800">
@@ -1309,7 +1309,7 @@ export default function ComprehensiveTestCreator() {
         {/* Preview Tab */}
         {activeTab === "preview" && (
           <div className="space-y-6">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+            <div className="bg-white rounded-2xl shadow-lg shadow-sm border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                   <Eye className="w-6 h-6 text-amber-600" />
@@ -1375,7 +1375,7 @@ export default function ComprehensiveTestCreator() {
                   questions.map((question, index) => (
                     <div
                       key={question.id}
-                      className="border border-gray-200 rounded-lg p-6"
+                      className="shadow-sm border border-gray-200 rounded-lg p-6"
                     >
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center gap-3">

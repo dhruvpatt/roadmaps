@@ -258,7 +258,7 @@ const CurriculumBuilder = ({
             {units.map((unit, unitIndex) => (
               <div
                 key={unit.id || unitIndex}
-                className="border border-gray-200 rounded-lg p-6"
+                className="shadow-sm border border-gray-200 rounded-lg p-6"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1 space-y-4">

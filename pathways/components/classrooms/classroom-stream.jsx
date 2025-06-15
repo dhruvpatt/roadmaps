@@ -29,7 +29,7 @@ export default function ClassroomStream({ classroom, isTeacher, user }) {
   const [commentInput, setCommentInput] = useState({});
   const [showComments, setShowComments] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
   const [showDrawer, setShowDrawer] = useState(false);
   const [drawerStep, setDrawerStep] = useState("select"); // or "form"
   const [selectedType, setSelectedType] = useState(null);

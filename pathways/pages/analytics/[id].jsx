@@ -200,7 +200,7 @@ export default function StudentAnalyticsPage() {
 
                 {/* Weekly Breakdown */}
                 {data.weeklyData.map((weekData, i) => (
-                    <Card key={i} className="rounded-xl border border-gray-200">
+                    <Card key={i} className="rounded-xl shadow-sm border border-gray-200">
                         <CardContent className="p-4 space-y-4">
                             <div className="flex justify-between items-center cursor-pointer mb-2" onClick={() => toggleExpand(weekData.week)}>
                                 <div>
@@ -236,7 +236,7 @@ export default function StudentAnalyticsPage() {
                                         {weekData.assessments.assignments.length > 0 ? (
                                             <div className="grid gap-3">
                                                 {weekData.assessments.assignments.map((a, idx) => (
-                                                    <Card key={idx} className="p-4 shadow-sm border border-gray-200 rounded-xl cursor-pointer" onClick={() => setSelectedItem(a)}>
+                                                    <Card key={idx} className="p-4 shadow-sm shadow-sm border border-gray-200 rounded-xl cursor-pointer" onClick={() => setSelectedItem(a)}>
                                                         <div className="flex justify-between items-center">
                                                             <div className="text-sm font-medium text-gray-800">{a.title}</div>
                                                             <div className="flex items-center gap-2">
@@ -271,7 +271,7 @@ export default function StudentAnalyticsPage() {
                                         {weekData.assessments.tests.length > 0 ? (
                                             <div className="grid gap-3">
                                                 {weekData.assessments.tests.map((t, idx) => (
-                                                    <Card key={idx} className="p-4 shadow-sm border border-gray-200 rounded-xl cursor-pointer" onClick={() => setSelectedItem(t)}>
+                                                    <Card key={idx} className="p-4 shadow-sm shadow-sm border border-gray-200 rounded-xl cursor-pointer" onClick={() => setSelectedItem(t)}>
                                                         <div className="flex justify-between items-center">
                                                             <div className="text-sm font-medium text-gray-800">{t.title}</div>
                                                             <Badge className="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded-full">{t.score}%</Badge>
@@ -351,7 +351,7 @@ export default function StudentAnalyticsPage() {
                                         <h4 className="text-lg font-semibold mb-4">Question Breakdown</h4>
                                         <div className="space-y-4">
                                             {selectedItem.questions.map((q, i) => (
-                                                <div key={i} className="border border-gray-200 rounded-lg p-4">
+                                                <div key={i} className="shadow-sm border border-gray-200 rounded-lg p-4">
                                                     <div className="font-medium mb-1">Q{i + 1}: {q.question}</div>
                                                     <div className="text-sm"><span className="font-semibold">Student Answer:</span> {q.studentAnswer}</div>
                                                     <div className="text-sm"><span className="font-semibold">Correct Answer:</span> {q.correctAnswer}</div>

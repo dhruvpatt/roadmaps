@@ -43,7 +43,7 @@ export default function ClassroomCard({
 
 
   return (
-    <div className="relative bg-white p-6 border border-gray-200 rounded-lg shadow-md flex flex-col">
+    <div className="relative bg-white p-6 shadow-sm border border-gray-200 rounded-lg shadow-md flex flex-col">
       {/* Top Row: Title + More Options */}
       <div className="flex items-start justify-between mb-2">
         <h3 className="text-lg font-bold text-gray-900">{title}</h3>
@@ -60,7 +60,7 @@ export default function ClassroomCard({
         {menuOpen && (
           <div
             ref={menuRef}
-            className="absolute right-5 top-10 mt-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10"
+            className="absolute right-5 top-10 mt-1 w-32 bg-white shadow-sm border border-gray-200 rounded-lg shadow-lg z-10"
           >
             <button
               type="button"

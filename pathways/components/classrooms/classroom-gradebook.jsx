@@ -336,7 +336,7 @@ export default function ClassroomGradebook({ classroom, user }) {
 
         {/* Export Form */}
         {showExportForm && (
-          <Card className="bg-white rounded-lg border border-gray-200 shadow-sm mb-6">
+          <Card className="bg-white rounded-lg shadow-sm border border-gray-200 shadow-sm mb-6">
             <CardHeader>
               <CardTitle>Export Grades</CardTitle>
             </CardHeader>
@@ -399,7 +399,7 @@ export default function ClassroomGradebook({ classroom, user }) {
         
         {/* Import CSV Form */}
         {showImportForm && (
-          <Card className="bg-white rounded-lg border border-gray-200 shadow-sm mb-6">
+          <Card className="bg-white rounded-lg shadow-sm border border-gray-200 shadow-sm mb-6">
             <CardHeader>
               <CardTitle>Import Grades from CSV</CardTitle>
             </CardHeader>
@@ -454,7 +454,7 @@ export default function ClassroomGradebook({ classroom, user }) {
 
         {/* Add Grade Form */}
         {showAddGradeForm && (
-          <Card className="bg-white rounded-lg border border-gray-200 shadow-sm mb-6">
+          <Card className="bg-white rounded-lg shadow-sm border border-gray-200 shadow-sm mb-6">
             <CardHeader>
               <CardTitle>Add Grade</CardTitle>
             </CardHeader>
@@ -538,8 +538,8 @@ export default function ClassroomGradebook({ classroom, user }) {
         )}
 
         {/* Gradebook Table */}
-        <Card className="bg-white rounded-lg border border-gray-200 shadow-sm">
-          <CardContent className="p-0 overflow-auto rounded-lg border border-gray-200">
+        <Card className="bg-white rounded-lg shadow-sm border border-gray-200 shadow-sm">
+          <CardContent className="p-0 overflow-auto rounded-lg shadow-sm border border-gray-200">
             <Table>
               <TableHeader>
                 <TableRow className="border-b-2 border-gray-300">

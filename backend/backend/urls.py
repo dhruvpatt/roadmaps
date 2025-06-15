@@ -2,14 +2,18 @@
 from django.urls import path
 from django.contrib import admin
 from django.views.decorators.csrf import csrf_exempt
-from pathways.views.user_views import *
-from rest_framework.routers import DefaultRouter
 
+from django.conf import settings
+from django.conf.urls.static import static
+
+
+from pathways.views.user_views import *
 from django.urls import path
 from pathways.views.classroom_views import (
     ClassroomListView,
     ClassroomCreateView,
     ClassroomDetailView,
+    FileUploadView,
     join_classroom_student,
     join_classroom_teacher,
     comment_view,
@@ -32,6 +36,10 @@ urlpatterns = [
     path("api/classroom/<int:id>/", ClassroomDetailView.as_view(), name="classroom-detail"),
     path("api/classroom/join/student/", join_classroom_student, name="classroom-join-student"),
     path("api/classroom/join/teacher/", join_classroom_teacher, name="classroom-join-teacher"),
+
+    path("api/materials/upload/", FileUploadView.as_view(), name="material-file-upload"),
+
+
     path('api/classrooms/materials/<int:material_id>/comments/', comment_view, name='material-comments'),
     path('api/classrooms/comments/<int:comment_id>/', comment_view, name='comment-detail'),
 
@@ -41,5 +49,5 @@ urlpatterns = [
     path('api/curriculum/upload/', upload_csv_curriculum, name='upload_csv_curriculum'),
     path('api/curriculum/create/', create_curriculum, name='create_curriculum'),
     path('api/curriculum/<int:classroom_id>/', get_classroom_curriculum, name='get_classroom_curriculum'),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

@@ -16,12 +16,8 @@ from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -161,3 +157,5 @@ CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
 CSRF_COOKIE_HTTPONLY = False  # Allows JavaScript access to read csrftoken (needed for X-CSRFToken header)
 CSRF_COOKIE_SAMESITE = "Lax"  # Allows POSTs from localhost:3000 → localhost:8000
 SESSION_COOKIE_SAMESITE = "Lax"  # SameSite policy for session cookie (allows login sessions across localhost ports)
+
+

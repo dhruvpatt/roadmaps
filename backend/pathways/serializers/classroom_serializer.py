@@ -6,9 +6,9 @@ from pathways.serializers.analytics_serializer import AnalyticsSerializer
 
 
 class MaterialSerializer(serializers.ModelSerializer):
-    created_by = UserSerializer()
-    viewed_by = UserSerializer(many=True)
-    comments = serializers.SerializerMethodField()
+    created_by = UserSerializer(read_only=True)
+    viewed_by = UserSerializer(many=True, read_only=True)
+    comments = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Material

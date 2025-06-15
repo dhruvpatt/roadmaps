@@ -28,7 +28,7 @@ export default function RecommendedActions({title="Recommended Actions"}) {
         {[1, 2, 3].map((_, idx) => (
           <div
             key={idx}
-            className="flex items-start gap-4 p-4 bg-white rounded-lg border border-gray-200 shadow-sm"
+            className="flex items-start gap-4 p-4 bg-white rounded-lg shadow-sm border border-gray-200 shadow-sm"
           >
             <div className="text-yellow-500">
               <svg

@@ -6,6 +6,7 @@ import emitter from "@/mitt";
 import ClassroomCard from "@/components/classrooms/ClassroomCard";
 import CreateClassroomModal from "@/components/modals/CreateClassroomModal";
 import { Button } from "@/components/ui/button";
+import PaginationControls from "@/components/PaginationControls";
 
 export default function ClassroomList({
     user,
@@ -189,27 +190,11 @@ export default function ClassroomList({
 
 
             {(!condensed && classrooms.length > 0) && (
-                <div className="mt-6 pb-6 flex justify-center space-x-4 text-gray-800">
-                    <Button
-                        onClick={() => fetchClassrooms(page - 1, searchQuery)}
-                        disabled={page <= 1}
-                        className="w-10 h-10 flex items-center justify-center disabled:opacity-40"
-                        variant="outline"
-                    >
-                        <ChevronLeft className="w-4 h-4 text-gray-100" />
-                    </Button>
-                    <span className="self-center">
-                        Page {page} of {totalPages}
-                    </span>
-                    <Button
-                        onClick={() => fetchClassrooms(page + 1, searchQuery)}
-                        disabled={page >= totalPages}
-                        className="w-10 h-10 flex items-center justify-center disabled:opacity-40"
-                        variant="outline"
-                    >
-                        <ChevronRight className="w-4 h-4 text-gray-100" />
-                    </Button>
-                </div>
+                <PaginationControls
+                page={page}
+                totalPages={totalPages}
+                onPageChange={(newPage) => fetchClassrooms(newPage, searchQuery)}
+                />
             )}
 
             {!setDrawerOpen && (

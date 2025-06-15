@@ -262,7 +262,7 @@ export default function TestResults() {
           <div className="space-y-6">
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="p-6 border border-gray-200 rounded-xl">
+              <Card className="p-6 shadow-sm border border-gray-200 rounded-xl">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-blue-100 rounded-lg">
                     <Users className="w-6 h-6 text-blue-600" />
@@ -277,7 +277,7 @@ export default function TestResults() {
                 </div>
               </Card>
 
-              <Card className="p-6 border border-gray-200 rounded-xl">
+              <Card className="p-6 shadow-sm border border-gray-200 rounded-xl">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-green-100 rounded-lg">
                     <Target className="w-6 h-6 text-green-600" />
@@ -291,7 +291,7 @@ export default function TestResults() {
                 </div>
               </Card>
 
-              <Card className="p-6 border border-gray-200 rounded-xl">
+              <Card className="p-6 shadow-sm border border-gray-200 rounded-xl">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-amber-100 rounded-lg">
                     <Clock className="w-6 h-6 text-amber-600" />
@@ -305,7 +305,7 @@ export default function TestResults() {
                 </div>
               </Card>
 
-              <Card className="p-6 border border-gray-200 rounded-xl">
+              <Card className="p-6 shadow-sm border border-gray-200 rounded-xl">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-purple-100 rounded-lg">
                     <TrendingUp className="w-6 h-6 text-purple-600" />
@@ -321,7 +321,7 @@ export default function TestResults() {
             </div>
 
             {/* Score Distribution Chart */}
-            <Card className="p-6 border border-gray-200 rounded-xl">
+            <Card className="p-6 shadow-sm border border-gray-200 rounded-xl">
               <h3 className="text-lg font-semibold text-black mb-4">
                 Score Distribution
               </h3>
@@ -370,7 +370,7 @@ export default function TestResults() {
 
         {/* Student Results Tab */}
         {activeTab === "students" && (
-          <Card className="border border-gray-200 rounded-xl overflow-hidden">
+          <Card className="shadow-sm border border-gray-200 rounded-xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
@@ -471,7 +471,7 @@ export default function TestResults() {
             {mockQuestionAnalysis.map((question) => (
               <Card
                 key={question.id}
-                className="p-6 border border-gray-200 rounded-xl"
+                className="p-6 shadow-sm border border-gray-200 rounded-xl"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
