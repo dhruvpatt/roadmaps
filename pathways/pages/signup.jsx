@@ -54,8 +54,8 @@ export default function SignupPage() {
 
     try {
       const user = await signup(payload);
-      print(user);
-      if (user.role === "teacher") {
+      console.log(user);
+      if (user?.role === "teacher") {
         router.push("/dashboard");
       } else {
         router.push("/settings");

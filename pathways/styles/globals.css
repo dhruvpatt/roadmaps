@@ -23,9 +23,28 @@
 
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --input: 0 0% 100%;
+  --background: 0 0% 98%;
+  --foreground: 0 0% 10%;
+  --border: 0 0% 85%;
+  --ring: 220 100% 50%;
+
+  --primary: 40 100% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 4.8% 95.9%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+
+  --radius: 0.5rem;
+
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 10%;
+  --ring: 220 100% 50%;
 }
+
 
 @theme inline {
   --color-background: var(--background);
@@ -34,12 +53,17 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.dark {
+  --background: 0 0% 10%;
+  --foreground: 0 0% 90%;
+  --input: 0 0% 20%;
+  --border: 0 0% 25%;
+  --card: 0 0% 15%;
+  --card-foreground: 0 0% 90%;
+  --popover: 0 0% 12%;
+  --popover-foreground: 0 0% 90%;
 }
+
 
 body {
   background: var(--background);
@@ -104,9 +128,13 @@ body {
 .node-hovered::before {
   content: '';
   position: absolute;
-  top: -2px; left: -2px; right: -2px; bottom: -2px;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
   border-radius: inherit;
-  z-index: 0; /* ← FIXED */
+  z-index: 0;
+  /* ← FIXED */
   background: linear-gradient(90deg, #ffcf33, #ff647c, #ffcf33);
   background-size: 300% 300%;
   animation: gradientShift 3s ease infinite;

@@ -6,18 +6,62 @@ from pathways.serializers.analytics_serializer import AnalyticsSerializer
 
 
 class MaterialSerializer(serializers.ModelSerializer):
+    created_by = UserSerializer()
+    viewed_by = UserSerializer(many=True)
+    comments = serializers.SerializerMethodField()
+
     class Meta:
         model = Material
-        fields = "__all__"
+        fields = [
+            "id", "type", "title", "details", "created_by",
+            "content", "likes", "viewed_by", "time_viewed",
+            "last_viewed", "comments"
+        ]
+
+    def get_comments(self, obj):
+        return CommentSerializer(Comment.objects.filter(material=obj), many=True).data
+
+
+class CreateCommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = ['content', 'replied_to']
+
+    def validate_content(self, value):
+        if not value.strip():
+            raise serializers.ValidationError(
+                "Comment content cannot be empty.")
+        return value
 
 
 class CommentSerializer(serializers.ModelSerializer):
     posted_by = UserSerializer(read_only=True)
-    replied_to = serializers.PrimaryKeyRelatedField(queryset=Comment.objects.all(), required=False)
+    replied_to = serializers.PrimaryKeyRelatedField(
+        queryset=Comment.objects.all(), required=False)
+    replies = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
-        fields = ["id", "content", "posted_by", "date", "replied_to"]
+        fields = ["id", "content", "posted_by",
+                  "date", "replied_to", "edited", "replies"]
+
+    def get_replies(self, obj):
+        replies = Comment.objects.filter(replied_to=obj)
+        return CommentSerializer(replies, many=True).data
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        if instance.is_deleted:
+            rep["content"] = "[deleted]"
+            rep["posted_by"] = None
+        return rep
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        if instance.is_deleted:
+            rep["content"] = "[deleted]"
+            rep["posted_by"] = None
+        return rep
 
 
 class WeekSerializer(serializers.ModelSerializer):
@@ -53,7 +97,6 @@ class CreateClassroomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Classroom
         fields = ['name', 'details']
-        
 
     def create(self, validated_data):
         # Get the current user from context
@@ -62,7 +105,8 @@ class CreateClassroomSerializer(serializers.ModelSerializer):
         user = getattr(request, 'user', None)
         # Fallback in case context not set
         if user is None or not user.is_authenticated:
-            raise serializers.ValidationError('Authentication credentials were not provided.')
+            raise serializers.ValidationError(
+                'Authentication credentials were not provided.')
 
         # Generate a unique, URL-safe join code
         join_id = secrets.token_urlsafe(6)

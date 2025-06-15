@@ -14,7 +14,7 @@ export async function login({ username, password }) {
     body: JSON.stringify({ username, password }),
   });
 
-  if (!res.ok) throw new Error("Invalid credentials");
+  if (!res.ok) console.error("Login failed", res.statusText);
   return await fetchCurrentUser();
 }
 
@@ -31,7 +31,7 @@ export async function signup(data) {
     body: JSON.stringify(data),
   });
 
-  if (!res.ok) throw new Error("Signup failed");
+  if (!res.ok) console.error("Login failed", res.statusText);
   return await fetchCurrentUser();
 }
 

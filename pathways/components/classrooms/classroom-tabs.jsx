@@ -16,15 +16,15 @@ export default function ClassroomTabs({ classroom, isTeacher, user }) {
 
   const tabs = [
     { key: "stream", label: "Stream" },
-    { key: "assignments", label: "Assignments" },
     { key: "materials", label: "Materials" },
+    { key: "assignments", label: "Assignments" },
     { key: "tests", label: "Tests" },
     ...(isTeacher
       ? [
-          { key: "gradebook", label: "Gradebook" },
-          { key: "students", label: "Students" },
-          { key: "attendance", label: "Attendance" },
-        ]
+        { key: "gradebook", label: "Gradebook" },
+        { key: "students", label: "Students" },
+        { key: "attendance", label: "Attendance" },
+      ]
       : []),
   ];
 
@@ -39,7 +39,7 @@ export default function ClassroomTabs({ classroom, isTeacher, user }) {
               type="button"
               onClick={() => setActiveTab(tab.key)}
               className={cn(
-                "flex-shrink-0 px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap cursor-pointer",
+                "flex-shrink-0 px-4 py-3 text-m font-medium transition-colors whitespace-nowrap cursor-pointer",
                 activeTab === tab.key
                   ? "border-b-2 border-amber-600 text-amber-600"
                   : "border-b-2 border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300"
@@ -60,13 +60,6 @@ export default function ClassroomTabs({ classroom, isTeacher, user }) {
             user={user}
           />
         )}
-        {activeTab === "assignments" && (
-          <ClassroomAssignments
-            classroom={classroom}
-            isTeacher={isTeacher}
-            user={user}
-          />
-        )}
         {activeTab === "materials" && (
           <ClassroomMaterials
             classroom={classroom}
@@ -74,6 +67,14 @@ export default function ClassroomTabs({ classroom, isTeacher, user }) {
             user={user}
           />
         )}
+        {activeTab === "assignments" && (
+          <ClassroomAssignments
+            classroom={classroom}
+            isTeacher={isTeacher}
+            user={user}
+          />
+        )}
+
         {activeTab === "tests" && (
           <ClassroomTests
             classroom={classroom}
@@ -92,6 +93,9 @@ export default function ClassroomTabs({ classroom, isTeacher, user }) {
         )}
       </div>
     </div>
+    
+
+    
   );
 }
 

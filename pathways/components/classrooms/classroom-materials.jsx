@@ -26,6 +26,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import SearchAndFilterBar from "./SearchAndFilterBar";
+
 // Sample data including a PowerPoint example
 const mockMaterials = [
   {
@@ -133,12 +135,12 @@ export default function ClassroomMaterials({ classroom, isTeacher, user }) {
       prev.map((m) =>
         m.id === editingId
           ? {
-              ...m,
-              title: newMaterial.title,
-              description: newMaterial.description,
-              type: newMaterial.type,
-              url: newMaterial.url,
-            }
+            ...m,
+            title: newMaterial.title,
+            description: newMaterial.description,
+            type: newMaterial.type,
+            url: newMaterial.url,
+          }
           : m
       )
     );
@@ -279,35 +281,21 @@ export default function ClassroomMaterials({ classroom, isTeacher, user }) {
         </div>
 
         {/* ===== FILTER + SEARCH ===== */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex items-center space-x-3">
-            <Label htmlFor="filter" className="text-gray-700">
-              Filter:
-            </Label>
-            <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="w-48 ring-1 ring-gray-200 rounded-lg hover:ring-gray-300 focus:ring-blue-300">
-                <SelectValue placeholder="All" />
-              </SelectTrigger>
-              <SelectContent className="bg-white border border-gray-200 rounded-lg shadow-sm">
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="document">Documents</SelectItem>
-                <SelectItem value="video">Videos</SelectItem>
-                <SelectItem value="image">Images</SelectItem>
-                <SelectItem value="ppt">PowerPoints</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <SearchAndFilterBar
+          searchQuery={searchTerm}
+          setSearchQuery={setSearchTerm}
+          filterType={filterType}
+          setFilterType={setFilterType}
+          filterOptions={[
+            { value: "document", label: "Documents" },
+            { value: "video", label: "Videos" },
+            { value: "image", label: "Images" },
+            { value: "ppt", label: "PowerPoints" },
+          ]}
+          placeholder="Search materials..."
+        />
 
-          <div className="flex items-center w-full sm:w-auto space-x-2">
-            <Search className="w-5 h-5 text-gray-400" />
-            <Input
-              placeholder="Search materials..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full sm:w-64 ring-1 ring-gray-200 rounded-lg focus:ring-blue-300"
-            />
-          </div>
-        </div>
+
 
         {/* ===== GRID OF CARDS ===== */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

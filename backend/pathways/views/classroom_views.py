@@ -12,9 +12,10 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from pathways.utils import attach_mock_students_to_classroom, populate_mock_data_for_classroom
-from pathways.models.classroom import Classroom, Material, User
+from pathways.models.classroom import Classroom, Material, User, Comment
 from pathways.serializers import ClassroomSerializer, CreateClassroomSerializer
 import json
+from pathways.serializers import CommentSerializer, CreateCommentSerializer
 
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 15
@@ -85,9 +86,9 @@ class ClassroomCreateView(APIView):
             if serializer.is_valid(raise_exception=True):
                 classroom = serializer.save()
                 
-                attach_mock_students_to_classroom(classroom, number_of_students=10)
+                students = attach_mock_students_to_classroom(classroom, number_of_students=10)
+                populate_mock_data_for_classroom(classroom.id, students=students)
 
-                populate_mock_data_for_classroom(classroom.id)
                 return Response(
                     ClassroomSerializer(classroom, context={"request": request}).data,
                     status=status.HTTP_201_CREATED
@@ -103,6 +104,7 @@ class ClassroomCreateView(APIView):
                 {"detail": "Something went wrong.", "error": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
 
 class ClassroomDetailView(APIView):
     permission_classes = [IsAuthenticated]
@@ -139,6 +141,66 @@ class ClassroomDetailView(APIView):
             )
 
 
+@api_view(['GET', 'POST', 'PATCH', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def comment_view(request, material_id=None, comment_id=None):
+    user = request.user
+
+    try:
+        # GET comments for a material
+        if request.method == "GET" and material_id:
+            material = get_object_or_404(Material, id=material_id)
+            comments = Comment.objects.filter(material=material, replied_to=None).exclude(is_deleted=True)
+            return Response(CommentSerializer(comments, many=True).data)
+
+        # POST new comment or reply
+        if request.method == "POST":
+            data = request.data.copy()
+            parent_comment = None
+
+            if comment_id:
+                parent_comment = get_object_or_404(Comment, id=comment_id)
+                material = parent_comment.material
+                data["replied_to"] = parent_comment.id
+            else:
+                material = get_object_or_404(Material, id=material_id)
+
+            serializer = CreateCommentSerializer(data=data)
+            if serializer.is_valid(raise_exception=True):
+                comment = serializer.save(posted_by=user, material=material)
+                return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
+
+        if request.method == "PATCH" and comment_id:
+            comment = get_object_or_404(Comment, id=comment_id)
+            if comment.posted_by != user:
+                return Response({"error": "Unauthorized"}, status=403)
+
+            serializer = CreateCommentSerializer(comment, data=request.data, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save(edited=True)  # 👈 Flag it as edited
+                return Response(CommentSerializer(comment).data)
+
+        # DELETE = soft-delete
+        if request.method == "DELETE" and comment_id:
+            comment = get_object_or_404(Comment, id=comment_id)
+            if comment.posted_by != user:
+                return Response({"error": "Unauthorized"}, status=403)
+            comment.is_deleted = True
+            comment.content = ""
+            comment.save()
+            return Response({"message": "Comment deleted"}, status=204)
+
+        return Response({"error": "Unsupported operation"}, status=400)
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return Response(
+            {"error": "Comment operation failed", "detail": str(e)},
+            status=500
+        )
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def join_classroom_student(request):
@@ -163,7 +225,6 @@ def join_classroom_student(request):
             {"detail": "Could not join classroom", "error": str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -191,29 +252,6 @@ def join_classroom_teacher(request):
         )
 
 
-@require_http_methods(["GET"])
-def get_announcements_view(request, classroom_id):
-    try:
-        classroom = Classroom.objects.get(id=classroom_id)
-        announcements = classroom.stream.filter(type="announcement").order_by("-id")
-        data = [
-            {
-                "id": a.id,
-                "title": a.title,
-                "details": a.details,
-                "created_by": a.created_by.username,
-                "created_at": a.created_by.date_joined.strftime('%Y-%m-%d'),
-            }
-            for a in announcements
-        ]
-        return JsonResponse({"announcements": data})
-    except Classroom.DoesNotExist:
-        return JsonResponse({"error": "Classroom not found"}, status=404)
-
-
-@csrf_exempt
-@require_http_methods(["POST"])
-def create_announcement_view(request, classroom_id):
     try:
         body = json.loads(request.body)
         title = body.get("title")

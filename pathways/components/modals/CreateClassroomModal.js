@@ -1,13 +1,16 @@
 import { useState } from "react";
-import { X } from "lucide-react";
+import { Router, X } from "lucide-react";
 import mockStudents from "../../data/mockStudents";
 import emitter from "@/mitt";
 import fetchWithAuth from "@/lib/fetch_with_auth";
+import { useRouter } from "next/navigation";
 
 export default function CreateClassroomModal({ isOpen, onClose, user }) {
   const [form, setForm] = useState({ name: "", details: "" });
-  const [search, setSearch] = useState("");
-  const [selectedStudents, setSelectedStudents] = useState([]);
+
+
+  const router = useRouter();
+  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -20,8 +23,10 @@ export default function CreateClassroomModal({ isOpen, onClose, user }) {
         method: "POST",
         body: JSON.stringify(data),
       });
-      await res.json();
+      var reply = await res.json();
+      console.log("Classroom created:", reply);
       emitter.emit("update-classrooms");
+      router.push(`/classroom/${reply.id}`);
     } catch (error) {
       console.error("Failed to create classroom", error);
     }

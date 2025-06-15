@@ -12,8 +12,7 @@ from pathways.views.classroom_views import (
     ClassroomDetailView,
     join_classroom_student,
     join_classroom_teacher,
-    get_announcements_view,
-    create_announcement_view
+    comment_view,
 )
 
 
@@ -33,9 +32,8 @@ urlpatterns = [
     path("api/classroom/<int:id>/", ClassroomDetailView.as_view(), name="classroom-detail"),
     path("api/classroom/join/student/", join_classroom_student, name="classroom-join-student"),
     path("api/classroom/join/teacher/", join_classroom_teacher, name="classroom-join-teacher"),
+    path('api/classrooms/materials/<int:material_id>/comments/', comment_view, name='material-comments'),
+    path('api/classrooms/comments/<int:comment_id>/', comment_view, name='comment-detail'),
 
-    # API endpoints for Classroom Stream
-    path('classrooms/<int:classroom_id>/announcements/', get_announcements_view, name='get_announcements'),
-    path('classrooms/<int:classroom_id>/announcements/create/', create_announcement_view, name='create_announcement'),
 ]
 

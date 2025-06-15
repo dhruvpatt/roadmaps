@@ -6,28 +6,23 @@ from pathways.models import (
     Question, Comment, User
 )
 
-def populate_mock_data_for_classroom(classroom_id: int):
+def populate_mock_data_for_classroom(classroom_id: int, students: list[User] = None):
     try:
         classroom = Classroom.objects.get(id=classroom_id)
     except Classroom.DoesNotExist:
         print(f"Classroom with id {classroom_id} not found.")
         return
 
-    # Use existing users or create mock users
-    students = list(User.objects.filter(role="student")[:3])
-    teachers = list(User.objects.filter(role="teacher")[:1])
+    if students is None:
+        students = list(classroom.students.all())
 
-    if not students:
-        students = [
-            User.objects.create(username=f"student{i}", email=f"s{i}@test.com", role="student")
-            for i in range(1, 4)
-        ]
+    teachers = list(User.objects.filter(role="teacher")[:1])
     if not teachers:
         teachers = [
             User.objects.create(username="teacher1", email="t1@test.com", role="teacher")
         ]
 
-    classroom.students.set(students)
+    classroom.teachers.set(teachers)
     classroom.teachers.set(teachers)
 
     # Add Units and Weeks

@@ -42,7 +42,11 @@ class Week(models.Model):
     student_analytics = models.ManyToManyField(Analytics, related_name='week_student_analytics', blank=True)
 
 class Comment(models.Model):
-    content = models.TextField()
+    content = models.TextField(null=True, blank=True)
     posted_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    material = models.ForeignKey(Material, on_delete=models.CASCADE, related_name='comments', null=True, blank=True)
     date = models.DateTimeField(auto_now_add=True)
     replied_to = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE)
+    is_deleted = models.BooleanField(default=False)
+    edited = models.BooleanField(default=False) 
+
