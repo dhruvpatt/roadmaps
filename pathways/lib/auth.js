@@ -32,6 +32,8 @@ export async function signup(data) {
   });
 
   if (!res.ok) console.error("Login failed", res.statusText);
+  console.log(data)
+  await login({username: data.username, password: data.password});
   return await fetchCurrentUser();
 }
 

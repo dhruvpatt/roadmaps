@@ -59,14 +59,14 @@ export default async function fetchWithAuth(endpoint, options = {}) {
       }
 
       // Redirect to error page if in browser
-      // const { code, title, message, details } = errorData;
-      // if (typeof window !== "undefined") {
-      //   window.location.href = `/error?code=${code}&title=${encodeURIComponent(
-      //     title
-      //   )}&message=${encodeURIComponent(message)}&details=${encodeURIComponent(
-      //     details || ""
-      //   )}`;
-      // }
+      const { code, title, message, details } = errorData;
+      if (typeof window !== "undefined") {
+        window.location.href = `/error?code=${code}&title=${encodeURIComponent(
+          title
+        )}&message=${encodeURIComponent(message)}&details=${encodeURIComponent(
+          details || ""
+        )}`;
+      }
 
       // throw new Error(message || "Request failed");
     }

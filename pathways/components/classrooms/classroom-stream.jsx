@@ -35,7 +35,7 @@ export default function ClassroomStream({ classroom, isTeacher, user }) {
   const [selectedType, setSelectedType] = useState(null);
 
   useEffect(() => {
-    const streamPosts = classroom.stream.map((item) => ({
+    const streamPosts = classroom.materials.map((item) => ({
       id: item.id,
       created_by: item.created_by, // 👈 use as-is
       content: item.details,

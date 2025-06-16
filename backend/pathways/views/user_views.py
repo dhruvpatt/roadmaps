@@ -43,7 +43,14 @@ class UserSignupView(APIView):
 
     def post(self, request):
         print(request.data)
-        serializer = UserSerializer(data=request.data)
+        data = request.data.copy()
+        allowed_roles = ["student", "teacher"]
+        if "role" in data and data["role"] not in allowed_roles:
+            return Response(
+                {"role": "Invalid role. Allowed: student or teacher."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        serializer = UserSerializer(data=data)
         if serializer.is_valid():
             user = serializer.save()
             return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)

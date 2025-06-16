@@ -3,7 +3,7 @@ from datetime import timedelta
 from django.utils import timezone
 from pathways.models import (
     Classroom, Unit, Week, Material, Test, Homework, CheckIn, Resource,
-    Question, Comment, User
+    Question, Comment, User, MaterialType
 )
 
 def populate_mock_data_for_classroom(classroom_id: int, students: list[User] = None):
@@ -16,14 +16,16 @@ def populate_mock_data_for_classroom(classroom_id: int, students: list[User] = N
     if students is None:
         students = list(classroom.students.all())
 
-    teachers = list(User.objects.filter(role="teacher")[:1])
-    if not teachers:
-        teachers = [
-            User.objects.create(username="teacher1", email="t1@test.com", role="teacher")
-        ]
+    # Always keep the existing teachers (including creator!)
+    teachers = list(classroom.teachers.all())
+    # Optionally, add a mock teacher if not already present (for demo data variety)
+    mock_teacher = User.objects.filter(role="teacher").exclude(id__in=[t.id for t in teachers]).first()
+    if mock_teacher and mock_teacher not in teachers:
+        teachers.append(mock_teacher)
+    # Add any missing teachers, but DON'T overwrite!
+    for t in teachers:
+        classroom.teachers.add(t)  # This is safe, does not duplicate
 
-    classroom.teachers.set(teachers)
-    classroom.teachers.set(teachers)
 
     # Add Units and Weeks
     for i in range(1, 3):
@@ -39,16 +41,17 @@ def populate_mock_data_for_classroom(classroom_id: int, students: list[User] = N
     material_types = ["file", "url", "announcement", "general"]
     materials = []
     for mtype in material_types:
+        mtype_obj = MaterialType.objects.get(key=mtype)  # get the MaterialType instance
         for i in range(5):
+            chosen_types = random.sample(list(MaterialType.objects.all()), k=random.randint(1, 2))  # 1 or 2 types
             material = Material.objects.create(
-                type=mtype,
-                title=f"{mtype.capitalize()} Material {i}",
-                details=f"Details for {mtype} material {i}",
-                created_by=random.choice(teachers)
+                title=f"Material {i}",
+                details=f"Details for material {i}",
+                created_by=random.choice(teachers),
+                classroom=classroom,
             )
-            materials.append(material)
-            classroom.stream.add(material)
-
+            material.types.set(chosen_types)
+            material.save()
     # Create Tests (3 total)
     for i in range(3):
         test = Test.objects.create(
@@ -123,3 +126,62 @@ def populate_mock_data_for_classroom(classroom_id: int, students: list[User] = N
         )
 
     print(f"✅ Successfully populated classroom '{classroom.name}' with full mock data (including 5 resources and 20 materials).")
+
+def create_mock_materials_for_classroom(classroom, teachers=None, count_per_type=5):
+    """
+    Adds a batch of mock Material objects to a classroom.
+    Each material gets one or more types assigned.
+    """
+    if teachers is None:
+        teachers = list(classroom.teachers.all())
+        if not teachers:
+            teachers = [User.objects.filter(role="teacher").first()]
+
+    # Ensure MaterialTypes exist (skip if already exists)
+    material_type_keys_labels = [
+        ("file", "File"),
+        ("url", "URL"),
+        ("announcement", "Announcement"),
+        ("general", "General"),
+    ]
+    type_objs = []
+    for key, label in material_type_keys_labels:
+        t, _ = MaterialType.objects.get_or_create(key=key, defaults={"label": label})
+        type_objs.append(t)
+
+    # Create Materials
+    for i in range(count_per_type):
+        # Pick 1-2 random types for this material
+        if i % 2 == 0:
+            material_types = random.sample(type_objs, k=1)
+        else:
+            material_types = random.sample(type_objs, k=2)
+        teacher = random.choice(teachers)
+        title = f"Material {i+1}"
+        details = f"Details for material {i+1}"
+        content = []
+        # Example file/url for 'file' or 'url'
+        if any(t.key == "file" for t in material_types):
+            content = [{
+                "url": f"https://files.example.com/material_{i+1}.pdf",
+                "filename": f"material_{i+1}.pdf",
+                "mimetype": "application/pdf",
+            }]
+        elif any(t.key == "url" for t in material_types):
+            content = [{
+                "url": f"https://example.com/resource/{i+1}",
+                "filename": "",
+                "mimetype": "text/html",
+            }]
+        # Create the material
+        material = Material.objects.create(
+            title=title,
+            details=details,
+            created_by=teacher,
+            classroom=classroom,
+            content=content,
+            likes=random.randint(0, 10),
+        )
+        material.types.set(material_types)
+        material.save()
+    print(f"✅ Created {count_per_type} mock materials for classroom '{classroom.name}'.")

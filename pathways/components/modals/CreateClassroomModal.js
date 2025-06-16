@@ -40,8 +40,6 @@ export default function CreateClassroomModal({ isOpen, onClose, user }) {
     createClassroom(classroom);
     onClose();
     setForm({ name: "", details: "" });
-    setSelectedStudents([]);
-    setSearch("");
 
   };
 

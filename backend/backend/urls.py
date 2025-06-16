@@ -13,7 +13,9 @@ from pathways.views.classroom_views import (
     ClassroomListView,
     ClassroomCreateView,
     ClassroomDetailView,
-    FileUploadView,
+    MaterialListView,
+    MaterialCreateView,
+    MaterialDetailView,
     join_classroom_student,
     join_classroom_teacher,
     comment_view,
@@ -37,8 +39,9 @@ urlpatterns = [
     path("api/classroom/join/student/", join_classroom_student, name="classroom-join-student"),
     path("api/classroom/join/teacher/", join_classroom_teacher, name="classroom-join-teacher"),
 
-    path("api/materials/upload/", FileUploadView.as_view(), name="material-file-upload"),
-
+    path("api/materials/", MaterialListView.as_view(), name="material-list"),
+    path("api/materials/create/", MaterialCreateView.as_view(), name="material-create"),
+    path("api/materials/<int:id>/", MaterialDetailView.as_view(), name="material-detail"),
 
     path('api/classrooms/materials/<int:material_id>/comments/', comment_view, name='material-comments'),
     path('api/classrooms/comments/<int:comment_id>/', comment_view, name='comment-detail'),

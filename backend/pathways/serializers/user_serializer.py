@@ -6,10 +6,14 @@ User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
+    role = serializers.ChoiceField(choices=[("student", "student"), ("teacher", "teacher")])
 
     class Meta:
         model = User
-        fields = ["id", "username", "email", "first_name", "last_name", "password", "grade", "age", "role"]
+        fields = [
+            "id", "username", "email", "first_name", "last_name",
+            "password", "grade", "age", "role"
+        ]
 
     def create(self, validated_data):
         password = validated_data.pop("password")
@@ -17,6 +21,7 @@ class UserSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
+
 
 class MissedDeliverableSerializer(serializers.ModelSerializer):
     deliverable_repr = serializers.SerializerMethodField()

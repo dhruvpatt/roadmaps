@@ -1,25 +1,61 @@
 import secrets
 from rest_framework import serializers
-from pathways.models import Material, Unit, Week, Comment, Classroom
+from pathways.models import Material, Unit, Week, Comment, Classroom, MaterialType
 from pathways.serializers.user_serializer import UserSerializer
 from pathways.serializers.analytics_serializer import AnalyticsSerializer
 
+class MaterialTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MaterialType
+        fields = ("key", "label")
+
+class MaterialViewSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    class Meta:
+        model = Material
+        fields = ("user", "time_viewed", "last_viewed")
 
 class MaterialSerializer(serializers.ModelSerializer):
+    types = MaterialTypeSerializer(many=True, read_only=True)
+    type_keys = serializers.SlugRelatedField(
+        queryset=MaterialType.objects.all(),
+        many=True,
+        slug_field="key",
+        write_only=True,
+        source="types"
+    )
     created_by = UserSerializer(read_only=True)
-    viewed_by = UserSerializer(many=True, read_only=True)
-    comments = serializers.SerializerMethodField(read_only=True)
+    comments = serializers.SerializerMethodField()
+    viewed_by = serializers.SerializerMethodField()
 
     class Meta:
         model = Material
         fields = [
-            "id", "type", "title", "details", "created_by",
-            "content", "likes", "viewed_by", "time_viewed",
-            "last_viewed", "comments"
+            "id", "types", "type_keys", "title", "details", "created_by",
+            "content", "likes", "viewed_by", "comments"
         ]
 
     def get_comments(self, obj):
-        return CommentSerializer(Comment.objects.filter(material=obj), many=True).data
+        return CommentSerializer(obj.comments.all(), many=True).data
+
+    def get_viewed_by(self, obj):
+        return UserSerializer(obj.viewed_by.all(), many=True).data
+
+    def create(self, validated_data):
+        types = validated_data.pop('types', [])
+        material = Material.objects.create(**validated_data)
+        if types:
+            material.types.set(types)
+        return material
+
+    def update(self, instance, validated_data):
+        types = validated_data.pop('types', None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        if types is not None:
+            instance.types.set(types)
+        instance.save()
+        return instance
 
 
 class CreateCommentSerializer(serializers.ModelSerializer):
@@ -128,8 +164,8 @@ class CreateClassroomSerializer(serializers.ModelSerializer):
 class ClassroomSerializer(serializers.ModelSerializer):
     teachers = UserSerializer(many=True, read_only=True)
     students = UserSerializer(many=True, read_only=True)
-    stream = MaterialSerializer(many=True, read_only=True)
     units = UnitSerializer(many=True, read_only=True)
+    materials = MaterialSerializer(many=True, read_only=True)
 
     class Meta:
         model = Classroom
@@ -140,6 +176,6 @@ class ClassroomSerializer(serializers.ModelSerializer):
             "details",
             "teachers",
             "students",
-            "stream",
+            "materials",
             "units",
         ]
