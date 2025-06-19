@@ -2,22 +2,37 @@ import React from "react";
 import PropTypes from "prop-types";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
+} from "@/components/ui/dropdown-menu";
 import { Search } from "lucide-react";
 
 export default function SearchAndFilterBar({
   searchQuery,
   setSearchQuery,
-  filterType,
-  setFilterType,
+  filterTypes = [],
+  setFilterTypes,
   filterOptions,
   placeholder = "Search...",
 }) {
+  // Helper to toggle a filter type
+  const toggleType = (type) => {
+    setFilterTypes((prev) =>
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+    );
+  };
+
+  // For button label: list selected labels, or "Filter by Type"
+  const selectedLabel =
+    filterTypes?.length === 0
+      ? "Filter by Type"
+      : filterOptions
+        .filter((opt) => filterTypes.includes(opt.value))
+        .map((opt) => opt.label)
+        .join(", ");
+
   return (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
       <div className="flex items-center space-x-2 w-full sm:w-auto relative">
@@ -25,33 +40,34 @@ export default function SearchAndFilterBar({
           placeholder={placeholder}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full sm:w-64 ring-1 shadow-sm border border-gray-200 ring-gray-200 rounded-lg focus:ring-blue-300 pr-10"
+          className="w-full sm:w-100 ring-1 shadow-sm border border-gray-200 ring-gray-200 rounded-lg focus:ring-blue-300 pr-10"
         />
         <Search className="absolute right-3 text-gray-400 w-5 h-5 pointer-events-none" />
       </div>
       <div className="flex items-center space-x-3">
-        <Select value={filterType} onValueChange={setFilterType}>
-          <SelectTrigger className="w-48 ring-1  shadow-sm border border-gray-200 ring-gray-200 rounded-lg hover:ring-gray-300 focus:ring-blue-300">
-            <SelectValue placeholder="No Filter" />
-          </SelectTrigger>
-          <SelectContent className="bg-white shadow-sm border border-gray-200 rounded-lg shadow-sm">
-            <SelectItem
-              value="all"
-              className="hover:bg-gray-100 cursor-pointer"
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className="w-50 ring-1 shadow-sm border border-gray-200 ring-gray-200 rounded-lg hover:ring-gray-300 hover:bg-gray-50 focus:ring-blue-300 px-4 py-2 text-left"
+              type="button"
             >
-              No Filter
-            </SelectItem>
+              {selectedLabel}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="bg-white shadow-sm border border-gray-200 rounded-lg p-1">
             {filterOptions.map((option) => (
-              <SelectItem
+              <DropdownMenuCheckboxItem
                 key={option.value}
-                value={option.value}
+                checked={filterTypes.includes(option.value)}
+                onSelect={e => e.preventDefault()}
+                onCheckedChange={() => toggleType(option.value)}
                 className="hover:bg-gray-100 cursor-pointer"
               >
                 {option.label}
-              </SelectItem>
+              </DropdownMenuCheckboxItem>
             ))}
-          </SelectContent>
-        </Select>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
@@ -60,8 +76,8 @@ export default function SearchAndFilterBar({
 SearchAndFilterBar.propTypes = {
   searchQuery: PropTypes.string.isRequired,
   setSearchQuery: PropTypes.func.isRequired,
-  filterType: PropTypes.string.isRequired,
-  setFilterType: PropTypes.func.isRequired,
+  filterTypes: PropTypes.arrayOf(PropTypes.string).isRequired,      // <-- array
+  setFilterTypes: PropTypes.func.isRequired,                        // <-- array mutator
   filterOptions: PropTypes.arrayOf(
     PropTypes.shape({
       value: PropTypes.string.isRequired,

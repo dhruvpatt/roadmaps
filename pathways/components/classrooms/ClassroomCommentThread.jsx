@@ -24,7 +24,7 @@ export default function CommentThread({
 
     const handleEdit = async () => {
         try {
-            const res = await fetchWithAuth(`/api/classrooms/comments/${comment.id}/`, {
+            const res = await fetchWithAuth(`/api/classroom/comments/${comment.id}/`, {
                 method: "PATCH",
                 body: JSON.stringify({ content: input }),
             });
@@ -38,7 +38,7 @@ export default function CommentThread({
 
     const handleDelete = async () => {
         try {
-            await fetchWithAuth(`/api/classrooms/comments/${comment.id}/`, {
+            await fetchWithAuth(`/api/classroom/comments/${comment.id}/`, {
                 method: "DELETE",
             });
             onUpdate(comment.id, { deleted: true });
@@ -50,7 +50,7 @@ export default function CommentThread({
     const handleReply = async () => {
         try {
             const res = await fetchWithAuth(
-                `/api/classrooms/materials/${materialId}/comments/`,
+                `/api/classroom/materials/${materialId}/comments/`,
                 {
                     method: "POST",
                     body: JSON.stringify({

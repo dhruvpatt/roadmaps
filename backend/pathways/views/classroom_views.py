@@ -26,7 +26,7 @@ from pathways.serializers import (
     CommentSerializer,
     CreateCommentSerializer,
 )
-from pathways.utils import attach_mock_students_to_classroom, populate_mock_data_for_classroom, create_mock_materials_for_classroom
+from pathways.utils import attach_mock_students_to_classroom, create_mock_deliverables_for_classroom, create_mock_materials_for_classroom
 
 
 ALLOWED_MIME_TYPES = {
@@ -70,9 +70,22 @@ def is_member(user, classroom):
 
 
 class StandardResultsSetPagination(PageNumberPagination):
-    page_size = 15
+    page_size = 10  # Default page size
     page_size_query_param = "page_size"
-    max_page_size = 100
+    max_page_size = 25
+
+    def get_page_size(self, request):
+        try:
+            page_size = int(request.query_params.get(self.page_size_query_param, self.page_size))
+            # Clamp between 1 and max_page_size
+            if page_size < 1:
+                return 1
+            if page_size > self.max_page_size:
+                return self.max_page_size
+            return page_size
+        except (ValueError, TypeError):
+            return self.page_size
+
 
 #region Classroom Views
 
@@ -130,12 +143,12 @@ class ClassroomCreateView(APIView):
                 # Add mock students
                 students = attach_mock_students_to_classroom(classroom, number_of_students=10)
 
-                # Add mock materials (multi-type), pass the classroom and the teacher(s)
                 teachers = list(classroom.teachers.all())
-                create_mock_materials_for_classroom(classroom, teachers=teachers, count_per_type=5)
 
-                # Populate other mock data (units, weeks, etc)
-                populate_mock_data_for_classroom(classroom.id, students=students)
+                materials = create_mock_materials_for_classroom(classroom, teachers=teachers, count_per_type=15)
+
+                # Populate all mock data: units, weeks, materials, tests, homeworks, etc.
+                create_mock_deliverables_for_classroom(materials, classroom.id, students=students)
 
                 return Response(
                     ClassroomSerializer(classroom, context={"request": request}).data,
@@ -202,7 +215,7 @@ class MaterialListView(ListAPIView):
     def get_queryset(self):
         user = self.request.user
         classrooms = Classroom.objects.filter(Q(students=user) | Q(teachers=user)).distinct()
-        return Material.objects.filter(classroom__in=classrooms).order_by("-id")
+        return Material.objects.filter(classroom__in=classrooms).order_by("created_at")
 
     def list(self, request, *args, **kwargs):
         try:

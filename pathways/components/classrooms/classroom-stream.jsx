@@ -29,7 +29,7 @@ export default function ClassroomStream({ classroom, isTeacher, user }) {
   const [commentInput, setCommentInput] = useState({});
   const [showComments, setShowComments] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
+  const [typeFilters, setTypeFilters] = useState([]); // instead of "all"
   const [showDrawer, setShowDrawer] = useState(false);
   const [drawerStep, setDrawerStep] = useState("select"); // or "form"
   const [selectedType, setSelectedType] = useState(null);
@@ -44,7 +44,8 @@ export default function ClassroomStream({ classroom, isTeacher, user }) {
       liked: false,
       comments: item.comments || [],
       attachments: [],
-      type: item.type,
+      types: item.types,
+
       title: item.title,
     }));
 
@@ -60,19 +61,20 @@ export default function ClassroomStream({ classroom, isTeacher, user }) {
   }, [user]);
 
 
-  const iconForType = (type) => {
-    switch (type) {
+  const iconForType = (typeKey) => {
+    switch (typeKey) {
       case "announcement":
         return <Megaphone className="w-4 h-4 text-amber-600" />;
       case "file":
         return <FileText className="w-4 h-4 text-blue-500" />;
-      case "url":
+      case "link":
         return <Link className="w-4 h-4 text-green-600" />;
       case "general":
       default:
         return <MessageCircle className="w-4 h-4 text-gray-500" />;
     }
   };
+
 
   const colorForType = {
     amber: "bg-amber-600 hover:bg-amber-700",
@@ -87,14 +89,17 @@ export default function ClassroomStream({ classroom, isTeacher, user }) {
     const matchesSearch = post.content
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
-    const matchesType = typeFilter === "all" || post.type === typeFilter;
+    const matchesType =
+      typeFilters.length === 0 ||
+      post.types.some((t) => typeFilters.includes(t.key));
     return matchesSearch && matchesType;
   });
+
 
   async function createPost({ classroomId, details, userId, content }) {
     try {
       const res = await fetch(
-        `/api/classrooms/${classroomId}/announcements/create/`,
+        `/api/classroom/${classroomId}/announcements/create/`,
         {
           method: "POST",
           headers: {
@@ -152,7 +157,7 @@ export default function ClassroomStream({ classroom, isTeacher, user }) {
     if (!text) return;
 
     try {
-      const res = await fetchWithAuth(`/api/classrooms/materials/${postId}/comments/`, {
+      const res = await fetchWithAuth(`/api/classroom/materials/${postId}/comments/`, {
         method: "POST",
         body: JSON.stringify({ content: text }),
       });
@@ -185,16 +190,17 @@ export default function ClassroomStream({ classroom, isTeacher, user }) {
         <SearchAndFilterBar
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
-          filterType={typeFilter}
-          setFilterType={setTypeFilter}
+          filterTypes={typeFilters}
+          setFilterTypes={setTypeFilters}
           filterOptions={[
             { value: "announcement", label: "Announcements" },
             { value: "file", label: "Files" },
-            { value: "url", label: "Links" },
+            { value: "link", label: "Links" },
             { value: "general", label: "General" },
           ]}
           placeholder="Search stream..."
         />
+
 
 
         {/* Posts */}
@@ -205,30 +211,33 @@ export default function ClassroomStream({ classroom, isTeacher, user }) {
               className={cn(
                 "rounded-md border border-gray-100 shadow-sm transition-colors hover:bg-opacity-80",
                 {
-                  "bg-amber-50": post.type === "announcement",
-                  "bg-blue-50": post.type === "file",
-                  "bg-green-50": post.type === "url",
-                  "bg-gray-50": post.type === "general",
+                  "bg-amber-50": post.types?.[0]?.key === "announcement",
+                  "bg-blue-50": post.types?.[0]?.key === "file",
+                  "bg-green-50": post.types?.[0]?.key === "link",
+                  "bg-gray-50": post.types?.[0]?.key === "general",
                 }
               )}
             >
 
               <CardHeader>
-                <div className="mb-2">
-                  <span
-                    className={cn(
-                      "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium capitalize",
-                      {
-                        "bg-amber-100 text-amber-700": post.type === "announcement",
-                        "bg-blue-100 text-blue-700": post.type === "file",
-                        "bg-green-100 text-green-700": post.type === "url",
-                        "bg-gray-100 text-gray-700": post.type === "general",
-                      }
-                    )}
-                  >
-                    {iconForType(post.type)}
-                    {post.type}
-                  </span>
+                <div className="mb-2 flex flex-wrap gap-1">
+                  {post.types.map((type) => (
+                    <span
+                      key={type.key}
+                      className={cn(
+                        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium capitalize",
+                        {
+                          "bg-amber-100 text-amber-700": type.key === "announcement",
+                          "bg-blue-100 text-blue-700": type.key === "file",
+                          "bg-green-100 text-green-700": type.key === "link",
+                          "bg-gray-100 text-gray-700": type.key === "general",
+                        }
+                      )}
+                    >
+                      {iconForType(type.key)}
+                      {type.label}
+                    </span>
+                  ))}
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -371,7 +380,7 @@ export default function ClassroomStream({ classroom, isTeacher, user }) {
                 {[
                   { type: "announcement", label: "Announcement", color: "amber", icon: <Megaphone className="w-4 h-4" /> },
                   { type: "file", label: "File", color: "blue", icon: <FileText className="w-4 h-4" /> },
-                  { type: "url", label: "URL", color: "green", icon: <Link className="w-4 h-4" /> },
+                  { type: "link", label: "Link", color: "green", icon: <Link className="w-4 h-4" /> },
                   { type: "general", label: "General", color: "gray", icon: <MessageCircle className="w-4 h-4" /> },
                 ].map(({ type, label, color, icon }) => {
                   const colorClasses = {

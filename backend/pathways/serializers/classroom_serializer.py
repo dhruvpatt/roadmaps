@@ -32,7 +32,7 @@ class MaterialSerializer(serializers.ModelSerializer):
         model = Material
         fields = [
             "id", "types", "type_keys", "title", "details", "created_by",
-            "content", "likes", "viewed_by", "comments"
+            "content", "likes", "viewed_by", "comments", "created_at"
         ]
 
     def get_comments(self, obj):

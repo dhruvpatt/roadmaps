@@ -4,7 +4,7 @@ from pathways.models import User, Analytics
 
 ALLOWED_MATERIAL_TYPES = (
     ("file", "File"),
-    ("url", "URL"),
+    ("link", "Link"),
     ("announcement", "Announcement"),
     ("general", "General"),
 )
@@ -43,6 +43,8 @@ class Material(models.Model):
         blank=True
     )
     classroom = models.ForeignKey('Classroom', on_delete=models.CASCADE, related_name="materials", null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)  # <-- Add this line
+
 
 
 
