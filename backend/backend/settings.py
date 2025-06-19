@@ -92,10 +92,12 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+DB_PATH = os.getenv("DJANGO_DB_PATH")
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': DB_PATH or os.path.join(BASE_DIR, "db.sqlite3"),
     }
 }
 
@@ -146,11 +148,13 @@ CORS_ALLOW_CREDENTIALS = True  # Required to allow cookies (sessionid, csrftoken
 CORS_ALLOW_ALL_ORIGINS = False  # Must be False when using credentials
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # Frontend origin
+    "http://127.0.0.1:3000"
 ]
 
 # --- CSRF & Session Cookie Settings ---
 CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",  # Ensures CSRF validation works across origins
+    "http://localhost:3000",
+    "http://127.0.0.1:3000" # Ensures CSRF validation works across origins
 ]
 
 CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
