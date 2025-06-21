@@ -42,7 +42,15 @@ class UserSignupView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        serializer = UserSerializer(data=request.data)
+        print(request.data)
+        data = request.data.copy()
+        allowed_roles = ["student", "teacher"]
+        if "role" in data and data["role"] not in allowed_roles:
+            return Response(
+                {"role": "Invalid role. Allowed: student or teacher."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        serializer = UserSerializer(data=data)
         if serializer.is_valid():
             user = serializer.save()
             return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
@@ -60,20 +68,29 @@ class UserSignupView(APIView):
 
         return Response(custom_errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 class LoginView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def post(self, request):
+        print("🚨 Incoming login request")
+        print("Headers:", request.headers)
+        print("Cookies:", request.COOKIES)
+        print("Session key:", request.session.session_key)
+        print("Request user (before login):", request.user)
+
         username = request.data.get("username")
         password = request.data.get("password")
+        print(f"Username: {username}, Password: {password}")
 
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
             request.session.save()
-            serialized = UserSerializer(user)
-            return Response({"detail": "Logged in", "user": serialized.data}, status=status.HTTP_200_OK)
+            print("✅ Login successful:", user.username)
+            print("Session key (after login):", request.session.session_key)
+            return Response({"detail": "Logged in", "user": UserSerializer(user).data}, status=status.HTTP_200_OK)
+
+        print("❌ Invalid credentials")
         return Response({"detail": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
 
 

@@ -71,8 +71,12 @@ class WeekAdmin(admin.ModelAdmin):
 
 @admin.register(Material)
 class MaterialAdmin(admin.ModelAdmin):
-    list_display = ('id', 'type', 'title', 'created_by', 'likes', 'last_viewed')
+    list_display = ('id', 'display_types', 'title', 'created_by', 'likes')
     search_fields = ('title', 'created_by__username')
+
+    def display_types(self, obj):
+        return ", ".join([t.label for t in obj.types.all()])
+    display_types.short_description = "Types"
 
 
 @admin.register(Test)

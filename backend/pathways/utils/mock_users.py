@@ -62,11 +62,7 @@ def get_or_create_mock_students(required_count=10):
 
 
 def attach_mock_students_to_classroom(classroom, number_of_students=10):
-    """
-    Attaches mock students to a classroom. Ensures no duplicates.
-    """
-    mock_students = get_or_create_mock_students(
-        required_count=number_of_students)
-
+    mock_students = get_or_create_mock_students(required_count=number_of_students)
     for student in mock_students:
         classroom.students.add(student)
+    return mock_students

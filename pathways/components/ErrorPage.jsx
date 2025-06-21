@@ -30,7 +30,7 @@ export default function ErrorPage({ code, title, message, details, redirectTo = 
               {showDetails ? "Hide Details" : "Show Details"}
             </button>
             {showDetails && (
-              <pre className="text-left bg-gray-100 text-sm text-gray-600 mt-2 p-2 rounded border border-gray-200 overflow-x-auto whitespace-pre-wrap">
+              <pre className="text-left bg-gray-100 text-sm text-gray-600 mt-2 p-2 rounded shadow-sm border border-gray-200 overflow-x-auto whitespace-pre-wrap">
                 {details}
               </pre>
             )}

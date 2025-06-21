@@ -1,23 +1,111 @@
 import secrets
 from rest_framework import serializers
-from pathways.models import Material, Unit, Week, Comment, Classroom
+from pathways.models.classroom import (
+    Classroom,
+    Material,
+    MaterialView,
+    Comment,
+    MaterialType,
+    Week,
+    Unit,
+)
 from pathways.serializers.user_serializer import UserSerializer
 from pathways.serializers.analytics_serializer import AnalyticsSerializer
 
+class MaterialTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MaterialType
+        fields = ("key", "label")
 
-class MaterialSerializer(serializers.ModelSerializer):
+class MaterialViewSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
     class Meta:
         model = Material
-        fields = "__all__"
+        fields = ("user", "time_viewed", "last_viewed")
+
+class MaterialSerializer(serializers.ModelSerializer):
+    types = MaterialTypeSerializer(many=True, read_only=True)
+    type_keys = serializers.SlugRelatedField(
+        queryset=MaterialType.objects.all(),
+        many=True,
+        slug_field="key",
+        write_only=True,
+        source="types"
+    )
+    created_by = UserSerializer(read_only=True)
+    comments = serializers.SerializerMethodField()
+    viewed_by = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Material
+        fields = [
+            "id", "types", "type_keys", "title", "details", "created_by",
+            "content", "likes", "viewed_by", "comments", "created_at"
+        ]
+
+    def get_comments(self, obj):
+        return CommentSerializer(obj.comments.all(), many=True).data
+
+    def get_viewed_by(self, obj):
+        return UserSerializer(obj.viewed_by.all(), many=True).data
+
+    def create(self, validated_data):
+        types = validated_data.pop('types', [])
+        material = Material.objects.create(**validated_data)
+        if types:
+            material.types.set(types)
+        return material
+
+    def update(self, instance, validated_data):
+        types = validated_data.pop('types', None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        if types is not None:
+            instance.types.set(types)
+        instance.save()
+        return instance
+
+
+class CreateCommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = ['content', 'replied_to']
+
+    def validate_content(self, value):
+        if not value.strip():
+            raise serializers.ValidationError(
+                "Comment content cannot be empty.")
+        return value
 
 
 class CommentSerializer(serializers.ModelSerializer):
     posted_by = UserSerializer(read_only=True)
-    replied_to = serializers.PrimaryKeyRelatedField(queryset=Comment.objects.all(), required=False)
+    replied_to = serializers.PrimaryKeyRelatedField(
+        queryset=Comment.objects.all(), required=False)
+    replies = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
-        fields = ["id", "content", "posted_by", "date", "replied_to"]
+        fields = ["id", "content", "posted_by",
+                  "date", "replied_to", "edited", "replies"]
+
+    def get_replies(self, obj):
+        replies = Comment.objects.filter(replied_to=obj)
+        return CommentSerializer(replies, many=True).data
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        if instance.is_deleted:
+            rep["content"] = "[deleted]"
+            rep["posted_by"] = None
+        return rep
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        if instance.is_deleted:
+            rep["content"] = "[deleted]"
+            rep["posted_by"] = None
+        return rep
 
 
 class WeekSerializer(serializers.ModelSerializer):
@@ -53,7 +141,6 @@ class CreateClassroomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Classroom
         fields = ['name', 'details']
-        
 
     def create(self, validated_data):
         # Get the current user from context
@@ -62,7 +149,8 @@ class CreateClassroomSerializer(serializers.ModelSerializer):
         user = getattr(request, 'user', None)
         # Fallback in case context not set
         if user is None or not user.is_authenticated:
-            raise serializers.ValidationError('Authentication credentials were not provided.')
+            raise serializers.ValidationError(
+                'Authentication credentials were not provided.')
 
         # Generate a unique, URL-safe join code
         join_id = secrets.token_urlsafe(6)
@@ -84,8 +172,8 @@ class CreateClassroomSerializer(serializers.ModelSerializer):
 class ClassroomSerializer(serializers.ModelSerializer):
     teachers = UserSerializer(many=True, read_only=True)
     students = UserSerializer(many=True, read_only=True)
-    stream = MaterialSerializer(many=True, read_only=True)
     units = UnitSerializer(many=True, read_only=True)
+    materials = MaterialSerializer(many=True, read_only=True)
 
     class Meta:
         model = Classroom
@@ -96,6 +184,6 @@ class ClassroomSerializer(serializers.ModelSerializer):
             "details",
             "teachers",
             "students",
-            "stream",
+            "materials",
             "units",
         ]

@@ -93,7 +93,7 @@ export default function ClassroomAssignments({ classroom, isTeacher }) {
           {assignments.map((a) => (
             <Card
               key={a.id}
-              className="border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              className="shadow-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <CardHeader>
                 {/* First row: title & details */}

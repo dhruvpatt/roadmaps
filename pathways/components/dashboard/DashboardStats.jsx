@@ -37,7 +37,6 @@ const getTypeIcon = (type) => {
 const getUrgencyColor = (daysLeft, type) => {
   const base = type === "test" ? 3 : type === "assignment" ? 2 : 1;
   const urgency = base / Math.max(0.1, daysLeft / 2);
-  console.log(`Urgency for ${type} with ${daysLeft} days left: ${urgency}`);
   if (urgency > 2) return "text-red-600";
   if (urgency > 1) return "text-orange-500";
   return "text-green-600";

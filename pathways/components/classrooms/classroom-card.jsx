@@ -35,7 +35,7 @@ export default function ClassroomCard({
   }, [menuOpen]);
 
   return (
-    <Card className="relative overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow duration-200">
+    <Card className="relative overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg transition-shadow duration-200">
       {/* Header with gradient background */}
       <div className="h-24 bg-gradient-to-r from-blue-500 to-blue-600 relative">
         <div className="absolute top-4 right-4">
@@ -52,7 +52,7 @@ export default function ClassroomCard({
           {menuOpen && (
             <div
               ref={menuRef}
-              className="absolute right-0 top-8 mt-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10"
+              className="absolute right-0 top-8 mt-1 w-32 bg-white shadow-sm border border-gray-200 rounded-lg shadow-lg z-10"
             >
               <button
                 type="button"

@@ -86,7 +86,7 @@ export default function ClassroomHeader({
         </div>
         <div className="border-t border-white/30 py-3">
           <div className="max-w-7xl mx-auto px-8 text-sm text-white/80">
-            Teacher(s):{" "}
+            Teacher{teachers.length > 1 ? "s" : ""} :{" "}
             <span className="font-medium text-white">
               {teachers
                 ?.map(t => `${t.first_name[0]}. ${t.last_name}`)

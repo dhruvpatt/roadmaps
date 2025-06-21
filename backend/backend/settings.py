@@ -16,12 +16,8 @@ from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -98,10 +94,12 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+DB_PATH = os.getenv("DJANGO_DB_PATH")
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': DB_PATH or os.path.join(BASE_DIR, "db.sqlite3"),
     }
 }
 
@@ -152,14 +150,18 @@ CORS_ALLOW_CREDENTIALS = True  # Required to allow cookies (sessionid, csrftoken
 CORS_ALLOW_ALL_ORIGINS = False  # Must be False when using credentials
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # Frontend origin
+    "http://127.0.0.1:3000"
 ]
 
 # --- CSRF & Session Cookie Settings ---
 CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",  # Ensures CSRF validation works across origins
+    "http://localhost:3000",
+    "http://127.0.0.1:3000" # Ensures CSRF validation works across origins
 ]
 
 CSRF_COOKIE_SECURE = True  # Set to True in production with HTTPS
 CSRF_COOKIE_HTTPONLY = False  # Allows JavaScript access to read csrftoken (needed for X-CSRFToken header)
 CSRF_COOKIE_SAMESITE = "Lax"  # Allows POSTs from localhost:3000 → localhost:8000
 SESSION_COOKIE_SAMESITE = "Lax"  # SameSite policy for session cookie (allows login sessions across localhost ports)
+
+

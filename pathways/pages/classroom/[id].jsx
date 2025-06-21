@@ -101,7 +101,7 @@ const ClassroomPage = ({ user }) => {
           title={classroom.name}
           subtitle={classroom.details || classroom.description}
           code={classroom.join_id}
-          teacher={classroom.teachers?.[0]?.first_name || "Instructor"}
+          teacher={classroom.teachers || "Instructor"}
           onInviteClick={handleInviteClick}
           onSettingsClick={handleSettingsClick}
         />
@@ -124,7 +124,7 @@ const ClassroomPage = ({ user }) => {
           title={classroom.name}
           subtitle={classroom.details || classroom.description}
           code={classroom.join_id}
-          teacher={classroom.teachers?.[0]?.first_name || "Instructor"}
+          teachers={classroom.teachers || "Instructor"}
           onInviteClick={handleInviteClick}
           onSettingsClick={handleSettingsClick}
         />
@@ -168,7 +168,7 @@ const ClassroomPage = ({ user }) => {
           title={classroom.name}
           subtitle={classroom.details || classroom.description}
           code={classroom.join_id}
-          teacher={classroom.teachers?.[0]?.first_name || "Instructor"}
+          teachers={classroom.teachers || "Instructor"}
           onInviteClick={handleInviteClick}
           onSettingsClick={handleSettingsClick}
         />
@@ -217,7 +217,7 @@ const ClassroomPage = ({ user }) => {
         title={classroom.name}
         subtitle={classroom.details || classroom.description}
         code={classroom.join_id}
-        teacher={classroom.teachers?.[0]?.first_name || "Instructor"}
+        teachers={classroom.teachers || "Instructor"}
         onInviteClick={handleInviteClick}
         onSettingsClick={handleSettingsClick}
       />

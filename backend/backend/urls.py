@@ -2,18 +2,23 @@
 from django.urls import path
 from django.contrib import admin
 from django.views.decorators.csrf import csrf_exempt
-from pathways.views.user_views import *
-from rest_framework.routers import DefaultRouter
 
+from django.conf import settings
+from django.conf.urls.static import static
+
+
+from pathways.views.user_views import *
 from django.urls import path
 from pathways.views.classroom_views import (
     ClassroomListView,
     ClassroomCreateView,
     ClassroomDetailView,
+    MaterialListView,
+    MaterialCreateView,
+    MaterialDetailView,
     join_classroom_student,
     join_classroom_teacher,
-    get_announcements_view,
-    create_announcement_view
+    comment_view,
 )
 from pathways.views.curriculum_builder import create_curriculum, process_pdf_curriculum, upload_csv_curriculum, get_classroom_curriculum
 from pathways.views.attendance_views import get_attendance_dashboard, sessions_view, update_attendance
@@ -34,9 +39,13 @@ urlpatterns = [
     path("api/classroom/join/student/", join_classroom_student, name="classroom-join-student"),
     path("api/classroom/join/teacher/", join_classroom_teacher, name="classroom-join-teacher"),
 
-    # API endpoints for Classroom Stream
-    path('classrooms/<int:classroom_id>/announcements/', get_announcements_view, name='get_announcements'),
-    path('classrooms/<int:classroom_id>/announcements/create/', create_announcement_view, name='create_announcement'),
+    path("api/classroom/materials/", MaterialListView.as_view(), name="material-list"),
+    path("api/classroom/materials/create/", MaterialCreateView.as_view(), name="material-create"),
+    path("api/classroom/materials/<int:id>/", MaterialDetailView.as_view(), name="material-detail"),
+
+    path('api/classroom/materials/<int:material_id>/comments/', comment_view, name='material-comments'),
+    path('api/classroom/comments/<int:comment_id>/', comment_view, name='comment-detail'),
+
 
     # API endpoints for Curriculum Builder
     path('api/curriculum/process-pdf/', process_pdf_curriculum, name='process_pdf_curriculum'),
@@ -48,5 +57,5 @@ urlpatterns = [
     path("api/classrooms/<int:classroom_id>/attendance/", get_attendance_dashboard, name="attendance-dashboard"),
     path("api/classrooms/<int:classroom_id>/attendance/<int:session_id>/", update_attendance, name="update-attendance"),
     path("api/classrooms/<int:classroom_id>/sessions/", sessions_view, name="sessions"),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

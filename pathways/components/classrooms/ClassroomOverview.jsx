@@ -116,7 +116,7 @@ export default function ClassroomOverview({ classroom=null }) {
         {stats.map(({ label, value, icon: Icon, bg, text }, i) => (
           <div
             key={i}
-            className="bg-white p-5 rounded-lg shadow border border-gray-200 flex items-center"
+            className="bg-white p-5 rounded-lg shadow shadow-sm border border-gray-200 flex items-center"
           >
             <div className={`p-3 rounded-full ${bg} ${text} mr-4`}>
               <Icon className="w-5 h-5" />

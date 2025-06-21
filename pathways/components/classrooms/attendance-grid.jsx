@@ -223,7 +223,7 @@ export default function AttendanceGrid({ classroomId }) {
   };
 
   return (
-    <div className="p-6 bg-gray-50 rounded-lg shadow-sm">
+    <div className="p-6 bg-white">
       {/* Navigation */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">

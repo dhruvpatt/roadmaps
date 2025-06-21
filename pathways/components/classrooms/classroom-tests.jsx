@@ -166,7 +166,7 @@ export default function ClassroomTests({ classroom, isTeacher, user }) {
             <Card
               key={test.id}
               className="
-                border border-gray-200 
+                shadow-sm border border-gray-200 
                 rounded-2xl shadow-lg 
                 p-6 bg-white
                 hover:shadow-xl hover:-translate-y-1

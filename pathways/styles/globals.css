@@ -3,43 +3,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
-  .animate-slide-up {
-    animation: slideUp 0.3s ease-out;
-  }
-
-  @keyframes slideUp {
-    0% {
-      transform: translateY(100%);
-      opacity: 0;
-    }
-
-    100% {
-      transform: translateY(0%);
-      opacity: 1;
-    }
-  }
-}
-
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
 
 body {
   background: var(--background);
@@ -47,91 +10,305 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* =======================
+   Custom Properties (Merged)
+   ======================= */
+
+/* Root light theme variables (merged from both files) */
+:root {
+  --background: 0 0% 98%; /* picked from your second file (more 'app-like' than 100%) */
+  --foreground: 0 0% 10%; /* from your second file */
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 10%;
+  --primary: 40 100% 50%; /* from your second file; if you prefer blue, swap to 221.2 83.2% 53.3% */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 4.8% 95.9%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 0 0% 85%; /* from your second file */
+  --input: 0 0% 100%;  /* from your second file */
+  --ring: 220 100% 50%; /* from your second file */
+  --radius: 0.5rem;
+}
+
+/* Dark mode merged variables */
+.dark {
+  --background: 0 0% 10%; /* from your second file (dark background) */
+  --foreground: 0 0% 90%; /* from your second file */
+  --input: 0 0% 20%;
+  --border: 0 0% 25%;
+  --card: 0 0% 15%;
+  --card-foreground: 0 0% 90%;
+  --popover: 0 0% 12%;
+  --popover-foreground: 0 0% 90%;
+  --primary: 217.2 91.2% 59.8%;
+  --primary-foreground: 222.2 47.4% 11.2%;
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --ring: 224.3 76.3% 48%;
+}
+
+/* Geist font variables (if using Geist) */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* =======================
+   Utilities & Animations
+   ======================= */
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Animation for sliding up */
+@layer utilities {
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+  @keyframes slideUp {
+    0% {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0%);
+      opacity: 1;
+    }
+  }
+}
+
+/* Animation for gradient background */
 @keyframes gradientShift {
   0% {
     background-position: 0% 50%;
   }
-
   50% {
     background-position: 100% 50%;
   }
-
   100% {
     background-position: 0% 50%;
   }
 }
-
 .bg-animated-gradient {
   background: linear-gradient(270deg, #ffe48d, #ffbc92, #ffffff);
   background-size: 600% 600%;
   animation: gradientShift 40s ease infinite;
 }
 
+/* Fade-in animation */
 @keyframes fadeIn {
   0% {
     opacity: 0;
     transform: translateX(20px);
   }
-
   100% {
     opacity: 1;
     transform: translateX(0);
   }
 }
-
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out forwards;
 }
 
+/* Accordion animations (if you use them) */
+@keyframes accordion-down {
+  from { height: 0 }
+  to   { height: var(--radix-accordion-content-height) }
+}
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height) }
+  to   { height: 0 }
+}
 
+/* =======================
+   Custom Component & Utility Styles
+   ======================= */
+
+.react-calendar {
+  color: #1f2937; /* tailwind's gray-800 */
+  font-size: 0.875rem; /* text-sm */
+}
+.react-calendar abbr {
+  text-decoration: none;
+  color: #1f2937;
+}
+.react-calendar__tile--active {
+  background-color: #facc15 !important; /* amber-400 */
+  color: #111827 !important; /* gray-900 */
+}
+
+/* KaTeX styling */
+.katex-display {
+  margin: 1.5rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  text-align: center;
+}
+.katex-inline {
+  padding: 0 0.2rem;
+  display: inline-block;
+}
+
+/* Math content styles */
+.math-content {
+  overflow-x: auto;
+  padding: 1rem;
+  background-color: #f8fafc;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: #374151;
+}
+.math-content p {
+  margin-bottom: 1.25rem;
+}
+.math-content strong {
+  font-weight: 600;
+}
+.math-content ul,
+.math-content ol {
+  margin: 1.25rem 0;
+  padding-left: 1.5rem;
+}
+.math-content ul {
+  list-style-type: disc;
+}
+.math-content ol {
+  list-style-type: decimal;
+}
+.math-content li {
+  margin: 0.5rem 0;
+}
+
+/* Custom styling for math equations */
+.math-equation {
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0;
+  font-size: 1.1rem;
+  font-family: "Times New Roman", Times, serif;
+  background-color: #f8fafc;
+  border-radius: 0.5rem;
+  margin: 0.5rem 0;
+  overflow-x: auto;
+}
+
+/* Custom styling for block types */
+.block-introduction      { background-color: #ebf5ff; border-left: 4px solid #3b82f6; }
+.block-learning-objectives { background-color: #ecfdf5; border-left: 4px solid #10b981; }
+.block-definition        { background-color: #f5f3ff; border-left: 4px solid #8b5cf6; }
+.block-concept-explanation { background-color: #fffbeb; border-left: 4px solid #f59e0b; }
+.block-worked-example    { background-color: #eef2ff; border-left: 4px solid #6366f1; }
+.block-practice-exercise { background-color: #d1fae5; border-left: 4px solid #10b981; }
+.block-visual-aid        { background-color: #ecfeff; border-left: 4px solid #06b6d4; }
+.block-real-world-link   { background-color: #fff1f2; border-left: 4px solid #e11d48; }
+.block-misconception     { background-color: #fee2e2; border-left: 4px solid #ef4444; }
+.block-summary           { background-color: #ccfbf1; border-left: 4px solid #14b8a6; }
+.block-reflection        { background-color: #f5f3ff; border-left: 4px solid #8b5cf6; }
+
+/* Prose styles for better math rendering */
+.prose {
+  max-width: 65ch;
+  color: #374151;
+  line-height: 1.75;
+}
+.prose :where(p):not(:where([class~="not-prose"] *)) {
+  margin-top: 1.25em;
+  margin-bottom: 1.25em;
+}
+.prose :where(ul):not(:where([class~="not-prose"] *)) {
+  list-style-type: disc;
+  padding-left: 1.625em;
+}
+.prose :where(ol):not(:where([class~="not-prose"] *)) {
+  list-style-type: decimal;
+  padding-left: 1.625em;
+}
+.prose :where(li):not(:where([class~="not-prose"] *)) {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+.prose :where(h3):not(:where([class~="not-prose"] *)) {
+  color: #111827;
+  font-weight: 600;
+  font-size: 1.25em;
+  margin-top: 1.6em;
+  margin-bottom: 0.6em;
+  line-height: 1.6;
+}
+.prose :where(h4):not(:where([class~="not-prose"] *)) {
+  color: #111827;
+  font-weight: 600;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  line-height: 1.5;
+}
+
+/* =======================
+   React Flow Customizations
+   ======================= */
 .edge-hover path {
   transition: stroke 0.2s ease, stroke-width 0.2s ease;
 }
-
 .react-flow__edge path {
   stroke-width: 3px;
   stroke: #999;
   transition: stroke 0.2s ease, stroke-width 0.2s ease;
 }
-
-
 .edge-connected path,
 .edge-hover:hover path {
   stroke: #0070f3 !important;
   stroke-width: 5px !important;
 }
-
 .node-hovered::before {
   content: '';
   position: absolute;
-  top: -2px; left: -2px; right: -2px; bottom: -2px;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
   border-radius: inherit;
-  z-index: 0; /* ← FIXED */
+  z-index: 0;
   background: linear-gradient(90deg, #ffcf33, #ff647c, #ffcf33);
   background-size: 300% 300%;
   animation: gradientShift 3s ease infinite;
 }
-
-
 .node-hovered {
   filter: brightness(1.05);
   transform: scale(1.03);
   transition: transform 0.2s ease, box-shadow 0.3s ease;
-  box-shadow: 0 0 8px 2px rgba(133, 144, 247, 0.6),
-    0 0 12px 4px rgba(184, 179, 255, 0.4);
+  box-shadow: 0 0 8px 2px rgba(133, 144, 247, 0.6), 0 0 12px 4px rgba(184, 179, 255, 0.4);
 }
-
-
 .react-flow__node {
   z-index: 2 !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-
 .react-flow__edge path {
   z-index: 999 !important;
   pointer-events: visibleStroke;
 }
 
-.react-flow__node {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+/* =============== END =============== */
