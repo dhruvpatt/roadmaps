@@ -16,7 +16,7 @@ from pathways.views.classroom_views import (
     create_announcement_view
 )
 from pathways.views.curriculum_builder import create_curriculum, process_pdf_curriculum, upload_csv_curriculum, get_classroom_curriculum
-
+from pathways.views.attendance_views import get_attendance_dashboard, sessions_view, update_attendance
 urlpatterns = [
     path('admin/', admin.site.urls),
 
@@ -43,5 +43,10 @@ urlpatterns = [
     path('api/curriculum/upload/', upload_csv_curriculum, name='upload_csv_curriculum'),
     path('api/curriculum/create/', create_curriculum, name='create_curriculum'),
     path('api/curriculum/<int:classroom_id>/', get_classroom_curriculum, name='get_classroom_curriculum'),
+
+    # API endpoints for Attendance and Session management
+    path("api/classrooms/<int:classroom_id>/attendance/", get_attendance_dashboard, name="attendance-dashboard"),
+    path("api/classrooms/<int:classroom_id>/attendance/<int:session_id>/", update_attendance, name="update-attendance"),
+    path("api/classrooms/<int:classroom_id>/sessions/", sessions_view, name="sessions"),
 ]
 

@@ -1,6 +1,6 @@
 # models/classroom.py
 from django.db import models
-from pathways.models import User, Analytics
+from pathways.models.analytics import Analytics
 
 class Material(models.Model):
     TYPE_CHOICES = [
@@ -12,10 +12,10 @@ class Material(models.Model):
     type = models.CharField(max_length=20, choices=TYPE_CHOICES)
     title = models.CharField(max_length=255)
     details = models.TextField(blank=True)
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_by = models.ForeignKey('pathways.User', on_delete=models.CASCADE)
     content = models.JSONField(blank=True, null=True)
     likes = models.IntegerField(default=0)
-    viewed_by = models.ManyToManyField(User, related_name='viewed_materials', blank=True)
+    viewed_by = models.ManyToManyField('pathways.User', related_name='viewed_materials', blank=True)
     time_viewed = models.DurationField(null=True, blank=True)
     last_viewed = models.DateTimeField(null=True, blank=True)
 
@@ -24,8 +24,8 @@ class Classroom(models.Model):
     stream = models.ManyToManyField(Material, blank=True)
     analytics = models.OneToOneField(Analytics, on_delete=models.CASCADE, null=True, blank=True)
     join_id = models.CharField(max_length=20, unique=True)
-    students = models.ManyToManyField(User, related_name='joined_classrooms', blank=True)
-    teachers = models.ManyToManyField(User, related_name='teaching_classrooms', blank=True)
+    students = models.ManyToManyField('pathways.User', related_name='joined_classrooms', blank=True)
+    teachers = models.ManyToManyField('pathways.User', related_name='teaching_classrooms', blank=True)
     details = models.TextField(blank=True)
     
 class Unit(models.Model):
@@ -43,6 +43,6 @@ class Week(models.Model):
 
 class Comment(models.Model):
     content = models.TextField()
-    posted_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    posted_by = models.ForeignKey('pathways.User', on_delete=models.CASCADE)
     date = models.DateTimeField(auto_now_add=True)
     replied_to = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE)

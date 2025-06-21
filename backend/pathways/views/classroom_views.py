@@ -12,7 +12,8 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from pathways.utils import attach_mock_students_to_classroom, populate_mock_data_for_classroom
-from pathways.models.classroom import Classroom, Material, User
+from pathways.models.classroom import Classroom, Material
+from pathways.models.user import User
 from pathways.serializers import ClassroomSerializer, CreateClassroomSerializer
 import json
 
