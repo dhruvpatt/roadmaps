@@ -2,6 +2,7 @@ import json
 import uuid
 
 from django.core.files.base import ContentFile
+from django.utils import timezone
 from django.core.files.storage import default_storage
 from django.db import transaction
 from django.db.models import Q
@@ -18,7 +19,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from pathways.models.classroom import Classroom, Material, Comment, MaterialType
+from pathways.models.classroom import Classroom, Material, Comment, MaterialType, ClassroomAssignment, AssignmentSubmission
 from pathways.models.user import User
 from pathways.serializers import (
     ClassroomSerializer,
@@ -26,8 +27,10 @@ from pathways.serializers import (
     MaterialSerializer,
     CommentSerializer,
     CreateCommentSerializer,
+    ClassroomAssignmentSerializer,
+    AssignmentSubmissionSerializer,
 )
-from pathways.utils import attach_mock_students_to_classroom, create_mock_deliverables_for_classroom, create_mock_materials_for_classroom
+from pathways.utils import attach_mock_students_to_classroom, create_mock_deliverables_for_classroom, create_mock_materials_for_classroom, create_mock_assignments_for_classroom
 from pathways.models.classroom import Classroom, Material
 from pathways.models.user import User
 from rest_framework.exceptions import NotFound
@@ -144,6 +147,12 @@ class ClassroomCreateView(APIView):
                 students = attach_mock_students_to_classroom(classroom, number_of_students=10)
 
                 teachers = list(classroom.teachers.all())
+                create_mock_materials_for_classroom(classroom, teachers=teachers, count_per_type=5)
+                
+                # Add mock assignments
+                print("Creating mock assignments...")
+                create_mock_assignments_for_classroom(classroom, teachers=teachers, count=8)
+                print("Mock assignments creation completed.")
 
                 materials = create_mock_materials_for_classroom(classroom, teachers=teachers, count_per_type=15)
 
@@ -482,6 +491,134 @@ class MaterialDetailView(APIView):
             import traceback; traceback.print_exc()
             return Response({"detail": "Could not delete material", "error": str(e)}, status=500)
 
+#endregion
+
+#region Assignment Views
+
+class AssignmentListView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ClassroomAssignmentSerializer
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        classroom_id = self.kwargs.get('classroom_id')
+        classroom = get_object_or_404(Classroom, id=classroom_id)
+        user = self.request.user
+        
+        if not is_member(user, classroom):
+            return ClassroomAssignment.objects.none()
+        
+        queryset = ClassroomAssignment.objects.filter(classroom=classroom, is_published=True)
+        return queryset.order_by('-created_at')
+
+class AssignmentCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def post(self, request, classroom_id):
+        classroom = get_object_or_404(Classroom, id=classroom_id)
+        user = request.user
+        
+        if not is_teacher(user, classroom):
+            return Response({'detail': 'Only teachers can create assignments.'}, status=403)
+        
+        data = request.data.copy()
+        data['classroom'] = classroom.id
+        
+        serializer = ClassroomAssignmentSerializer(data=data, context={'request': request})
+        if serializer.is_valid():
+            assignment = serializer.save(created_by=user, classroom=classroom)
+            return Response(ClassroomAssignmentSerializer(assignment, context={'request': request}).data, status=201)
+        return Response(serializer.errors, status=400)
+
+class AssignmentDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get(self, request, id):
+        assignment = get_object_or_404(ClassroomAssignment, id=id)
+        user = request.user
+        
+        if not is_member(user, assignment.classroom):
+            return Response({'detail': 'Not allowed.'}, status=403)
+        
+        return Response(ClassroomAssignmentSerializer(assignment, context={'request': request}).data)
+
+    def put(self, request, id):
+        assignment = get_object_or_404(ClassroomAssignment, id=id)
+        user = request.user
+        
+        if not is_teacher(user, assignment.classroom):
+            return Response({'detail': 'Only teachers can edit assignments.'}, status=403)
+        
+        serializer = ClassroomAssignmentSerializer(assignment, data=request.data, partial=True, context={'request': request})
+        if serializer.is_valid():
+            assignment = serializer.save()
+            return Response(ClassroomAssignmentSerializer(assignment, context={'request': request}).data)
+        return Response(serializer.errors, status=400)
+
+    def delete(self, request, id):
+        assignment = get_object_or_404(ClassroomAssignment, id=id)
+        user = request.user
+        
+        if not is_teacher(user, assignment.classroom):
+            return Response({'detail': 'Only teachers can delete assignments.'}, status=403)
+        
+        assignment.delete()
+        return Response({'detail': 'Assignment deleted'}, status=204)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def submit_assignment(request, assignment_id):
+    assignment = get_object_or_404(ClassroomAssignment, id=assignment_id)
+    user = request.user
+    
+    if not is_student(user, assignment.classroom):
+        return Response({'detail': 'Only students can submit assignments.'}, status=403)
+    
+    # Check if already submitted
+    existing_submission = AssignmentSubmission.objects.filter(assignment=assignment, student=user).first()
+    if existing_submission:
+        return Response({'detail': 'Assignment already submitted.'}, status=400)
+    
+    data = request.data.copy()
+    submission = AssignmentSubmission.objects.create(
+        assignment=assignment,
+        student=user,
+        content=data.get('content', {}),
+        status='late' if timezone.now() > assignment.due_date else 'submitted'
+    )
+    
+    return Response(AssignmentSubmissionSerializer(submission).data, status=201)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def assignment_submissions(request, assignment_id):
+    assignment = get_object_or_404(ClassroomAssignment, id=assignment_id)
+    user = request.user
+    
+    if not is_teacher(user, assignment.classroom):
+        return Response({'detail': 'Only teachers can view submissions.'}, status=403)
+    
+    submissions = AssignmentSubmission.objects.filter(assignment=assignment)
+    return Response(AssignmentSubmissionSerializer(submissions, many=True).data)
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def grade_submission(request, submission_id):
+    submission = get_object_or_404(AssignmentSubmission, id=submission_id)
+    user = request.user
+    
+    if not is_teacher(user, submission.assignment.classroom):
+        return Response({'detail': 'Only teachers can grade submissions.'}, status=403)
+    
+    data = request.data
+    submission.grade = data.get('grade')
+    submission.feedback = data.get('feedback', '')
+    submission.status = 'graded'
+    submission.save()
+    
+    return Response(AssignmentSubmissionSerializer(submission).data)
 
 #endregion
 
