@@ -3,31 +3,21 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import {
-  Plus, FileText, Video, ImageIcon, File, MoreVertical,
+  Plus, FileText, Video, ImageIcon, File as FileIcon, MoreVertical,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
-import SearchAndFilterBar from "./SearchAndFilterBar";
+import SearchAndFilterBar from "@components/SearchAndFilterBar";
 import PaginationControls from "@components/PaginationControls";
 import MaterialCreationModal from "./MaterialCreationModal";
 import fetchWithAuth from "@/lib/fetch_with_auth";
 import MaterialViewerModal from "./MaterialViewerModal";
 import MaterialCard from "./MaterialCard";
+import ConfirmDialog from "@/components/ConfirmDialog";
+
 
 const PAGE_SIZE = 9;
 
-// Map keys to pretty labels and icons if you want
-const TYPE_LABELS = {
-  file: "File",
-  link: "Link",
-  announcement: "Announcement",
-  general: "General",
-};
-const TYPE_ICONS = {
-  file: <FileText className="w-4 h-4 text-blue-500" />,
-  link: <Video className="w-4 h-4 text-green-600" />,
-  announcement: <File className="w-4 h-4 text-amber-600" />,
-  general: <ImageIcon className="w-4 h-4 text-gray-500" />,
-};
 
 export default function ClassroomMaterials({ classroom, isTeacher, user }) {
   const [materials, setMaterials] = useState([]);
@@ -39,32 +29,48 @@ export default function ClassroomMaterials({ classroom, isTeacher, user }) {
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
+
 
   // Fetch materials from backend
+
+  const fetchMaterials = async (params) => {
+    try {
+      const res = await fetchWithAuth(`/api/classroom/materials/?${params}&page_size=${PAGE_SIZE}`);
+      if (!res.ok) throw new Error("Failed to fetch materials");
+
+      const data = await res.json();
+      console.log("Fetched materials", data);
+
+      setMaterials(data.results || data); // Support paginated and non-paginated
+      setTotalPages(Math.ceil((data.count || 1) / PAGE_SIZE));
+    } catch (err) {
+      setMaterials([]);
+      setTotalPages(1);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   useEffect(() => {
     if (!classroom?.id) return;
-    setLoading(true);
-    const params = new URLSearchParams({
-      classroom: classroom.id,
-      page,
-      ...(filterTypes.length > 0 ? { types: filterTypes.join(",") } : {}),
-      ...(searchTerm ? { search: searchTerm } : {}),
-    });
-    fetchWithAuth(`/api/classroom/materials/?${params}&page_size=${PAGE_SIZE}`)
-      .then(async (res) => {
-        if (!res.ok) throw new Error("Failed to fetch materials");
-        const data = await res.json();
 
-        console.log(data)
-        setMaterials(data.results || data); // Support paginated and non-paginated
-        setTotalPages(Math.ceil((data.count || 1) / PAGE_SIZE));
-      })
-      .catch((err) => {
-        setMaterials([]);
-        setTotalPages(1);
-      })
-      .finally(() => setLoading(false));
-  }, [classroom?.id, filterTypes, searchTerm, page]);
+    const fetchData = async () => {
+      setLoading(true);
+      const params = new URLSearchParams({
+        classroom: classroom.id,
+        page,
+        ...(filterTypes.length > 0 ? { types: filterTypes.join(",") } : {}),
+        ...(searchTerm ? { search: searchTerm } : {}),
+      });
+
+      await fetchMaterials(params);
+    };
+
+    fetchData();
+  }, [classroom?.id, filterTypes, searchTerm, page, pendingDeleteId]);
+
 
   const formatDate = (dateStr, showTime = false) =>
     new Date(dateStr).toLocaleString("en-US", {
@@ -79,14 +85,19 @@ export default function ClassroomMaterials({ classroom, isTeacher, user }) {
     setShowModal(true);
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm("Delete this resource?")) return;
+  const confirmDelete = (id) => setPendingDeleteId(id);
+
+  const handleConfirmDelete = async () => {
+    if (!pendingDeleteId) return;
     setLoading(true);
     try {
-      const res = await fetchWithAuth(`/api/classroom/materials/${id}/`, { method: "DELETE" });
+      const res = await fetchWithAuth(`/api/classroom/materials/${pendingDeleteId}/`, {
+        method: "DELETE",
+      });
       if (!res.ok) throw new Error("Failed to delete");
-      setMaterials((prev) => prev.filter((m) => m.id !== id));
+      setMaterials((prev) => prev.filter((m) => m.id !== pendingDeleteId));
     } finally {
+      setPendingDeleteId(null);
       setLoading(false);
     }
   };
@@ -95,21 +106,40 @@ export default function ClassroomMaterials({ classroom, isTeacher, user }) {
     setLoading(true);
     try {
       let result;
-      // For file upload, use FormData
-      const hasFile = data.content?.file instanceof File;
+      // Always infer type_keys from content (unique types)
+      const typeKeys = Array.isArray(data.content)
+        ? [...new Set(data.content.map(item => item.type))]
+        : [];
+      const content = Array.isArray(data.content) ? data.content : [];
+
+      // Remove blob previews (frontend-only)
+      const nonBlobContent = content.filter(
+        item => !(item.type === "file" && item.url?.startsWith("blob:"))
+      );
+
+      // Actual files
+      const files = content.filter(
+        c => c.type === "file" && c.file instanceof File
+      );
+
+      const hasFile = files.length > 0;
+
       if (editingMaterial) {
-        // Edit
         const formData = new FormData();
         formData.append("title", data.title);
         formData.append("details", data.details);
-        // NOTE: type_keys = array of keys, required by backend for M2M
-        (data.type_keys || []).forEach((key) => formData.append("type_keys", key));
-        if (hasFile) formData.append("file", data.content.file);
+        // Use type_keys here
+        typeKeys.forEach((key) => formData.append("type_keys", key));
+        content.forEach((item) => {
+          if (item.type === "file" && item.file instanceof File) {
+            formData.append("files", item.file);
+          }
+        });
         const res = await fetchWithAuth(
           `/api/classroom/materials/${editingMaterial.id}/`,
           {
             method: "PUT",
-            body: hasFile ? formData : JSON.stringify(data),
+            body: hasFile ? formData : JSON.stringify({ ...data, type_keys: typeKeys, content }),
             headers: hasFile ? undefined : { "Content-Type": "application/json" },
           }
         );
@@ -119,18 +149,26 @@ export default function ClassroomMaterials({ classroom, isTeacher, user }) {
           prev.map((m) => (m.id === editingMaterial.id ? result : m))
         );
       } else {
-        // Add
         const formData = new FormData();
         formData.append("title", data.title);
         formData.append("details", data.details);
         formData.append("classroom", classroom.id);
-        (data.type_keys || []).forEach((key) => formData.append("type_keys", key));
-        if (hasFile) formData.append("file", data.content.file);
+        typeKeys.forEach((key) => formData.append("type_keys", key));
+
+        const nonFileContent = content.map(({ file, ...rest }) => rest);
+        formData.append("content", JSON.stringify(nonBlobContent));
+
+        files.forEach((fileItem) => {
+          formData.append("files", fileItem.file); // ✅ actual File
+        });
+
         const res = await fetchWithAuth(
           `/api/classroom/materials/create/`,
           {
             method: "POST",
-            body: hasFile ? formData : JSON.stringify({ ...data, classroom: classroom.id }),
+            body: hasFile
+              ? formData
+              : JSON.stringify({ ...data, classroom: classroom.id, type_keys: typeKeys, content }),
             headers: hasFile ? undefined : { "Content-Type": "application/json" },
           }
         );
@@ -144,6 +182,8 @@ export default function ClassroomMaterials({ classroom, isTeacher, user }) {
       setLoading(false);
     }
   };
+
+
 
   // Filtering
   const byType =
@@ -215,7 +255,7 @@ export default function ClassroomMaterials({ classroom, isTeacher, user }) {
                 material={mat}
                 onClick={() => setSelectedMaterial(mat)}
                 onEdit={isTeacher ? handleEdit : undefined}
-                onDelete={isTeacher ? handleDelete : undefined}
+                onDelete={isTeacher ? confirmDelete : undefined}
                 formatDate={formatDate}
                 menu={isTeacher}
               />
@@ -223,6 +263,16 @@ export default function ClassroomMaterials({ classroom, isTeacher, user }) {
             ))
           )}
         </div>
+
+        <ConfirmDialog
+          open={!!pendingDeleteId}
+          title="Delete this material?"
+          description="This action is irreversible. Are you sure you want to delete this material?"
+          onOk={handleConfirmDelete}
+          onCancel={() => setPendingDeleteId(null)}
+          okText="Delete"
+          cancelText="Cancel"
+        />
 
         <PaginationControls
           page={page}
@@ -251,14 +301,14 @@ export default function ClassroomMaterials({ classroom, isTeacher, user }) {
                 type_keys: editingMaterial.types
                   ? editingMaterial.types.map((t) => t.key)
                   : [],
-                content:
-                  Array.isArray(editingMaterial.content) &&
-                    editingMaterial.content.length > 0
-                    ? editingMaterial.content[0]
-                    : {},
+
+                content: Array.isArray(editingMaterial.content)
+                  ? editingMaterial.content
+                  : [],
               }
               : {}
           }
+
           isEditing={!!editingMaterial}
           onSave={handleSave}
         />

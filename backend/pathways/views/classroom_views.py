@@ -27,6 +27,8 @@ from pathways.serializers import (
     CreateCommentSerializer,
 )
 from pathways.utils import attach_mock_students_to_classroom, create_mock_deliverables_for_classroom, create_mock_materials_for_classroom
+from rest_framework.exceptions import NotFound
+
 
 
 ALLOWED_MIME_TYPES = {
@@ -105,7 +107,7 @@ class ClassroomListView(ListAPIView):
                 Q(name__icontains=search_query) |
                 Q(details__icontains=search_query)
             )
-        return queryset.order_by("name")
+        return queryset.order_by("-created_at")
 
     def list(self, request, *args, **kwargs):
         try:
@@ -136,10 +138,6 @@ class ClassroomCreateView(APIView):
             if serializer.is_valid(raise_exception=True):
                 classroom = serializer.save()
                 classroom.refresh_from_db()
-
-                print("Request user id:", user.id)
-                print("Classroom teachers:", list(classroom.teachers.values_list('id', flat=True)))
-                print("is_member_in_classroom:", is_member(user, classroom))
                 # Add mock students
                 students = attach_mock_students_to_classroom(classroom, number_of_students=10)
 
@@ -171,13 +169,25 @@ class ClassroomDetailView(APIView):
         try:
             classroom = get_object_or_404(Classroom, id=id)
             user = request.user
-            print("User id:", user.id)
-            print("Teachers:", list(classroom.teachers.values_list('id', flat=True)))
-            print("Students:", list(classroom.students.values_list('id', flat=True)))
-            print("is_member:", is_member(user, classroom))
+
             if not is_member(user, classroom):
                 return Response({"detail": "Not allowed."}, status=403)
-            return Response(ClassroomSerializer(classroom, context={"request": request}).data)
+
+            # Serialize classroom (without materials for now)
+            data = ClassroomSerializer(classroom, context={"request": request}).data
+
+            # Paginate classroom.materials
+            paginator = StandardResultsSetPagination()
+            materials_qs = classroom.materials.order_by("-created_at").all()
+            paginated_materials = paginator.paginate_queryset(materials_qs, request)
+
+            # Attach paginated materials into the data
+            data["materials"] = MaterialSerializer(paginated_materials, many=True, context={"request": request}).data
+            data["materials_page"] = paginator.page.number
+            data["materials_has_next"] = paginator.page.has_next()
+
+            return Response(data)
+
         except Exception as e:
             import traceback; traceback.print_exc()
             return Response(
@@ -214,18 +224,39 @@ class MaterialListView(ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
+        search_query = self.request.query_params.get("search", "").strip().lower()
+
         classrooms = Classroom.objects.filter(Q(students=user) | Q(teachers=user)).distinct()
-        return Material.objects.filter(classroom__in=classrooms).order_by("created_at")
+        queryset = Material.objects.filter(classroom__in=classrooms)
+
+        if search_query:
+            queryset = queryset.filter(
+                Q(title__icontains=search_query) |
+                Q(details__icontains=search_query)
+            )
+
+        return queryset.order_by("-created_at")
+
 
     def list(self, request, *args, **kwargs):
         try:
             queryset = self.get_queryset()
             page = self.paginate_queryset(queryset)
             if page is not None:
+                print(f"Materials on this page: {len(page)}")  # ✅ Add this
                 serializer = self.get_serializer(page, many=True, context={"request": request})
                 return self.get_paginated_response(serializer.data)
+            
+            print(f"Total materials before pagination: {queryset.count()}")
             serializer = self.get_serializer(queryset, many=True, context={"request": request})
             return Response(serializer.data)
+        except NotFound: 
+            return Response({
+                'count': queryset.count(),
+                'next': None,
+                'previous': None,
+                'results': [],
+            })  
         except Exception as e:
             import traceback; traceback.print_exc()
             return Response(
@@ -233,15 +264,33 @@ class MaterialListView(ListAPIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+
 class MaterialCreateView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def post(self, request):
+        print("request data:", request.data)
         user = request.user
         data = request.data.copy()
         files = request.FILES.getlist("files")
+
+        # Safely extract and normalize input values
+        title = data.get("title")
+        details = data.get("details")
         classroom_id = data.get("classroom")
+        content_raw = data.get("content")
+        type_keys_raw = data.getlist("type_keys") if hasattr(data, "getlist") else data.get("type_keys", [])
+
+        # Normalize type_keys
+        if isinstance(type_keys_raw, str):
+            type_keys = [type_keys_raw]
+        elif isinstance(type_keys_raw, list):
+            type_keys = type_keys_raw
+        else:
+            type_keys = list(type_keys_raw) if type_keys_raw else []
+
+        # Validate classroom
         classroom = get_object_or_404(Classroom, id=classroom_id)
 
         # RBAC: Only teachers in classroom can create
@@ -250,21 +299,32 @@ class MaterialCreateView(APIView):
 
         # Validate required fields
         errors = {}
-        required_fields = ["title", "details", "types"]
-        for field in required_fields:
-            if not data.get(field):
-                errors[field] = f"{field.capitalize()} is required."
+        for field_name, value in [("title", title), ("details", details), ("type_keys", type_keys)]:
+            if not value:
+                errors[field_name] = f"{field_name.capitalize()} is required."
 
-        # Validate types
-        type_keys = data.getlist("types") if hasattr(data, "getlist") else data.get("types", [])
-        if isinstance(type_keys, str):
-            # If single type is sent as a string, convert to list
-            type_keys = [type_keys]
+        # Validate type_keys
         valid_types = list(MaterialType.objects.values_list("key", flat=True))
         for key in type_keys:
             if key not in valid_types:
-                errors["types"] = f"Invalid type: {key}"
+                errors["type_keys"] = f"Invalid type: {key}"
 
+        # Parse existing content (JSON string)
+        try:
+            existing_content = json.loads(content_raw) if content_raw else []
+            # Filter out blob URLs that were only for preview
+            existing_content = [
+                item for item in existing_content
+                if not item.get("url", "").startswith("blob:")
+            ]
+
+        except json.JSONDecodeError:
+            errors["content"] = "Content must be valid JSON."
+
+        if not isinstance(existing_content, list):
+            existing_content = list(existing_content)
+
+        # Build file_info
         file_info = []
         if files:
             for f in files:
@@ -279,28 +339,35 @@ class MaterialCreateView(APIView):
                 path = default_storage.save(f"uploads/materials/{filename}", ContentFile(f.read()))
                 file_url = default_storage.url(path)
                 file_info.append({
+                    "type": "file",
                     "url": file_url,
                     "filename": f.name,
                     "mimetype": f.content_type,
                     "size": f.size
                 })
-        # Content can be empty for some material types, so don't error if not files
+
+        combined_content = existing_content + file_info if file_info else existing_content
 
         if errors:
+            print(errors)
             return Response(errors, status=status.HTTP_400_BAD_REQUEST)
 
-        data["created_by"] = user.id
-        data["content"] = file_info
-        data["classroom"] = classroom.id
+        # Final serializer payload
+        serializer_data = {
+            "title": title,
+            "details": details,
+            "content": combined_content,
+            "type_keys": type_keys,
+            "classroom": classroom.id
+        }
 
-        serializer = MaterialSerializer(data=data, context={"request": request})
+        serializer = MaterialSerializer(data=serializer_data, context={"request": request})
         try:
             if serializer.is_valid(raise_exception=True):
                 with transaction.atomic():
                     material = serializer.save(created_by=user, classroom=classroom)
-                    # Set types M2M (serializer doesn't always do this with SlugRelatedField)
-                    if type_keys:
-                        material.types.set(MaterialType.objects.filter(key__in=type_keys))
+                    print("✅ Saved material content:", material.content)
+                    print("✅ Full material object:", material.__dict__)
                 return Response(MaterialSerializer(material, context={"request": request}).data, status=status.HTTP_201_CREATED)
         except Exception as e:
             import traceback; traceback.print_exc()
@@ -308,6 +375,7 @@ class MaterialCreateView(APIView):
                 {"detail": "Could not create material.", "error": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
 
 class MaterialDetailView(APIView):
     permission_classes = [IsAuthenticated]
@@ -327,49 +395,77 @@ class MaterialDetailView(APIView):
                 {"detail": "Could not retrieve material", "error": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
     def put(self, request, id):
         try:
             user = request.user
             material = get_object_or_404(Material, id=id)
             classroom = material.classroom
+
             if not classroom or not (material.created_by == user or is_teacher_in_classroom(user, classroom)):
                 return Response({"detail": "Not allowed."}, status=403)
+
             data = request.data.copy()
             files = request.FILES.getlist("files")
 
-            file_info = material.content or []
+            print("Incoming data:", data)
+
+            # Process files and build new file content blocks
+            new_file_blocks = []
             if files:
                 for f in files:
                     if f.content_type not in ALLOWED_MIME_TYPES:
                         return Response({"files": f"Unsupported file type: {f.content_type}"}, status=400)
                     if f.size > MAX_FILE_SIZE_MB * 1024 * 1024:
                         return Response({"files": f"File too large: {f.name} (max {MAX_FILE_SIZE_MB}MB)."}, status=400)
+
                     ext = f.name.split(".")[-1]
                     filename = f"{uuid.uuid4()}.{ext}"
                     path = default_storage.save(f"uploads/materials/{filename}", ContentFile(f.read()))
                     file_url = default_storage.url(path)
-                    file_info.append({
+
+                    new_file_blocks.append({
+                        "type": "file",
                         "url": file_url,
                         "filename": f.name,
                         "mimetype": f.content_type,
                         "size": f.size
                     })
-                data["content"] = file_info
 
+            # Merge with existing non-file content
+            existing_content = material.content or []
+            non_file_content = [c for c in existing_content if c.get("type") != "file"]
+            combined_content = non_file_content + new_file_blocks
+            data["content"] = json.dumps(combined_content)
+
+            # Handle type_keys (normalize + fetch actual MaterialType instances)
+            raw_type_keys = data.getlist("type_keys") if hasattr(data, "getlist") else data.get("type_keys", [])
+
+            if isinstance(raw_type_keys, list) and len(raw_type_keys) == 1 and ',' in raw_type_keys[0]:
+                raw_type_keys = [k.strip() for k in raw_type_keys[0].split(',')]
+            elif isinstance(raw_type_keys, str):
+                raw_type_keys = [raw_type_keys]
+
+            material_type_objs = MaterialType.objects.filter(key__in=raw_type_keys)
+            if material_type_objs.count() != len(raw_type_keys):
+                return Response({"type_keys": "One or more provided keys are invalid."}, status=400)
+
+            # Replace type_keys with their corresponding IDs
+            data.setlist("type_keys", [mt.key for mt in material_type_objs])
+
+            # Serialize and save
             serializer = MaterialSerializer(material, data=data, partial=True, context={"request": request})
             if serializer.is_valid(raise_exception=True):
-                material = serializer.save()
-                # Update types if present
-                type_keys = data.getlist("types") if hasattr(data, "getlist") else data.get("types", [])
-                if isinstance(type_keys, str):
-                    type_keys = [type_keys]
-                if type_keys:
-                    material.types.set(MaterialType.objects.filter(key__in=type_keys))
-                return Response(MaterialSerializer(material, context={"request": request}).data)
-        except Exception as e:
-            import traceback; traceback.print_exc()
-            return Response({"detail": "Could not update material", "error": str(e)}, status=500)
+                updated = serializer.save()
+                return Response(MaterialSerializer(updated, context={"request": request}).data)
 
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response(
+                {"detail": "Could not update material", "error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     def delete(self, request, id):
         try:
@@ -383,6 +479,7 @@ class MaterialDetailView(APIView):
         except Exception as e:
             import traceback; traceback.print_exc()
             return Response({"detail": "Could not delete material", "error": str(e)}, status=500)
+
 
 #endregion
 

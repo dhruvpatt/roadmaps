@@ -1,142 +1,32 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import PropTypes from "prop-types";
-import {
-  Plus,
-  Heart,
-  MessageCircle,
-  FileText,
-  Link,
-  Megaphone,
-} from "lucide-react";
+import { Plus, MoreHorizontal } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
 import fetchWithAuth from "@/lib/fetch_with_auth";
-import CommentThread from "./ClassroomCommentThread";
-import SearchAndFilterBar from "./SearchAndFilterBar";
+import SearchAndFilterBar from "@components/SearchAndFilterBar";
+import ConfirmDialog from "@components/ConfirmDialog";
+import MaterialCreationModal from "./MaterialCreationModal";
+import StreamCard from "./StreamCard";
+import MaterialViewerModal from "./MaterialViewerModal";
 
-
+const PAGE_SIZE = 10;
 
 export default function ClassroomStream({ classroom, isTeacher, user }) {
   const [posts, setPosts] = useState([]);
-  const [newPost, setNewPost] = useState("");
-  const [showCreatePost, setShowCreatePost] = useState(false);
-  const [commentInput, setCommentInput] = useState({});
-  const [showComments, setShowComments] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
-  const [typeFilters, setTypeFilters] = useState([]); // instead of "all"
-  const [showDrawer, setShowDrawer] = useState(false);
-  const [drawerStep, setDrawerStep] = useState("select"); // or "form"
-  const [selectedType, setSelectedType] = useState(null);
+  const [typeFilters, setTypeFilters] = useState([]);
+  const [editingMaterial, setEditingMaterial] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState({ open: false, materialId: null });
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const loaderRef = useRef(null);
+  const [loading, setLoading] = useState(false);
+  const [selectedMaterial, setSelectedMaterial] = useState(null);
 
-  useEffect(() => {
-    const streamPosts = classroom.materials.map((item) => ({
-      id: item.id,
-      created_by: item.created_by, // 👈 use as-is
-      content: item.details,
-      timestamp: item.last_viewed ?? new Date().toISOString(),
-      likes: item.likes || 0,
-      liked: false,
-      comments: item.comments || [],
-      attachments: [],
-      types: item.types,
-
-      title: item.title,
-    }));
-
-    setPosts(streamPosts);
-  }, [classroom]);
-
-  useEffect(() => {
-    if (user?.role === "student") {
-      setSelectedType("general");
-      setDrawerStep("form");
-      setShowDrawer(true);
-    }
-  }, [user]);
-
-
-  const iconForType = (typeKey) => {
-    switch (typeKey) {
-      case "announcement":
-        return <Megaphone className="w-4 h-4 text-amber-600" />;
-      case "file":
-        return <FileText className="w-4 h-4 text-blue-500" />;
-      case "link":
-        return <Link className="w-4 h-4 text-green-600" />;
-      case "general":
-      default:
-        return <MessageCircle className="w-4 h-4 text-gray-500" />;
-    }
-  };
-
-
-  const colorForType = {
-    amber: "bg-amber-600 hover:bg-amber-700",
-    blue: "bg-blue-600 hover:bg-blue-700",
-    green: "bg-green-600 hover:bg-green-700",
-    gray: "bg-gray-600 hover:bg-gray-700",
-  };
-
-
-
-  const filteredPosts = posts.filter((post) => {
-    const matchesSearch = post.content
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    const matchesType =
-      typeFilters.length === 0 ||
-      post.types.some((t) => typeFilters.includes(t.key));
-    return matchesSearch && matchesType;
-  });
-
-
-  async function createPost({ classroomId, details, userId, content }) {
-    try {
-      const res = await fetch(
-        `/api/classroom/${classroomId}/announcements/create/`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            title: "Announcement",
-            details: details,
-            content: content,
-            creator_user_id: userId,
-          }),
-        }
-      );
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to create announcement");
-      }
-
-      const created = await res.json();
-      return {
-        id: created.id,
-        author: user.first_name ?? "You",
-        content,
-        details,
-        timestamp: new Date().toISOString(),
-        likes: 0,
-        liked: false,
-        comments: [],
-        attachments: [],
-        type: "announcement",
-      };
-    } catch (err) {
-      console.error("createPost error:", err.message);
-      return null;
-    }
-  }
 
   const formatDate = (timestamp) =>
     new Date(timestamp).toLocaleString("en-US", {
@@ -146,47 +36,158 @@ export default function ClassroomStream({ classroom, isTeacher, user }) {
       minute: "2-digit",
     });
 
-
-
-  const handleToggleComments = (postId) => {
-    setShowComments((prev) => ({ ...prev, [postId]: !prev[postId] }));
+  const sortContent = (material) => {
+    const contentArr = Array.isArray(material.content) ? material.content : [];
+    const announcements = contentArr.filter((c) => c.type === "announcement");
+    const generals = contentArr.filter((c) => c.type === "general");
+    const links = contentArr.filter((c) => c.type === "link");
+    const files = contentArr.filter((c) => c.type === "file");
+    return { ...material, content: [...announcements, ...generals, ...links, ...files] };
   };
 
-  const handleAddComment = async (postId) => {
-    const text = commentInput[postId]?.trim();
-    if (!text) return;
+  const fetchMaterials = useCallback(
+    async ({ reset = false } = {}) => {
+      if (!classroom?.id) return;
 
+      const targetPage = reset ? 1 : page;
+      try {
+        const res = await fetchWithAuth(
+          `/api/classroom/materials/?classroom=${classroom.id}&page=${targetPage}&page_size=${PAGE_SIZE}`
+        );
+        if (!res.ok) throw new Error("Failed to fetch materials");
+
+        const data = await res.json();
+        console.log("Fetched materials (stream):", data);
+        const newMaterials = (data.results || data).map(sortContent);
+
+        setPosts((prev) => (reset ? newMaterials : [...prev, ...newMaterials]));
+        setHasMore(newMaterials.length === PAGE_SIZE);
+        setPage(reset ? 2 : targetPage + 1); // reset to page 2 after initial fetch
+      } catch (err) {
+        console.error("Failed to fetch materials", err);
+        setHasMore(false);
+      }
+    },
+    [classroom?.id, page, hasMore]
+  );
+
+
+  // Infinite scroll trigger
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasMore) {
+        fetchMaterials();
+      }
+    });
+
+    const current = loaderRef.current;
+    if (current) observer.observe(current);
+
+    return () => {
+      if (current) observer.unobserve(current);
+    };
+  }, [fetchMaterials, hasMore]);
+
+  const filteredPosts = posts.filter((post) => {
+    const text = ((post.title || "") + " " + (post.details || "")).toLowerCase();
+    const matchesSearch = text.includes(searchQuery.toLowerCase());
+    const matchesType =
+      typeFilters.length === 0 || post.types?.some((t) => typeFilters.includes(t.key));
+    return matchesSearch && matchesType;
+  });
+
+  const handleDelete = async (id) => {
+    setConfirmDelete({ open: false, materialId: null });
     try {
-      const res = await fetchWithAuth(`/api/classroom/materials/${postId}/comments/`, {
-        method: "POST",
-        body: JSON.stringify({ content: text }),
-      });
+      const res = await fetchWithAuth(`/api/classroom/materials/${id}/`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete");
+      await fetchMaterials({ reset: true }); // full refetch
+    } catch (e) {
+      console.error("Delete failed", e);
+    }
+  };
 
-      if (!res.ok) {
-        throw new Error("Failed to post comment");
+
+  const handleSave = async (data) => {
+    setLoading(true);
+    try {
+      let result;
+      const typeKeys = Array.isArray(data.content)
+        ? [...new Set(data.content.map(item => item.type))]
+        : [];
+
+      const content = Array.isArray(data.content) ? data.content : [];
+      const nonBlobContent = content.filter(
+        item => !(item.type === "file" && item.url?.startsWith("blob:"))
+      );
+      const files = content.filter(
+        c => c.type === "file" && c.file instanceof File
+      );
+      const hasFile = files.length > 0;
+
+      if (editingMaterial) {
+        const formData = new FormData();
+        formData.append("title", data.title);
+        formData.append("details", data.details);
+        typeKeys.forEach((key) => formData.append("type_keys", key));
+        content.forEach((item) => {
+          if (item.type === "file" && item.file instanceof File) {
+            formData.append("files", item.file);
+          }
+        });
+
+        const res = await fetchWithAuth(
+          `/api/classroom/materials/${editingMaterial.id}/`,
+          {
+            method: "PUT",
+            body: hasFile
+              ? formData
+              : JSON.stringify({ ...data, type_keys: typeKeys, content }),
+          }
+        );
+        if (!res.ok) throw new Error("Failed to update");
+        result = await res.json();
+      } else {
+        const formData = new FormData();
+        formData.append("title", data.title);
+        formData.append("details", data.details);
+        formData.append("classroom", classroom.id);
+        typeKeys.forEach((key) => formData.append("type_keys", key));
+        formData.append("content", JSON.stringify(nonBlobContent));
+
+        files.forEach((fileItem) => {
+          formData.append("files", fileItem.file);
+        });
+
+        const res = await fetchWithAuth(
+          `/api/classroom/materials/create/`,
+          {
+            method: "POST",
+            body: hasFile
+              ? formData
+              : JSON.stringify({ ...data, classroom: classroom.id, type_keys: typeKeys, content }),
+            headers: hasFile ? undefined : { "Content-Type": "application/json" },
+          }
+        );
+        if (!res.ok) throw new Error("Failed to create");
+        result = await res.json();
       }
 
-      const newComment = await res.json();
-
-      setPosts((prev) =>
-        prev.map((post) =>
-          post.id === postId
-            ? { ...post, comments: [...post.comments, newComment] }
-            : post
-        )
-      );
-      setCommentInput((prev) => ({ ...prev, [postId]: "" }));
+      // Always reset modal and re-fetch list
+      setShowModal(false);
+      setEditingMaterial(null);
+      await fetchMaterials({ reset: true });
     } catch (err) {
-      console.error("Error posting comment:", err);
+      console.error("Save failed:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
 
   return (
     <div className="bg-white">
-      <div className="max-w-2xl mx-auto space-y-6">
-
-
+      <div className="max-w-4xl mx-auto space-y-6 px-4">
         <SearchAndFilterBar
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
@@ -201,254 +202,76 @@ export default function ClassroomStream({ classroom, isTeacher, user }) {
           placeholder="Search stream..."
         />
 
-
-
-        {/* Posts */}
         <div className="space-y-6">
           {filteredPosts.map((post) => (
-            <Card
+            <StreamCard
               key={post.id}
-              className={cn(
-                "rounded-md border border-gray-100 shadow-sm transition-colors hover:bg-opacity-80",
-                {
-                  "bg-amber-50": post.types?.[0]?.key === "announcement",
-                  "bg-blue-50": post.types?.[0]?.key === "file",
-                  "bg-green-50": post.types?.[0]?.key === "link",
-                  "bg-gray-50": post.types?.[0]?.key === "general",
-                }
-              )}
-            >
-
-              <CardHeader>
-                <div className="mb-2 flex flex-wrap gap-1">
-                  {post.types.map((type) => (
-                    <span
-                      key={type.key}
-                      className={cn(
-                        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium capitalize",
-                        {
-                          "bg-amber-100 text-amber-700": type.key === "announcement",
-                          "bg-blue-100 text-blue-700": type.key === "file",
-                          "bg-green-100 text-green-700": type.key === "link",
-                          "bg-gray-100 text-gray-700": type.key === "general",
-                        }
-                      )}
-                    >
-                      {iconForType(type.key)}
-                      {type.label}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <Avatar className="ring-2 ring-gray-300">
-                    <AvatarImage />
-                    <AvatarFallback>{post.created_by?.first_name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="flex items-baseline gap-2">
-                      <span className="font-medium text-gray-900">
-                        {post.created_by ? `${post.created_by.first_name} ${post.created_by.last_name ?? ""}` : "Unknown"}
-                      </span>
-                      <span className="text-sm text-gray-500">
-                        • {formatDate(post.timestamp)} {post.edited && <span className="ml-1 text-xs text-gray-500">(edited)</span>}
-
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-gray-700 mb-4">{post.content}</p>
-                <div className="flex items-center gap-3 text-gray-500">
-                  {/* <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleLike(post.id)}
-                    className={post.liked ? "text-blue-600" : ""}
-                  >
-                    <Heart className="mr-1" /> {post.likes}
-                  </Button> */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleToggleComments(post.id)}
-                  >
-                    <MessageCircle className="mr-1" /> {post.comments.length}
-                  </Button>
-                </div>
-
-                {showComments[post.id] && (
-                  <div className="mt-4 space-y-3">
-                    <div className="space-y-2 max-h-70 overflow-y-auto p-1">
-                      <div className="mt-4">
-                        {post.comments
-                          .filter((c) => !c.replied_to) // top-level only
-                          .map((comment) => (
-                            <CommentThread
-                              key={comment.id || `${comment.posted_by?.id}-${comment.date || Math.random()}`}
-                              comment={comment}
-                              currentUser={user}
-                              materialId={post.id}
-                              onUpdate={(id, update) => {
-                                setPosts((prev) =>
-                                  prev.map((p) =>
-                                    p.id === post.id
-                                      ? {
-                                        ...p,
-                                        comments: p.comments.map((c) =>
-                                          c.id === id
-                                            ? { ...c, ...update }
-                                            : update?.replied_to === c.id
-                                              ? [...(c.replies || []), update]
-                                              : c
-                                        ),
-                                      }
-                                      : p
-                                  )
-                                );
-                              }}
-                            />
-                          ))}
-                      </div>
-
-                    </div>
-                    <div className="flex items-center gap-3 mt-2">
-                      <Avatar className="w-8 h-8 ring-1 ring-gray-300">
-                        <AvatarFallback>{user.first_name?.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 relative">
-                        <Input
-                          className="pl-4 pr-12 py-2 rounded-full border-gray-300 focus:ring-amber-600 text-sm shadow-sm"
-                          placeholder="Write a comment..."
-                          value={commentInput[post.id] || ""}
-                          onChange={(e) =>
-                            setCommentInput((prev) => ({
-                              ...prev,
-                              [post.id]: e.target.value,
-                            }))
-                          }
-                        />
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="absolute right-1 top-1/2 -translate-y-1/2 text-amber-600 hover:text-amber-700"
-                          onClick={() => handleAddComment(post.id)}
-                        >
-                          <MessageCircle className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              post={post}
+              formatDate={formatDate}
+              onClick={() => setSelectedMaterial(post)}
+              onEdit={isTeacher ? (mat) => {
+                setEditingMaterial(mat);
+                setShowModal(true);
+              } : undefined} onDelete={isTeacher ? (id) => setConfirmDelete({ open: true, materialId: id }) : undefined}
+              isTeacher={isTeacher}
+            />
           ))}
+          <div ref={loaderRef} className="h-12" />
         </div>
       </div>
-      {!showDrawer && user?.role !== "student" && (
-        <Button
-          onClick={() => setShowDrawer(true)}
-          className="fixed bottom-6 right-6 z-50 bg-amber-600 hover:bg-amber-700 text-white rounded-full w-14 h-14 shadow-lg flex items-center justify-center"
-        >
-          <Plus className="w-6 h-6" />
-        </Button>
+
+      <Button
+        onClick={() => {
+          setEditingMaterial(null);
+          setShowModal(true);
+          setPage(1);
+        }}
+        className="fixed bottom-6 right-6 z-50 bg-amber-600 hover:bg-amber-700 text-white rounded-full w-14 h-14 shadow-lg flex items-center justify-center"
+      >
+        <Plus className="w-6 h-6" />
+      </Button>
+
+      {showModal && isTeacher && (
+        <MaterialCreationModal
+          open={showModal}
+          onClose={() => setShowModal(false)}
+          initialData={
+            editingMaterial
+              ? {
+                title: editingMaterial.title,
+                details: editingMaterial.details,
+                type_keys: editingMaterial.types
+                  ? editingMaterial.types.map((t) => t.key)
+                  : [],
+
+                content: Array.isArray(editingMaterial.content)
+                  ? editingMaterial.content
+                  : [],
+              }
+              : {}
+          }
+
+          isEditing={!!editingMaterial}
+          onSave={handleSave}
+        />
       )}
 
-      {showDrawer && (
-        <div
-          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
-          onClick={() => setShowDrawer(false)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-xl p-6 max-h-[80vh] overflow-y-auto animate-slide-up"
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium">What do you want to share?</h3>
-              <button
-                onClick={() => setShowDrawer(false)}
-                className="text-sm text-gray-500 hover:text-gray-800"
-              >
-                ✕
-              </button>
-            </div>
+      <ConfirmDialog
+        open={confirmDelete.open}
+        title="Delete Material"
+        description="Are you sure you want to delete this material?"
+        onOk={() => handleDelete(confirmDelete.materialId)}
+        onCancel={() => setConfirmDelete({ open: false, materialId: null })}
+        showOk
+        showCancel
+      />
 
-            {drawerStep === "select" && (
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { type: "announcement", label: "Announcement", color: "amber", icon: <Megaphone className="w-4 h-4" /> },
-                  { type: "file", label: "File", color: "blue", icon: <FileText className="w-4 h-4" /> },
-                  { type: "link", label: "Link", color: "green", icon: <Link className="w-4 h-4" /> },
-                  { type: "general", label: "General", color: "gray", icon: <MessageCircle className="w-4 h-4" /> },
-                ].map(({ type, label, color, icon }) => {
-                  const colorClasses = {
-                    amber: "bg-amber-500 hover:bg-amber-600",
-                    blue: "bg-blue-500 hover:bg-blue-600",
-                    green: "bg-green-500 hover:bg-green-600",
-                    gray: "bg-gray-500 hover:bg-gray-600",
-                  }[color];
-
-                  return (
-                    <Button
-                      key={type}
-                      onClick={() => {
-                        setSelectedType(type);
-                        setDrawerStep("form");
-                      }}
-                      className={`h-14 text-base font-medium ${colorClasses} text-white rounded-xl shadow-md flex gap-2 items-center justify-center`}
-                    >
-                      {icon}
-                      {label}
-                    </Button>
-                  );
-                })}
-              </div>
-            )}
-
-
-            {drawerStep === "form" && (
-              <div className="space-y-5">
-                <h3 className="text-lg font-semibold capitalize">{selectedType}</h3>
-
-                <div className="space-y-2">
-                  <Input placeholder="Title" className="text-base" />
-                  <Textarea placeholder="Details" rows={4} className="text-base" />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-sm text-gray-600">Content Type</label>
-                  <select className="w-full border border-gray-300 rounded-md text-sm px-3 py-2">
-                    <option value="">None</option>
-                    <option value="text">Text</option>
-                    <option value="material">Material</option>
-                  </select>
-                </div>
-
-                <div className="flex justify-between">
-                  <Button
-                    variant="outline"
-                    className="rounded-lg px-4"
-                    onClick={() => {
-                      setDrawerStep("select");
-                    }}
-                  >
-                    Back
-                  </Button>
-                  <Button className="bg-amber-600 hover:bg-amber-700 text-white rounded-lg px-6">
-                    Post
-                  </Button>
-                </div>
-              </div>
-            )}
-
-          </div>
-        </div>
-      )}
-
-
-
+      <MaterialViewerModal
+        material={selectedMaterial}
+        open={!!selectedMaterial}
+        onClose={() => setSelectedMaterial(null)}
+        formatDate={formatDate}
+      />
     </div>
   );
 }

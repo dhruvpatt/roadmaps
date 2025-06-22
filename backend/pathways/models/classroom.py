@@ -43,7 +43,7 @@ class Material(models.Model):
         blank=True
     )
     classroom = models.ForeignKey('Classroom', on_delete=models.CASCADE, related_name="materials", null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)  # <-- Add this line
+    created_at = models.DateTimeField(auto_now_add=True)
 
 
 
@@ -55,6 +55,7 @@ class Classroom(models.Model):
     students = models.ManyToManyField(User, related_name='joined_classrooms', blank=True)
     teachers = models.ManyToManyField(User, related_name='teaching_classrooms', blank=True)
     details = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     
 class Unit(models.Model):
     name = models.CharField(max_length=255)

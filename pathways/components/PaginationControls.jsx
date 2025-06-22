@@ -16,8 +16,8 @@ export default function PaginationControls({
       <Button
         onClick={() => onPageChange(page - 1)}
         disabled={page <= 1}
-        className="w-10 h-10 flex items-center justify-center disabled:opacity-40"
-        variant="outline"
+        size="icon"
+
       >
         <ChevronLeft className="w-4 h-4" />
       </Button>
@@ -27,8 +27,7 @@ export default function PaginationControls({
       <Button
         onClick={() => onPageChange(page + 1)}
         disabled={page >= totalPages}
-        className="w-10 h-10 flex items-center justify-center disabled:opacity-40"
-        variant="outline"
+        size="icon"
       >
         <ChevronRight className="w-4 h-4" />
       </Button>

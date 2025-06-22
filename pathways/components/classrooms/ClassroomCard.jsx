@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react"
 import { MoreHorizontal, Users, Calendar, Clock } from "lucide-react"
+import CardDropdownMenu from "@components/CardDropdownMenu"
 
 /**
  * Renders a classroom card with:
@@ -47,44 +48,30 @@ export default function ClassroomCard({
       {/* Top Row: Title + More Options */}
       <div className="flex items-start justify-between mb-2">
         <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-        <button
-          type="button"
-          onClick={() => {
-            setMenuOpen((prev) => !prev)
-            onMoreClick?.()
-          }}
-          className="text-gray-400 hover:text-gray-600 focus:outline-none"
-        >
-          <MoreHorizontal className="w-5 h-5" />
-        </button>
-        {menuOpen && (
-          <div
-            ref={menuRef}
-            className="absolute right-5 top-10 mt-1 w-32 bg-white shadow-sm border border-gray-200 rounded-lg shadow-lg z-10"
-          >
+        <CardDropdownMenu
+          trigger={
             <button
               type="button"
-              onClick={() => {
-                // TODO: implement edit
-                setMenuOpen(false)
-              }}
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              className="text-gray-400 hover:text-gray-600 focus:outline-none"
+              onClick={onMoreClick}
             >
-              Edit
+              <MoreHorizontal className="w-5 h-5" />
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                onDelete?.(classroomId)
-                setMenuOpen(false)
-              }}
-              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-            >
-              Delete
-            </button>
-          </div>
-        )}
-
+          }
+          items={[
+            {
+              label: "Edit",
+              onClick: () => {
+                // implement edit handler if needed
+              },
+            },
+            {
+              label: "Delete",
+              onClick: () => onDelete?.(classroomId),
+              className: "text-red-600"
+            }
+          ]}
+        />
       </div>
 
       {/* Subtitle / Description */}

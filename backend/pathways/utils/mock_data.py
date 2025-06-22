@@ -94,6 +94,8 @@ def create_mock_materials_for_classroom(classroom, teachers=None, count_per_type
                         "link": file_url,
                         "filename": f"material_{i+1}.txt",
                         "mimetype": "text/plain",
+                        "type": "file",
+
                     })
                 elif file_type == "pdf":
                     file_url = create_mock_pdf_file(filename=f"material_{i+1}.pdf", text=f"This is PDF {i+1}")
@@ -101,6 +103,8 @@ def create_mock_materials_for_classroom(classroom, teachers=None, count_per_type
                         "link": file_url,
                         "filename": f"material_{i+1}.pdf",
                         "mimetype": "application/pdf",
+                        "type": "file",
+
                     })
                 elif file_type == "png":
                     file_url = create_mock_png_file(filename=f"material_{i+1}.png")
@@ -108,21 +112,29 @@ def create_mock_materials_for_classroom(classroom, teachers=None, count_per_type
                         "link": file_url,
                         "filename": f"material_{i+1}.png",
                         "mimetype": "image/png",
+                        "type": "file",
+
                     })
             elif t.key == "link":
                 content.append({
                     "link": f"https://example.com/resource/{i+1}",
                     "filename": "",
                     "mimetype": "text/html",
+                    "type": "link",
+
                 })
+                
             elif t.key == "announcement":
                 content.append({
+                    "type": "announcement",
                     "text": f"Announcement info for material {i+1}",
                 })
             elif t.key == "general":
                 content.append({
+                    "type": "general",
                     "text": f"General info for material {i+1}",
                 })
+    
         if not content:
             content = [{"text": f"Default info for material {i+1}"}]
 
