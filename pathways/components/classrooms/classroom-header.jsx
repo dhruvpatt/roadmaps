@@ -37,8 +37,10 @@ export default function ClassroomHeader({
 
   return (
     <ToastProvider>
-      <header className="bg-gradient-to-r from-amber-500 via-amber-500 to-amber-500 text-white shadow-lg overflow-hidden">
-        <div className="max-w-7xl mx-auto px-8 py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+      {/* <header className="bg-gradient-to-r from-amber-500 via-amber-500 to-amber-500 text-white shadow-lg overflow-hidden"> */}
+      <header className="bg-animated-gradient text-white drop-shadow-lg backdrop-blur-md bg-opacity-90">
+
+        <div className="max-w-7xl mx-auto px-8 py-6 flex flex-col text-gray-100 md:flex-row md:items-center md:justify-between gap-6">
           {/* Title & Subject */}
           <div className="flex items-start md:items-center gap-4">
             <Button

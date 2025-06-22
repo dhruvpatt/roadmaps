@@ -22,6 +22,9 @@ from pathways.views.classroom_views import (
 )
 from pathways.views.curriculum_builder import create_curriculum, process_pdf_curriculum, upload_csv_curriculum, get_classroom_curriculum
 from pathways.views.attendance_views import get_attendance_dashboard, sessions_view, update_attendance
+from pathways.views.assistant_views import AssistantView
+
+
 urlpatterns = [
     path('admin/', admin.site.urls),
 
@@ -31,6 +34,9 @@ urlpatterns = [
     path("api/logout/", LogoutView.as_view()),
     path("api/signup/", UserSignupView.as_view()),
     path("api/user/", UserView.as_view(), name="user"),
+
+    path('api/ask-assistant/', AssistantView.as_view(), name='ask-assistant'),
+
 
     # API endpoints for Classroom management
     path("api/classroom/", ClassroomListView.as_view(), name="classroom-list"),

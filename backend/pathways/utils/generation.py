@@ -1,9 +1,10 @@
 import tiktoken
 import openai
-from django.conf import settings
 from pydantic import BaseModel
 from typing import Optional, Type
 from openai import LengthFinishReasonError
+from django.conf import settings
+
 
 openai.api_key = getattr(settings, 'LLM_API_KEY')
 

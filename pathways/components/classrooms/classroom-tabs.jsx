@@ -18,8 +18,8 @@ export default function ClassroomTabs({ classroom, isTeacher, user }) {
 
   const tabs = [
     { key: "stream", label: "Stream" },
-    { key: "assignments", label: "Assignments" },
     { key: "materials", label: "Materials" },
+    { key: "assignments", label: "Assignments" },
     { key: "tests", label: "Tests" },
     ...(isTeacher
       ? [
