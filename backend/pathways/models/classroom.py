@@ -80,7 +80,7 @@ class ClassroomAssignment(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     instructions = models.TextField(blank=True)
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_by = models.ForeignKey('pathways.User', on_delete=models.CASCADE)
     classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name='assignments')
     due_date = models.DateTimeField()
     points_possible = models.IntegerField(default=100)
@@ -99,7 +99,7 @@ class AssignmentSubmission(models.Model):
     )
     
     assignment = models.ForeignKey(ClassroomAssignment, on_delete=models.CASCADE, related_name='submissions')
-    student = models.ForeignKey(User, on_delete=models.CASCADE)
+    student = models.ForeignKey('pathways.User', on_delete=models.CASCADE)
     content = models.JSONField(blank=True, null=True)
     submitted_at = models.DateTimeField(auto_now_add=True)
     grade = models.FloatField(null=True, blank=True)

@@ -4,6 +4,8 @@ import { useRouter } from "next/router";
 import { AuthProvider } from "@/contexts/useAuth";
 import ErudaDevTools from "@components/devtools";
 
+import AssistantWidget from "@/components/AssistantWidget"; // 👈 import
+
 export default function App({ Component, pageProps }) {
   const router = useRouter();
   const noLayoutRoutes = ["/", "/login", "/signup"];
@@ -15,8 +17,16 @@ export default function App({ Component, pageProps }) {
     <div className="min-h-screen w-full bg-animated-gradient">
       <ErudaDevTools />
       <AuthProvider>
-        {shouldUseLayout ? <DashboardLayout>{Page}</DashboardLayout> : Page}
+        {shouldUseLayout ? (
+          <>
+            <DashboardLayout>{Page}</DashboardLayout>
+            <AssistantWidget /> {/* 👈 add here */}
+          </>
+        ) : (
+          Page
+        )}
       </AuthProvider>
     </div>
   );
 }
+

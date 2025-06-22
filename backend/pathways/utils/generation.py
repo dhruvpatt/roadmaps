@@ -19,23 +19,27 @@ def get_llm_response(
     temperature: float = 0.7,
     response_model: Optional[Type[BaseModel]] = None,
     mode: str = "dumps",
-    max_tokens: int = 4000,  # Start reasonably
-    model: str = "gpt-4o-mini"
+    max_tokens: int = 4000,
+    model: str = "gpt-4o-mini",
+    system_message: Optional[str] = None,
 ):
     try:
-        model_context_limit = 128_000  # GPT-4o context window
+        model_context_limit = 128_000
         prompt_tokens = count_tokens(prompt, model)
-
-        # Leave room for safety buffer
         safe_max_tokens = min(max_tokens, model_context_limit - prompt_tokens - 1000)
 
         if safe_max_tokens <= 0:
             raise ValueError("Prompt is too long for the model context window.")
 
+        messages = []
+        if system_message:
+            messages.append({"role": "system", "content": system_message})
+        messages.append({"role": "user", "content": prompt})
+
         if response_model:
             response = openai.beta.chat.completions.parse(
                 model=model,
-                messages=[{"role": "user", "content": prompt}],
+                messages=messages,
                 temperature=temperature,
                 response_format=response_model,
                 max_tokens=safe_max_tokens
@@ -49,7 +53,7 @@ def get_llm_response(
         else:
             response = openai.chat.completions.create(
                 model=model,
-                messages=[{"role": "user", "content": prompt}],
+                messages=messages,
                 temperature=temperature,
                 max_tokens=safe_max_tokens
             )
@@ -66,10 +70,12 @@ def get_llm_response(
             temperature=temperature,
             response_model=response_model,
             mode=mode,
-            max_tokens=min(max_tokens + 2000, 15000),  # Increase in 2k chunks
-            model=model
+            max_tokens=min(max_tokens + 2000, 15000),
+            model=model,
+            system_message=system_message,
         )
 
     except Exception as e:
         print(e)
         raise ValueError(f"LLM response generation failed: {e}")
+

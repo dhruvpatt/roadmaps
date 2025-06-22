@@ -41,7 +41,7 @@ urlpatterns = [
     path("api/signup/", UserSignupView.as_view()),
     path("api/user/", UserView.as_view(), name="user"),
 
-    path('api/ask-assistant/', AssistantView.as_view(), name='ask-assistant'),
+    path('api/assistant/', AssistantView.as_view(), name='ask-assistant'),
 
 
     # API endpoints for Classroom management

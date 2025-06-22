@@ -269,6 +269,7 @@ def create_mock_materials_for_classroom(classroom, teachers=None, count_per_type
         t, _ = MaterialType.objects.get_or_create(key=key, defaults={"label": label})
         type_objs.append(t)
 
+    materials = []
     # Create Materials
     for i in range(count_per_type):
         # Pick 1-2 random types for this material
@@ -304,7 +305,10 @@ def create_mock_materials_for_classroom(classroom, teachers=None, count_per_type
         )
         material.types.set(material_types)
         material.save()
+        materials.append(material)
     print(f"Created {count_per_type} mock materials for classroom '{classroom.name}'.")
+    return materials
+
 
 def create_mock_assignments_for_classroom(classroom, teachers=None, count=8):
     """
@@ -315,7 +319,7 @@ def create_mock_assignments_for_classroom(classroom, teachers=None, count=8):
         teachers = list(classroom.teachers.all())
         if not teachers:
             teachers = [User.objects.filter(role="teacher").first()]
-    print(f"Teachers available: {[t.name for t in teachers]}")
+    print(f"Teachers available: {[t.get_full_name() for t in teachers]}")
     
     students = list(classroom.students.all())
     

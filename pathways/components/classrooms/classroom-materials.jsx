@@ -216,7 +216,7 @@ export default function ClassroomMaterials({ classroom, isTeacher, user }) {
               }}
               disabled={loading}
             >
-              <Plus className="w-5 h-5" /> Add Resource
+              <Plus className="w-5 h-5" /> Add Material
             </Button>
           )}
         </div>
