@@ -6,7 +6,7 @@ import { Plus, Calendar, Clock, FileText, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
-import SearchAndFilterBar from "./SearchAndFilterBar";
+import SearchAndFilterBar from "@components/SearchAndFilterBar";
 import PaginationControls from "@/components/PaginationControls";
 import AssignmentCreationModal from "./AssignmentCreationModal";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
