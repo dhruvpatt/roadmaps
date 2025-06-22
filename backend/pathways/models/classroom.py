@@ -1,6 +1,5 @@
 # models/classroom.py
 from django.db import models
-from pathways.models import User, Analytics
 
 ALLOWED_MATERIAL_TYPES = (
     ("file", "File"),
@@ -21,7 +20,7 @@ class MaterialType(models.Model):
         verbose_name_plural = "Material Types"
 
 class MaterialView(models.Model):
-    user = models.ForeignKey('User', on_delete=models.CASCADE)
+    user = models.ForeignKey('pathways.User', on_delete=models.CASCADE)
     material = models.ForeignKey('Material', on_delete=models.CASCADE)
     time_viewed = models.DurationField(null=True, blank=True)
     last_viewed = models.DateTimeField(null=True, blank=True)
@@ -33,7 +32,7 @@ class Material(models.Model):
     types = models.ManyToManyField(MaterialType, related_name="materials")
     title = models.CharField(max_length=255)
     details = models.TextField(blank=True)
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_by = models.ForeignKey('pathways.User', on_delete=models.CASCADE)
     content = models.JSONField(blank=True, null=True)
     likes = models.IntegerField(default=0)
     viewed_by = models.ManyToManyField(
@@ -50,10 +49,10 @@ class Material(models.Model):
 
 class Classroom(models.Model):
     name = models.CharField(max_length=255)
-    analytics = models.OneToOneField(Analytics, on_delete=models.CASCADE, null=True, blank=True)
+    analytics = models.OneToOneField("pathways.Analytics", on_delete=models.CASCADE, null=True, blank=True)
     join_id = models.CharField(max_length=20, unique=True)
-    students = models.ManyToManyField(User, related_name='joined_classrooms', blank=True)
-    teachers = models.ManyToManyField(User, related_name='teaching_classrooms', blank=True)
+    students = models.ManyToManyField('pathways.User', related_name='joined_classrooms', blank=True)
+    teachers = models.ManyToManyField('pathways.User', related_name='teaching_classrooms', blank=True)
     details = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
@@ -61,18 +60,18 @@ class Unit(models.Model):
     name = models.CharField(max_length=255)
     classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name='units')
     description = models.TextField(blank=True)
-    analytics = models.OneToOneField(Analytics, on_delete=models.CASCADE, null=True, blank=True)
-    student_analytics = models.ManyToManyField(Analytics, related_name='unit_student_analytics', blank=True)
+    analytics = models.OneToOneField("pathways.Analytics", on_delete=models.CASCADE, null=True, blank=True)
+    student_analytics = models.ManyToManyField("pathways.Analytics", related_name='unit_student_analytics', blank=True)
 
 class Week(models.Model):
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='weeks')
     learning_goal = models.TextField(blank=True)
-    analytics = models.OneToOneField(Analytics, on_delete=models.CASCADE, null=True, blank=True)
-    student_analytics = models.ManyToManyField(Analytics, related_name='week_student_analytics', blank=True)
+    analytics = models.OneToOneField("pathways.Analytics", on_delete=models.CASCADE, null=True, blank=True)
+    student_analytics = models.ManyToManyField("pathways.Analytics", related_name='week_student_analytics', blank=True)
 
 class Comment(models.Model):
     content = models.TextField(null=True, blank=True)
-    posted_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    posted_by = models.ForeignKey("pathways.User", on_delete=models.CASCADE)
     material = models.ForeignKey(Material, on_delete=models.CASCADE, related_name='comments', null=True, blank=True)
     date = models.DateTimeField(auto_now_add=True)
     replied_to = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE)

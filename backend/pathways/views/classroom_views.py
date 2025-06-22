@@ -18,7 +18,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from pathways.models.classroom import Classroom, Material, User, Comment, MaterialType
+from pathways.models.classroom import Classroom, Material, Comment, MaterialType
+from pathways.models.user import User
 from pathways.serializers import (
     ClassroomSerializer,
     CreateClassroomSerializer,
@@ -27,8 +28,9 @@ from pathways.serializers import (
     CreateCommentSerializer,
 )
 from pathways.utils import attach_mock_students_to_classroom, create_mock_deliverables_for_classroom, create_mock_materials_for_classroom
+from pathways.models.classroom import Classroom, Material
+from pathways.models.user import User
 from rest_framework.exceptions import NotFound
-
 
 
 ALLOWED_MIME_TYPES = {

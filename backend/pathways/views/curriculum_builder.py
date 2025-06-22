@@ -168,7 +168,7 @@ def get_classroom_curriculum(request, classroom_id):
     """
     try:
         classroom = get_object_or_404(Classroom, id=classroom_id)
-        
+        print(f"Fetching curriculum for classroom: {classroom.name} (ID: {classroom.id})")
         # Check if user has access to this classroom
         if (request.user not in classroom.teachers.all() and 
             request.user not in classroom.students.all()):
@@ -177,6 +177,7 @@ def get_classroom_curriculum(request, classroom_id):
             }, status=status.HTTP_403_FORBIDDEN)
         
         units = Unit.objects.filter(classroom=classroom).prefetch_related('weeks')
+        print(f"Found {units.count()} units for classroom: {classroom.name}")
         serializer = UnitSerializer(units, many=True)
         
         return Response({

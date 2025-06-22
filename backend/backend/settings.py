@@ -22,7 +22,9 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "localhost"
+]
 env_path = os.path.join(os.path.dirname(__file__), '../.env')
 if os.path.exists(env_path):
     dotenv_path = env_path
@@ -48,10 +50,10 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -157,7 +159,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:3000" # Ensures CSRF validation works across origins
 ]
 
-CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
+CSRF_COOKIE_SECURE = True  # Set to True in production with HTTPS
 CSRF_COOKIE_HTTPONLY = False  # Allows JavaScript access to read csrftoken (needed for X-CSRFToken header)
 CSRF_COOKIE_SAMESITE = "Lax"  # Allows POSTs from localhost:3000 → localhost:8000
 SESSION_COOKIE_SAMESITE = "Lax"  # SameSite policy for session cookie (allows login sessions across localhost ports)

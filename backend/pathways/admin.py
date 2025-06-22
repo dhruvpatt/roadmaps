@@ -38,14 +38,8 @@ class MissedDeliverableInline(GenericTabularInline):
 # —— Attendance admin —— #
 @admin.register(Attendance)
 class AttendanceAdmin(admin.ModelAdmin):
-    list_display = ('student', 'status', 'date', 'missed_count')
-    list_filter = ('status', 'date')
-    search_fields = ('student__username', 'student__email')
-    inlines = [MissedDeliverableInline]
-
-    def missed_count(self, obj):
-        return obj.missed_items.count()
-    missed_count.short_description = 'Missed Items'
+    list_display = ('student', 'session')  # include real fields or methods
+    
 
 # —— MissedDeliverable admin —— #
 @admin.register(MissedDeliverable)

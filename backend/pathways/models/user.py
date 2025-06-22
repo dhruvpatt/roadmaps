@@ -4,6 +4,7 @@ from django.db import models
 from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.validators import MinValueValidator, MaxValueValidator
+from pathways.models.classroom import Classroom
 
 
 class User(AbstractUser):
@@ -38,21 +39,25 @@ class MissedDeliverable(models.Model):
     deliverable = GenericForeignKey('content_type', 'object_id')
 
 
+class Session(models.Model):
+    classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name="sessions")
+    date = models.DateField(auto_now_add=False, default=None)
+    topic = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.classroom.name} - {self.date} - {self.topic}"
+
 class Attendance(models.Model):
-    STATUS_CHOICES = [
-        ('present', 'Present'),
-        ('late', 'Late'),
-        ('absent', 'Absent'),
-        ('excused', 'Excused'),
-    ]
-
     student = models.ForeignKey(User, on_delete=models.CASCADE)
-    classroom = models.ForeignKey('Classroom', on_delete=models.CASCADE, related_name='attendance_records')
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES)
-    date = models.DateField()
-
+    session = models.ForeignKey(Session, on_delete=models.CASCADE, related_name="attendance_records")
+    status = models.CharField(max_length=10, choices=[
+        ('present','Present'),
+        ('late','Late'),
+        ('absent','Absent'),
+        ('excused','Excused'),
+    ])
+    
     missed_items = GenericRelation(MissedDeliverable)
 
     class Meta:
-        unique_together = ('student', 'classroom', 'date')
-
+        unique_together = ('student', 'session')
