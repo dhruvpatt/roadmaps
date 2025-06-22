@@ -2,8 +2,8 @@ import random
 from datetime import timedelta
 from django.utils import timezone
 from pathways.models import (
-    Classroom, Unit, Week, Material, Test, Homework, CheckIn,
-    Question, Comment, User, MaterialType
+    Classroom, Unit, Week, Material, Test, Homework, CheckIn, Resource,
+    Question, Comment, User, MaterialType, ClassroomAssignment, AssignmentSubmission
 )
 
 from django.core.files.base import ContentFile
@@ -246,3 +246,160 @@ def create_mock_deliverables_for_classroom(materials, classroom_id: int, student
 
     print(
         f"✅ Successfully populated classroom '{classroom.name}' with full mock data (including deliverables and {len(materials)} materials).")
+
+def create_mock_materials_for_classroom(classroom, teachers=None, count_per_type=5):
+    """
+    Adds a batch of mock Material objects to a classroom.
+    Each material gets one or more types assigned.
+    """
+    if teachers is None:
+        teachers = list(classroom.teachers.all())
+        if not teachers:
+            teachers = [User.objects.filter(role="teacher").first()]
+
+    # Ensure MaterialTypes exist (skip if already exists)
+    material_type_keys_labels = [
+        ("file", "File"),
+        ("url", "URL"),
+        ("announcement", "Announcement"),
+        ("general", "General"),
+    ]
+    type_objs = []
+    for key, label in material_type_keys_labels:
+        t, _ = MaterialType.objects.get_or_create(key=key, defaults={"label": label})
+        type_objs.append(t)
+
+    # Create Materials
+    for i in range(count_per_type):
+        # Pick 1-2 random types for this material
+        if i % 2 == 0:
+            material_types = random.sample(type_objs, k=1)
+        else:
+            material_types = random.sample(type_objs, k=2)
+        teacher = random.choice(teachers)
+        title = f"Material {i+1}"
+        details = f"Details for material {i+1}"
+        content = []
+        # Example file/url for 'file' or 'url'
+        if any(t.key == "file" for t in material_types):
+            content = [{
+                "url": f"https://files.example.com/material_{i+1}.pdf",
+                "filename": f"material_{i+1}.pdf",
+                "mimetype": "application/pdf",
+            }]
+        elif any(t.key == "url" for t in material_types):
+            content = [{
+                "url": f"https://example.com/resource/{i+1}",
+                "filename": "",
+                "mimetype": "text/html",
+            }]
+        # Create the material
+        material = Material.objects.create(
+            title=title,
+            details=details,
+            created_by=teacher,
+            classroom=classroom,
+            content=content,
+            likes=random.randint(0, 10),
+        )
+        material.types.set(material_types)
+        material.save()
+    print(f"Created {count_per_type} mock materials for classroom '{classroom.name}'.")
+
+def create_mock_assignments_for_classroom(classroom, teachers=None, count=8):
+    """
+    Creates mock assignments for a classroom with varied due dates and types.
+    """
+    print(f"Starting to create {count} assignments for classroom: {classroom.name}")
+    if teachers is None:
+        teachers = list(classroom.teachers.all())
+        if not teachers:
+            teachers = [User.objects.filter(role="teacher").first()]
+    print(f"Teachers available: {[t.name for t in teachers]}")
+    
+    students = list(classroom.students.all())
+    
+    assignment_types = ['essay', 'quiz', 'project', 'homework']
+    assignment_titles = {
+        'essay': ['Argumentative Essay on Climate Change', 'Personal Narrative Essay', 'Compare and Contrast Essay'],
+        'quiz': ['Chapter 5 Quiz', 'Midterm Quiz', 'Weekly Knowledge Check'],
+        'project': ['Science Fair Project', 'Group Research Project', 'Creative Portfolio'],
+        'homework': ['Math Problem Set 1', 'Reading Assignment Ch. 3', 'Practice Exercises']
+    }
+    
+    for i in range(count):
+        assignment_type = random.choice(assignment_types)
+        title = random.choice(assignment_titles[assignment_type]) + f" {i+1}"
+        
+        # Generate due dates - mix of past, current, and future
+        now = timezone.now()
+        if i < 2:  # 2 overdue assignments
+            due_date = now - timedelta(days=random.randint(1, 7))
+        elif i < 4:  # 2 due soon (within 24 hours)
+            due_date = now + timedelta(hours=random.randint(1, 23))
+        else:  # rest are future assignments
+            due_date = now + timedelta(days=random.randint(2, 30))
+        
+        points_possible = random.choice([50, 75, 100, 150, 200])
+        
+        descriptions = {
+            'essay': 'Write a well-structured essay with proper citations and arguments.',
+            'quiz': 'Complete the quiz covering the material from recent lectures.',
+            'project': 'Work individually or in groups to complete this comprehensive project.',
+            'homework': 'Complete the assigned exercises and submit your work.'
+        }
+        
+        instructions = {
+            'essay': 'Your essay should be 3-5 pages, double-spaced, with at least 3 credible sources.',
+            'quiz': 'You have 30 minutes to complete this quiz. Make sure to read each question carefully.',
+            'project': 'Follow the project guidelines provided in class. Include a bibliography.',
+            'homework': 'Show all your work. Partial credit will be given for correct methodology.'
+        }
+        
+        assignment = ClassroomAssignment.objects.create(
+            title=title,
+            description=descriptions[assignment_type],
+            instructions=instructions[assignment_type],
+            created_by=random.choice(teachers),
+            classroom=classroom,
+            due_date=due_date,
+            points_possible=points_possible,
+            assignment_type=assignment_type,
+            content={},
+            is_published=True
+        )
+        
+        # Create some submissions for past assignments
+        if due_date < now and students:
+            # 60-90% of students submit
+            num_submissions = random.randint(int(len(students) * 0.6), int(len(students) * 0.9))
+            submitting_students = random.sample(students, min(num_submissions, len(students)))
+            
+            for student in submitting_students:
+                submitted_at = due_date - timedelta(hours=random.randint(1, 48))
+                status = 'late' if submitted_at > due_date else 'submitted'
+                
+                # Some submissions are graded
+                grade = None
+                feedback = ""
+                if random.random() < 0.7:  # 70% chance of being graded
+                    grade = random.uniform(0.6, 1.0) * points_possible
+                    status = 'graded'
+                    feedback = random.choice([
+                        "Good work! Well organized and clear.",
+                        "Nice effort. Consider expanding on your main points.",
+                        "Excellent analysis. Great use of examples.",
+                        "Solid work. Check grammar and citations."
+                    ])
+                
+                AssignmentSubmission.objects.create(
+                    assignment=assignment,
+                    student=student,
+                    content={"text": f"Student submission for {title}"},
+                    submitted_at=submitted_at,
+                    grade=grade,
+                    feedback=feedback,
+                    status=status
+                )
+    
+    print(f"Created {count} mock assignments for classroom '{classroom.name}' with submissions.")

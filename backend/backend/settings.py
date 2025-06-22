@@ -22,9 +22,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [
-    "localhost"
-]
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 env_path = os.path.join(os.path.dirname(__file__), '../.env')
 if os.path.exists(env_path):
     dotenv_path = env_path
