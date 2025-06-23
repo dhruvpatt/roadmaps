@@ -53,11 +53,11 @@ def create_mock_pdf_file(filename="demo.pdf", text="Hello, this is a demo PDF.")
 
 
 
-
 def create_mock_materials_for_classroom(classroom, teachers=None, count_per_type=5):
     """
     Adds a batch of mock Material objects to a classroom and returns them.
-    Each material gets one or more types assigned.
+    Ensures each material has at least a title or one content item.
+    Details are only included if paired with a title or content.
     """
     if teachers is None:
         teachers = list(classroom.teachers.all())
@@ -70,23 +70,21 @@ def create_mock_materials_for_classroom(classroom, teachers=None, count_per_type
         ("announcement", "Announcement"),
         ("general", "General"),
     ]
+
     type_objs = []
     for key, label in material_type_keys_labels:
-        t, _ = MaterialType.objects.get_or_create(
-            key=key, defaults={"label": label})
+        t, _ = MaterialType.objects.get_or_create(key=key, defaults={"label": label})
         type_objs.append(t)
 
     materials = []
     for i in range(count_per_type):
-        material_types = random.sample(type_objs, k=random.randint(1, 2))
         teacher = random.choice(teachers)
-        title = f"Material {i+1}"
-        details = f"Details for material {i+1}"
+        material_types = random.sample(type_objs, k=random.randint(1, 2))
         content = []
 
+        # Populate content based on types
         for t in material_types:
             if t.key == "file":
-                # Randomly choose a file type for the demo
                 file_type = random.choice(["txt", "pdf", "png"])
                 if file_type == "txt":
                     file_url = create_mock_txt_file(filename=f"material_{i+1}.txt", content=f"This is the content of file {i+1}.")
@@ -95,7 +93,6 @@ def create_mock_materials_for_classroom(classroom, teachers=None, count_per_type
                         "filename": f"material_{i+1}.txt",
                         "mimetype": "text/plain",
                         "type": "file",
-
                     })
                 elif file_type == "pdf":
                     file_url = create_mock_pdf_file(filename=f"material_{i+1}.pdf", text=f"This is PDF {i+1}")
@@ -104,7 +101,6 @@ def create_mock_materials_for_classroom(classroom, teachers=None, count_per_type
                         "filename": f"material_{i+1}.pdf",
                         "mimetype": "application/pdf",
                         "type": "file",
-
                     })
                 elif file_type == "png":
                     file_url = create_mock_png_file(filename=f"material_{i+1}.png")
@@ -113,7 +109,6 @@ def create_mock_materials_for_classroom(classroom, teachers=None, count_per_type
                         "filename": f"material_{i+1}.png",
                         "mimetype": "image/png",
                         "type": "file",
-
                     })
             elif t.key == "link":
                 content.append({
@@ -121,9 +116,7 @@ def create_mock_materials_for_classroom(classroom, teachers=None, count_per_type
                     "filename": "",
                     "mimetype": "text/html",
                     "type": "link",
-
                 })
-                
             elif t.key == "announcement":
                 content.append({
                     "type": "announcement",
@@ -134,26 +127,28 @@ def create_mock_materials_for_classroom(classroom, teachers=None, count_per_type
                     "type": "general",
                     "text": f"General info for material {i+1}",
                 })
-    
-        if not content:
-            content = [{"text": f"Default info for material {i+1}"}]
+
+        has_content = bool(content)
+        has_title = random.choice([True, False]) if has_content else True  # must have title if no content
+        has_details = random.choice([True, False]) if has_title or has_content else False  # only allow details if paired
+
+        title = f"Material {i+1}" if has_title else ""
+        details = f"Details for material {i+1}" if has_details else ""
 
         material = Material.objects.create(
             title=title,
             details=details,
             created_by=teacher,
             classroom=classroom,
-            content=content,
+            content=content if has_content else [],
             likes=random.randint(0, 10),
         )
         material.types.set(material_types)
         material.save()
         materials.append(material)
-        
-    print(
-        f"✅ Created {count_per_type} mock materials for classroom '{classroom.name}'.")
-    return materials
 
+    print(f"✅ Created {count_per_type} compliant mock materials for classroom '{classroom.name}'.")
+    return materials
 
 def create_mock_deliverables_for_classroom(materials, classroom_id: int, students: list[User] = None):
     try:
@@ -249,55 +244,92 @@ def create_mock_deliverables_for_classroom(materials, classroom_id: int, student
 
 def create_mock_materials_for_classroom(classroom, teachers=None, count_per_type=5):
     """
-    Adds a batch of mock Material objects to a classroom.
-    Each material gets one or more types assigned.
+    Adds a batch of valid Material objects with clean content rules:
+    - Only one general
+    - Only one announcement
+    - Title and announcement are mutually exclusive
     """
     if teachers is None:
         teachers = list(classroom.teachers.all())
         if not teachers:
             teachers = [User.objects.filter(role="teacher").first()]
 
-    # Ensure MaterialTypes exist (skip if already exists)
     material_type_keys_labels = [
         ("file", "File"),
-        ("url", "URL"),
+        ("link", "Link"),
         ("announcement", "Announcement"),
         ("general", "General"),
     ]
+
     type_objs = []
     for key, label in material_type_keys_labels:
         t, _ = MaterialType.objects.get_or_create(key=key, defaults={"label": label})
         type_objs.append(t)
 
     materials = []
-    # Create Materials
     for i in range(count_per_type):
-        # Pick 1-2 random types for this material
-        if i % 2 == 0:
-            material_types = random.sample(type_objs, k=1)
-        else:
-            material_types = random.sample(type_objs, k=2)
         teacher = random.choice(teachers)
-        title = f"Material {i+1}"
-        details = f"Details for material {i+1}"
+        material_types = random.sample(type_objs, k=random.randint(1, 2))
         content = []
-        # Example file/url for 'file' or 'url'
-        if any(t.key == "file" for t in material_types):
-            content = [{
-                "url": f"https://files.example.com/material_{i+1}.pdf",
-                "filename": f"material_{i+1}.pdf",
-                "mimetype": "application/pdf",
-            }]
-        elif any(t.key == "url" for t in material_types):
-            content = [{
-                "url": f"https://example.com/resource/{i+1}",
-                "filename": "",
-                "mimetype": "text/html",
-            }]
-        # Create the material
+        has_announcement = False
+        has_general = False
+
+        for t in material_types:
+            if t.key == "file":
+                file_type = random.choice(["txt", "pdf", "png"])
+                if file_type == "txt":
+                    url = create_mock_txt_file(f"material_{i+1}.txt")
+                    content.append({
+                        "link": url,
+                        "filename": f"material_{i+1}.txt",
+                        "mimetype": "text/plain",
+                        "type": "file",
+                    })
+                elif file_type == "pdf":
+                    url = create_mock_pdf_file(f"material_{i+1}.pdf")
+                    content.append({
+                        "link": url,
+                        "filename": f"material_{i+1}.pdf",
+                        "mimetype": "application/pdf",
+                        "type": "file",
+                    })
+                elif file_type == "png":
+                    url = create_mock_png_file(f"material_{i+1}.png")
+                    content.append({
+                        "link": url,
+                        "filename": f"material_{i+1}.png",
+                        "mimetype": "image/png",
+                        "type": "file",
+                    })
+
+            elif t.key == "link":
+                content.append({
+                    "link": f"https://example.com/resource/{i+1}",
+                    "filename": "",
+                    "mimetype": "text/html",
+                    "type": "link",
+                })
+
+            elif t.key == "announcement" and not has_announcement:
+                content.append({
+                    "type": "announcement",
+                    "text": f"Announcement info for material {i+1}",
+                })
+                has_announcement = True
+
+            elif t.key == "general" and not has_general:
+                content.append({
+                    "type": "general",
+                    "text": f"General info for material {i+1}",
+                })
+                has_general = True
+
+        # Ensure validation: title XOR announcement
+        use_title = not has_announcement and random.choice([True, False])
+        title = f"Material {i+1}" if use_title else ""
+
         material = Material.objects.create(
             title=title,
-            details=details,
             created_by=teacher,
             classroom=classroom,
             content=content,
@@ -306,9 +338,9 @@ def create_mock_materials_for_classroom(classroom, teachers=None, count_per_type
         material.types.set(material_types)
         material.save()
         materials.append(material)
-    print(f"Created {count_per_type} mock materials for classroom '{classroom.name}'.")
-    return materials
 
+    print(f"✅ Created {count_per_type} clean mock materials for classroom '{classroom.name}'.")
+    return materials
 
 def create_mock_assignments_for_classroom(classroom, teachers=None, count=8):
     """

@@ -31,7 +31,6 @@ class MaterialView(models.Model):
 class Material(models.Model):
     types = models.ManyToManyField(MaterialType, related_name="materials")
     title = models.CharField(max_length=255)
-    details = models.TextField(blank=True)
     created_by = models.ForeignKey('pathways.User', on_delete=models.CASCADE)
     content = models.JSONField(blank=True, null=True)
     likes = models.IntegerField(default=0)
