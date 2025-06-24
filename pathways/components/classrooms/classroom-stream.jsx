@@ -111,69 +111,12 @@ export default function ClassroomStream({ classroom, isTeacher, user }) {
   const handleSave = async (data) => {
     setLoading(true);
     try {
-      let result;
-      const typeKeys = Array.isArray(data.content)
-        ? [...new Set(data.content.map(item => item.type))]
-        : [];
+      const result = await saveMaterial({
+        data,
+        editingMaterial,
+        classroomId: classroom.id, // only used if creating
+      });
 
-      const content = Array.isArray(data.content) ? data.content : [];
-      const nonBlobContent = content.filter(
-        item => !(item.type === "file" && item.url?.startsWith("blob:"))
-      );
-      const files = content.filter(
-        c => c.type === "file" && c.file instanceof File
-      );
-      const hasFile = files.length > 0;
-
-      if (editingMaterial) {
-        const formData = new FormData();
-        formData.append("title", data.title);
-        formData.append("details", data.details);
-        typeKeys.forEach((key) => formData.append("type_keys", key));
-        content.forEach((item) => {
-          if (item.type === "file" && item.file instanceof File) {
-            formData.append("files", item.file);
-          }
-        });
-
-        const res = await fetchWithAuth(
-          `/api/classroom/materials/${editingMaterial.id}/`,
-          {
-            method: "PUT",
-            body: hasFile
-              ? formData
-              : JSON.stringify({ ...data, type_keys: typeKeys, content }),
-          }
-        );
-        if (!res.ok) throw new Error("Failed to update");
-        result = await res.json();
-      } else {
-        const formData = new FormData();
-        formData.append("title", data.title);
-        formData.append("details", data.details);
-        formData.append("classroom", classroom.id);
-        typeKeys.forEach((key) => formData.append("type_keys", key));
-        formData.append("content", JSON.stringify(nonBlobContent));
-
-        files.forEach((fileItem) => {
-          formData.append("files", fileItem.file);
-        });
-
-        const res = await fetchWithAuth(
-          `/api/classroom/materials/create/`,
-          {
-            method: "POST",
-            body: hasFile
-              ? formData
-              : JSON.stringify({ ...data, classroom: classroom.id, type_keys: typeKeys, content }),
-            headers: hasFile ? undefined : { "Content-Type": "application/json" },
-          }
-        );
-        if (!res.ok) throw new Error("Failed to create");
-        result = await res.json();
-      }
-
-      // Always reset modal and re-fetch list
       setShowModal(false);
       setEditingMaterial(null);
       await fetchMaterials({ reset: true });

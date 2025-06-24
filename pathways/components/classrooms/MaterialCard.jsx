@@ -24,17 +24,20 @@ function AnnouncementBadges({ contents = [], limit = 1 }) {
       {items.map((c, i) => (
         <div
           key={i}
-          className="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-semibold w-fit max-w-full bg-amber-100 text-amber-700"
-          style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "95%" }}
+          className="inline-flex items-center gap-2 px-2 py-2 rounded-lg text-xs font-semibold w-fit max-w-full bg-amber-100 text-amber-700"
+          style={{ maxWidth: "95%" }}
           title={c.text}
         >
-          <Megaphone className="w-5 h-5 text-amber-500" />
-          <span className="truncate">{c.text}</span>
+          <Megaphone className="w-5 h-5 text-amber-500 mt-0.5" />
+          <span className="text-lg font-bold leading-snug break-words line-clamp-1">
+            {c.text}
+          </span>
         </div>
       ))}
     </div>
   );
 }
+
 
 function GeneralBadges({ contents = [], limit = 1 }) {
   const items = contents.slice(0, limit);
@@ -139,12 +142,24 @@ export default function MaterialCard({
 
       <div className="mb-2 flex flex-wrap gap-1">{typeBadges}</div>
 
-      <h3 className="font-semibold text-gray-900 text-lg">{material.title}</h3>
+      <h3 className="font-semibold text-gray-900 text-lg truncate max-w-full">
+        {material.title || <AnnouncementBadges contents={announcements} limit={1} />
+        }
+      </h3>
 
-      <div className="font-semibold text-base text-gray-500 mb-2">{material.details}</div>
+      {generals.length > 0 && (
+        <div className="flex items-center gap-2 text-sm text-gray-600 mb-1 min-w-0">
+          <MessageCircle className="w-4 h-4 text-gray-400 shrink-0" />
+          <div className="min-w-0">
+            <span className="line-clamp-2 break-words whitespace-pre-wrap text-sm">
+              {generals[0].text}
+            </span>
+          </div>
+        </div>
+      )}
 
-      <AnnouncementBadges contents={announcements} limit={1} />
-      <GeneralBadges contents={generals} limit={announcements.length ? 1 : 2} />
+
+
 
       <FadeRowPreview>
         {files.map((f, i) => (

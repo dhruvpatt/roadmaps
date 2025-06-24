@@ -10,8 +10,7 @@ export default function ErudaDevTools() {
         window.location.hostname === 'localhost' ||
         window.location.hostname === '127.0.0.1';
       console.log(window.innerWidth)
-      //if (isLocalhost && window.matchMedia("(max-width: 1000px)").matches) {
-      if (isLocalhost) {
+      if (isLocalhost && window.innerWidth < 1200) {
       const script = document.createElement('script');
         script.src = 'https://cdn.jsdelivr.net/npm/eruda';
         script.onload = () => {

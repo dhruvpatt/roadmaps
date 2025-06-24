@@ -1,6 +1,6 @@
 import secrets
 from rest_framework import serializers
-from pathways.models import Material, Unit, Week, Comment, Classroom, MaterialType, ClassroomAssignment, AssignmentSubmission
+from pathways.models import Material, Unit, Week, Comment, Classroom, MaterialType, ClassroomAssignment, AssignmentSubmission, ALLOWED_MATERIAL_TYPES
 from pathways.serializers.user_serializer import UserSerializer
 from pathways.serializers.analytics_serializer import AnalyticsSerializer
 
