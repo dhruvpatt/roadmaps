@@ -454,11 +454,12 @@ class MaterialDetailView(APIView):
                 return Response({"detail": "Not allowed."}, status=403)
 
             files = request.FILES.getlist("files")
-            data = request.data.copy() if hasattr(request.data, "copy") else dict(request.data)
 
+            # SAFELY get a mutable dict without deepcopy issues
+            data = dict(request.data.items())
             print("Incoming data:", data)
 
-            # Parse and validate incoming content
+            # Handle and parse content
             raw_content = data.get("content")
             try:
                 content = json.loads(raw_content) if isinstance(raw_content, str) else raw_content
@@ -467,7 +468,7 @@ class MaterialDetailView(APIView):
             except Exception:
                 return Response({"content": "Invalid content format."}, status=400)
 
-            # Process and append any new uploaded files
+            # Handle uploaded files
             new_file_blocks = []
             if files:
                 for f in files:
@@ -489,19 +490,16 @@ class MaterialDetailView(APIView):
                         "size": f.size
                     })
 
-            # Combine and assign final content
+            # Combine content + uploaded files
             full_content = content + new_file_blocks
             data["content"] = full_content
 
             # Normalize type_keys
-            raw_type_keys = data.get("type_keys", [])
-            if hasattr(data, "getlist"):
-                raw_type_keys = data.getlist("type_keys")
-
-            if isinstance(raw_type_keys, list) and len(raw_type_keys) == 1 and isinstance(raw_type_keys[0], str) and ',' in raw_type_keys[0]:
-                raw_type_keys = [k.strip() for k in raw_type_keys[0].split(',')]
-            elif isinstance(raw_type_keys, str):
+            raw_type_keys = request.data.getlist("type_keys") if hasattr(request.data, "getlist") else data.get("type_keys", [])
+            if isinstance(raw_type_keys, str):
                 raw_type_keys = [raw_type_keys]
+            elif isinstance(raw_type_keys, list) and len(raw_type_keys) == 1 and ',' in raw_type_keys[0]:
+                raw_type_keys = [k.strip() for k in raw_type_keys[0].split(',')]
 
             material_type_objs = MaterialType.objects.filter(key__in=raw_type_keys)
             if material_type_objs.count() != len(raw_type_keys):
@@ -509,7 +507,7 @@ class MaterialDetailView(APIView):
 
             data["type_keys"] = [mt.key for mt in material_type_objs]
 
-            # Save updated material
+            # Save changes
             serializer = MaterialSerializer(material, data=data, partial=True, context={"request": request})
             if serializer.is_valid(raise_exception=True):
                 updated = serializer.save()
