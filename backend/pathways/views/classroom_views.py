@@ -20,7 +20,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from pathways.models.classroom import Classroom, Material, Comment, MaterialType, AssignmentSubmission
-from pathways.models.deliverable import Assignment
+from pathways.models.deliverable import Assignment, Test, Question
 from pathways.models.user import User
 from pathways.serializers import (
     ClassroomSerializer,
@@ -30,7 +30,7 @@ from pathways.serializers import (
     CreateCommentSerializer,
     AssignmentSubmissionSerializer,
 )
-from pathways.serializers.deliverable_serializer import AssignmentSerializer
+from pathways.serializers.deliverable_serializer import AssignmentSerializer, TestSerializer, QuestionSerializer
 from pathways.utils import attach_mock_students_to_classroom, create_mock_deliverables_for_classroom, create_mock_materials_for_classroom, create_mock_assignments_for_classroom
 from pathways.models.classroom import Classroom, Material
 from pathways.models.user import User
@@ -691,6 +691,171 @@ def grade_submission(request, submission_id):
     submission.save()
 
     return Response(AssignmentSubmissionSerializer(submission).data)
+
+# endregion
+
+# region Test Views
+
+class TestListView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = TestSerializer
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        classroom_id = self.kwargs.get('classroom_id')
+        classroom = get_object_or_404(Classroom, id=classroom_id)
+        user = self.request.user
+
+        if not is_member(user, classroom):
+            return Test.objects.none()
+
+        # Teachers can see all tests (published and unpublished)
+        # Students can only see published tests
+        if is_teacher(user, classroom):
+            queryset = Test.objects.filter(classroom=classroom)
+        else:
+            queryset = Test.objects.filter(classroom=classroom, is_published=True)
+        
+        return queryset.order_by('-created_at')
+
+
+class TestCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def post(self, request, classroom_id):
+        classroom = get_object_or_404(Classroom, id=classroom_id)
+        user = request.user
+
+        if not is_teacher(user, classroom):
+            return Response({'detail': 'Only teachers can create tests.'}, status=403)
+
+        data = request.data.copy()
+        data['classroom'] = classroom.id
+
+        serializer = TestSerializer(
+            data=data, context={'request': request})
+        if serializer.is_valid():
+            test = serializer.save(created_by=user, classroom=classroom)
+            return Response(TestSerializer(test, context={'request': request}).data, status=201)
+        return Response(serializer.errors, status=400)
+
+
+class TestDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get(self, request, id):
+        test = get_object_or_404(Test, id=id)
+        user = request.user
+
+        if not is_member(user, test.classroom):
+            return Response({'detail': 'Not allowed.'}, status=403)
+
+        return Response(TestSerializer(test, context={'request': request}).data)
+
+    def put(self, request, id):
+        test = get_object_or_404(Test, id=id)
+        user = request.user
+
+        if not is_teacher(user, test.classroom):
+            return Response({'detail': 'Only teachers can edit tests.'}, status=403)
+
+        serializer = TestSerializer(
+            test, data=request.data, partial=True, context={'request': request})
+        if serializer.is_valid():
+            test = serializer.save()
+            return Response(TestSerializer(test, context={'request': request}).data)
+        return Response(serializer.errors, status=400)
+
+    def delete(self, request, id):
+        test = get_object_or_404(Test, id=id)
+        user = request.user
+
+        if not is_teacher(user, test.classroom):
+            return Response({'detail': 'Only teachers can delete tests.'}, status=403)
+
+        test.delete()
+        return Response({'detail': 'Test deleted'}, status=204)
+
+# endregion
+
+# region Question Views
+
+class QuestionListView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = QuestionSerializer
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        test_id = self.kwargs.get('test_id')
+        test = get_object_or_404(Test, id=test_id)
+        user = self.request.user
+
+        if not is_member(user, test.classroom):
+            return Question.objects.none()
+
+        return Question.objects.filter(test=test).order_by('order', 'created_at')
+
+
+class QuestionCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def post(self, request, test_id):
+        test = get_object_or_404(Test, id=test_id)
+        user = request.user
+
+        if not is_teacher(user, test.classroom):
+            return Response({'detail': 'Only teachers can create questions.'}, status=403)
+
+        data = request.data.copy()
+        data['test'] = test.id
+
+        serializer = QuestionSerializer(
+            data=data, context={'request': request})
+        if serializer.is_valid():
+            question = serializer.save()
+            return Response(QuestionSerializer(question, context={'request': request}).data, status=201)
+        return Response(serializer.errors, status=400)
+
+
+class QuestionDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get(self, request, id):
+        question = get_object_or_404(Question, id=id)
+        user = request.user
+
+        if not is_member(user, question.test.classroom):
+            return Response({'detail': 'Not allowed.'}, status=403)
+
+        return Response(QuestionSerializer(question, context={'request': request}).data)
+
+    def put(self, request, id):
+        question = get_object_or_404(Question, id=id)
+        user = request.user
+
+        if not is_teacher(user, question.test.classroom):
+            return Response({'detail': 'Only teachers can edit questions.'}, status=403)
+
+        serializer = QuestionSerializer(
+            question, data=request.data, partial=True, context={'request': request})
+        if serializer.is_valid():
+            question = serializer.save()
+            return Response(QuestionSerializer(question, context={'request': request}).data)
+        return Response(serializer.errors, status=400)
+
+    def delete(self, request, id):
+        question = get_object_or_404(Question, id=id)
+        user = request.user
+
+        if not is_teacher(user, question.test.classroom):
+            return Response({'detail': 'Only teachers can delete questions.'}, status=403)
+
+        question.delete()
+        return Response({'detail': 'Question deleted'}, status=204)
 
 # endregion
 

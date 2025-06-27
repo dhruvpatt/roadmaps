@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import Link from "next/link";
 import {
@@ -17,74 +17,65 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useRouter } from "next/navigation"; // instead of next/router
-// Mock tests data
-const mockTests = [
-  {
-    id: 1,
-    title: "Photosynthesis Quiz",
-    description:
-      "Test your understanding of the photosynthesis process and its components. Covering light-dependent reactions, Calvin Cycle, and photosynthetic pigments.",
-    questions: 15,
-    timeLimit: 30,
-    dueDate: "2025-01-30T23:59:00Z",
-    points: 75,
-    status: "published",
-    attempts: 18,
-    totalStudents: 25,
-    studentAttempt: {
-      completed: true,
-      score: 68,
-      completedAt: "2025-01-25T14:30:00Z",
-      timeSpent: 25,
-    },
-  },
-  {
-    id: 2,
-    title: "Cell Structure Test",
-    description:
-      "Comprehensive test on plant and animal cell structures and organelles. Identify functions of nucleus, mitochondria, chloroplasts, ER, and Golgi apparatus.",
-    questions: 25,
-    timeLimit: 45,
-    dueDate: "2025-02-05T23:59:00Z",
-    points: 100,
-    status: "published",
-    attempts: 5,
-    totalStudents: 25,
-    studentAttempt: null,
-  },
-  {
-    id: 3,
-    title: "Midterm Exam",
-    description:
-      "Comprehensive midterm covering chapters 1–5: Biochemistry, Cell Structure, Genetics, Evolution, and Ecology.",
-    questions: 50,
-    timeLimit: 90,
-    dueDate: "2025-02-15T23:59:00Z",
-    points: 200,
-    status: "draft",
-    attempts: 0,
-    totalStudents: 25,
-    studentAttempt: null,
-  },
-];
+import { useRouter } from "next/navigation";
+import fetchWithAuth from "@/lib/fetch_with_auth";
 
 export default function ClassroomTests({ classroom, isTeacher, user }) {
-  const [tests, setTests] = useState(mockTests);
+  const [tests, setTests] = useState([]);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  useEffect(() => {
+    if (classroom?.id) {
+      fetchTests();
+    }
+  }, [classroom?.id]);
+
+  const fetchTests = async () => {
+    setLoading(true);
+    try {
+      const response = await fetchWithAuth(`/api/classrooms/${classroom.id}/tests/`);
+      if (response.ok) {
+        const data = await response.json();
+        setTests(data.results || data);
+      }
+    } catch (error) {
+      console.error('Error fetching tests:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Delete a test
-  const handleDeleteTest = (id) => {
+  const handleDeleteTest = async (id) => {
     if (confirm("Delete this test?")) {
-      setTests((prev) => prev.filter((x) => x.id !== id));
+      try {
+        const response = await fetchWithAuth(`/api/tests/${id}/`, { method: 'DELETE' });
+        if (response.ok) {
+          setTests((prev) => prev.filter((x) => x.id !== id));
+        }
+      } catch (error) {
+        console.error('Error deleting test:', error);
+      }
     }
   };
 
   // Teacher publishes a draft
-  const handlePublishTest = (id) => {
-    setTests((prev) =>
-      prev.map((x) => (x.id === id ? { ...x, status: "published" } : x))
-    );
+  const handlePublishTest = async (id) => {
+    try {
+      const response = await fetchWithAuth(`/api/tests/${id}/`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_published: true })
+      });
+      if (response.ok) {
+        setTests((prev) =>
+          prev.map((x) => (x.id === id ? { ...x, is_published: true } : x))
+        );
+      }
+    } catch (error) {
+      console.error('Error publishing test:', error);
+    }
   };
 
   // Student starts a test
@@ -100,7 +91,7 @@ export default function ClassroomTests({ classroom, isTeacher, user }) {
   // Badge logic with amber theme
   const getBadge = (t) => {
     if (isTeacher) {
-      if (t.status === "draft")
+      if (!t.is_published)
         return (
           <Badge className="bg-amber-100 text-amber-800 border-amber-200">
             Draft
@@ -108,18 +99,11 @@ export default function ClassroomTests({ classroom, isTeacher, user }) {
         );
       return (
         <Badge className="bg-cream-100 text-amber-900 border-amber-200">
-          {t.attempts}/{t.totalStudents} completed
+          Published
         </Badge>
       );
     }
-    if (t.studentAttempt?.completed) {
-      return (
-        <Badge className="bg-green-100 text-green-800 border-green-200">
-          Completed
-        </Badge>
-      );
-    }
-    if (t.status === "published") {
+    if (t.is_published) {
       return <Badge className="bg-amber-500 text-white">Available</Badge>;
     }
     return (
@@ -152,8 +136,8 @@ export default function ClassroomTests({ classroom, isTeacher, user }) {
             </h2>
           </div>
           {isTeacher && (
-            <Link href="/create-test">
-              <Button className="flex items-center gap-2 bg-amber-600 text-white hover:bg-amber-700 focus:ring-2 focus:ring-offset-1 focus:ring-amber-400 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200">
+            <Link href={`/create-test?classroom_id=${classroom.id}`} className="cursor-pointer">
+              <Button className="flex items-center gap-2 bg-amber-600 text-white hover:bg-amber-700 focus:ring-2 focus:ring-offset-1 focus:ring-amber-400 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer">
                 <Plus className="w-5 h-5" /> Create Test
               </Button>
             </Link>
@@ -162,7 +146,19 @@ export default function ClassroomTests({ classroom, isTeacher, user }) {
 
         {/* List of Tests */}
         <div className="space-y-6">
-          {tests.map((test) => (
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4"></div>
+              <p className="text-amber-600">Loading tests...</p>
+            </div>
+          ) : tests.length === 0 ? (
+            <div className="text-center py-12">
+              <FileQuestion className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-500 mb-2">No tests found</h3>
+              <p className="text-gray-400">Create your first test to get started.</p>
+            </div>
+          ) : (
+            tests.map((test) => (
             <Card
               key={test.id}
               className="
@@ -194,11 +190,11 @@ export default function ClassroomTests({ classroom, isTeacher, user }) {
                   {getBadge(test)}
                   {isTeacher && (
                     <div className="flex items-center gap-1">
-                      <Link href={`/create-test?edit=${test.id}`}>
+                      <Link href={`/create-test?classroom_id=${classroom.id}&edit=${test.id}`} className="cursor-pointer">
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-amber-700 hover:bg-amber-100 rounded-lg"
+                          className="text-amber-700 hover:bg-amber-100 rounded-lg cursor-pointer"
                           aria-label="Edit Test"
                         >
                           <Edit className="w-4 h-4" />
@@ -208,7 +204,7 @@ export default function ClassroomTests({ classroom, isTeacher, user }) {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDeleteTest(test.id)}
-                        className="text-red-600 hover:bg-red-50 rounded-lg"
+                        className="text-red-600 hover:bg-red-50 rounded-lg cursor-pointer"
                         aria-label="Delete Test"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -222,45 +218,39 @@ export default function ClassroomTests({ classroom, isTeacher, user }) {
               <div className="flex flex-wrap items-center gap-3 mb-4">
                 <div className="flex items-center gap-2 bg-amber-100 px-3 py-2 rounded-full text-sm font-medium text-amber-800">
                   <FileQuestion className="w-4 h-4" />
-                  <span>{test.questions} Questions</span>
+                  <span>{test.number_of_questions || 0} Questions</span>
                 </div>
+                {test.time_limit && (
+                  <div className="flex items-center gap-2 bg-amber-100 px-3 py-2 rounded-full text-sm font-medium text-amber-800">
+                    <Clock className="w-4 h-4" />
+                    <span>{test.time_limit.split(':')[1]} minutes</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2 bg-amber-100 px-3 py-2 rounded-full text-sm font-medium text-amber-800">
-                  <Clock className="w-4 h-4" />
-                  <span>{test.timeLimit} minutes</span>
-                </div>
-                <div className="flex items-center gap-2 bg-amber-100 px-3 py-2 rounded-full text-sm font-medium text-amber-800">
-                  <span>{test.points} points</span>
+                  <span>{test.points_possible} points</span>
                 </div>
                 <div
                   className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium ${
-                    isOverdue(test.dueDate)
+                    isOverdue(test.due_date)
                       ? "bg-red-100 text-red-700"
                       : "bg-amber-100 text-amber-800"
                   }`}
                 >
-                  {isOverdue(test.dueDate) && (
+                  {isOverdue(test.due_date) && (
                     <AlertCircle className="w-4 h-4" />
                   )}
-                  <span>Due {formatDate(test.dueDate)}</span>
+                  <span>Due {formatDate(test.due_date)}</span>
                 </div>
               </div>
 
               {/* Action Row */}
               {isTeacher ? (
                 <div className="border-t border-amber-200 pt-4 flex flex-wrap gap-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => console.log("Edit questions", test.id)}
-                    className="bg-amber-600 text-white hover:bg-amber-700 focus:ring-amber-400 border-amber-600 rounded-lg"
-                  >
-                    Edit Questions
-                  </Button>
-                  {test.status === "draft" ? (
+                  {!test.is_published ? (
                     <Button
                       size="sm"
                       onClick={() => handlePublishTest(test.id)}
-                      className="bg-green-600 text-white hover:bg-green-700 focus:ring-green-400 rounded-lg"
+                      className="bg-green-600 text-white hover:bg-green-700 focus:ring-green-400 rounded-lg cursor-pointer"
                     >
                       Publish
                     </Button>
@@ -269,37 +259,18 @@ export default function ClassroomTests({ classroom, isTeacher, user }) {
                       variant="outline"
                       size="sm"
                       onClick={() => handleViewResults(test.id)}
-                      className="hover:bg-amber-50 border-amber-300 text-amber-700 rounded-lg"
+                      className="hover:bg-amber-50 border-amber-300 text-amber-700 rounded-lg cursor-pointer"
                     >
-                      Results ({test.attempts})
+                      Results ({test.submission_count || 0})
                     </Button>
                   )}
                 </div>
               ) : (
                 <div className="border-t border-amber-200 pt-4">
-                  {test.studentAttempt?.completed ? (
-                    <div className="flex flex-col gap-3 p-4 bg-green-50 rounded-xl border border-green-200">
-                      <div className="flex items-center gap-2 text-green-700 font-medium">
-                        <CheckCircle className="w-5 h-5" />
-                        <span>
-                          Completed on{" "}
-                          {formatDate(test.studentAttempt.completedAt)}
-                        </span>
-                      </div>
-                      <div className="text-amber-900">
-                        Score:{" "}
-                        <span className="font-bold text-amber-700">
-                          {test.studentAttempt.score}/{test.points}
-                        </span>
-                      </div>
-                      <div className="text-amber-700">
-                        Time Spent: {test.studentAttempt.timeSpent} minutes
-                      </div>
-                    </div>
-                  ) : test.status === "published" ? (
+                  {test.is_published ? (
                     <Button
                       onClick={() => handleStartTest(test.id)}
-                      className="flex items-center gap-2 bg-amber-600 text-white hover:bg-amber-700 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                      className="flex items-center gap-2 bg-amber-600 text-white hover:bg-amber-700 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer"
                     >
                       <Play className="w-4 h-4" /> Start Test
                     </Button>
@@ -311,7 +282,8 @@ export default function ClassroomTests({ classroom, isTeacher, user }) {
                 </div>
               )}
             </Card>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </section>
