@@ -3,14 +3,25 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Resizable } from "@components/animations/Resizeable"
 
-interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+interface ResizableProps {
+  children: React.ReactNode;
+  duration?: number;
+  easing?: string;
   disableAnimation?: boolean;
+  refToAnimate?: React.RefObject<HTMLElement>;
+  collapseStart?: boolean; // <-- Add this!
+  onCollapseComplete?: () => void;
 }
 
 
+type CardProps = React.HTMLAttributes<HTMLDivElement> & {
+  disableAnimation?: boolean;
+  resizableProps?: Partial<ResizableProps>;
+};
+
+
 const Card = React.forwardRef<HTMLDivElement, CardProps>(
-  ({ className, disableAnimation, ...props }, ref) => (
-    <Resizable disableAnimation={disableAnimation}>
+  ({ className, resizableProps, ...props }, ref) => (
       <div
         ref={ref}
         className={cn(
@@ -19,10 +30,10 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
         )}
         {...props}
       />
-    </Resizable>
   )
 );
 Card.displayName = "Card";
+
 
 
 const CardHeader = React.forwardRef<

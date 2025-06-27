@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import PropTypes from "prop-types";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -10,7 +10,7 @@ import backendUrl from "@backendUrl";
 import CardDropdownMenu from "@components/CardDropdownMenu";
 import { MoreHorizontal } from "lucide-react";
 import CommentSection from "@components/CommentSection";
-import { CollapsePresence } from "@components/animations/CollapsePresence";
+import { Resizable } from "@components/animations/Resizeable";
 
 
 
@@ -45,10 +45,7 @@ export default function StreamCard({
 
     const announcementText = announcements[0]?.text;
     const [showComments, setShowComments] = useState(false);
-    const [resizingDisabled, setResizingDisabled] = useState(false);
 
-
-    //TODO: fetch material on comment update.
 
     return (
         <Card
@@ -56,7 +53,6 @@ export default function StreamCard({
             onClick={() => {
                 if (mode === "material") onClick?.(post);
             }}
-            disableAnimation={resizingDisabled}
         >
             <CardHeader className="relative p-0 space-y-2 px-6 pt-4 pb-2">
                 {isTeacher && (
@@ -218,19 +214,11 @@ export default function StreamCard({
                 </div>
 
                 {/* Comments */}
-                <CollapsePresence
-                    show={showComments}
-                    onCollapseStart={() => setResizingDisabled(true)}
-                    onCollapseEnd={() => setResizingDisabled(false)}
-                >
-                    <div
-                        className="mt-3 bg-gray-100 rounded-lg p-4 overflow-y-auto"
-                        onClick={(e) => e.stopPropagation()}
-                    >
+                <Resizable show={showComments} fade duration={0.3}>
+                    <div className="mt-3 bg-gray-100 rounded-lg p-4 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
                         <CommentSection materialId={post.id} currentUser={user} />
                     </div>
-                </CollapsePresence>
-
+                </Resizable>
             </CardContent>
         </Card>
 

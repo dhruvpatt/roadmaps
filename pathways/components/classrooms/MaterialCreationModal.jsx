@@ -293,6 +293,7 @@ export default function MaterialCreationModal({
 
         <div className="px-6 space-y-3 min-w-0">
           {/* TITLE + ANNOUNCEMENT BADGE */}
+          
           <div>
             <div className="mb-1 font-bold text-lg text-gray-700">Add:</div>
             <p className="text-m text-gray-500 mb-2">
@@ -562,7 +563,7 @@ export default function MaterialCreationModal({
           )}
         </div>
 
-        <DialogFooter className="mr-6 flex-row flex justify-end items-center gap-3">
+        <DialogFooter className="mr-6 flex-row flex justify-end items-center pt-5 gap-3">
           <DialogClose asChild>
             <Button variant="cancel">Cancel</Button>
           </DialogClose>

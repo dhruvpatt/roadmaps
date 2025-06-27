@@ -53,9 +53,9 @@ export default function CommentSection({ materialId, currentUser }) {
     };
 
     return (
-        <div className="relative bg-gray-100 rounded-lg p-4 max-h-200 overflow-hidden">
+        <div className="relative bg-gray-100 rounded-lg p-4 max-h-[400px] overflow-hidden">
             {/* Scrollable comments list */}
-            <div className="overflow-y-auto pr-2 pb-20 max-h-100 space-y-4 mb-10">
+            <div className="overflow-y-auto pr-2 pb-20 max-h-[300px] space-y-4 mb-10">
                 {comments.map((comment) => (
                     <CommentThread
                         key={comment.id}

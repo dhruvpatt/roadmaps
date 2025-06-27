@@ -11,6 +11,7 @@ import ConfirmDialog from "@components/ConfirmDialog";
 import MaterialCreationModal from "./MaterialCreationModal";
 import StreamCard from "./StreamCard";
 import MaterialViewerModal from "./MaterialViewerModal";
+import { saveMaterial } from "@/lib/api/materials";
 
 const PAGE_SIZE = 10;
 

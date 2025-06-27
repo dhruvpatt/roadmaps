@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Pencil, Trash2, CornerDownRight, Send, ChevronDown, ChevronRight } from "lucide-react";
 import fetchWithAuth from "@/lib/fetch_with_auth";
+import { Resizable } from "@components/animations/Resizeable";
 
 export default function CommentThread({
     comment,
@@ -144,19 +145,18 @@ export default function CommentThread({
                         {collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
                         {collapsed ? "Show replies" : "Hide replies"}
                     </button>
-                    {!collapsed && (
-                        <div className="mt-2 space-y-2">
-                            {comment.replies.map((reply) => (
-                                <CommentThread
-                                    key={reply.id || `${reply.posted_by?.id}-${reply.date || Math.random()}`}
-                                    comment={reply}
-                                    currentUser={currentUser}
-                                    onUpdate={onUpdate}
-                                    materialId={materialId}
-                                />
-                            ))}
-                        </div>
-                    )}
+                    <Resizable show={!collapsed} fade duration={100} className="mt-2 space-y-2">
+                        {comment.replies.map((reply) => (
+                            <CommentThread
+                                key={reply.id || `${reply.posted_by?.id}-${reply.date || Math.random()}`}
+                                comment={reply}
+                                currentUser={currentUser}
+                                onUpdate={onUpdate}
+                                materialId={materialId}
+                            />
+                        ))}
+                    </Resizable>
+
                 </div>
             )}
 

@@ -160,6 +160,16 @@ body {
   }
 }
 
+.ReactCollapse--collapse {
+  transition: height 0.3s linear;
+}
+
+.fade-out {
+  transition: height 300ms ease, opacity 300ms ease;
+  opacity: 0;
+  height: 0 !important;
+}
+
 .animate-fade-out {
   animation: fadeOut 0.3s ease-in forwards;
 }
@@ -167,7 +177,8 @@ body {
 @keyframes fadeOutOpacity {
   0% {
     opacity: 1;
-    transform: translateZ(0); /* triggers GPU compositing */
+    transform: translateZ(0);
+    /* triggers GPU compositing */
   }
 
   100% {
@@ -181,9 +192,26 @@ body {
 }
 
 
+@keyframes fadeInOpacity {
+  0% {
+    opacity: 0.8;
+    transform: translateZ(0);
+    /* triggers GPU compositing */
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateZ(0);
+  }
+}
+
+.animate-fade-in-opacity {
+  animation: fadeInOpacity 0.2s ease-in-out forwards;
+}
+
+
 .resizable {
-  will-change: transform, opacity;
-  transition: height 0.3s ease, width 0.3s ease;
+  overflow: hidden;
 }
 
 .smooth-move {

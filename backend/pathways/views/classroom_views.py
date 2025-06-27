@@ -164,6 +164,35 @@ class ClassroomCreateView(APIView):
             
         try:
             classroom = serializer.save()
+            if serializer.is_valid(raise_exception=True):
+                classroom = serializer.save()
+                classroom.refresh_from_db()
+                # Add mock students
+                students = attach_mock_students_to_classroom(
+                    classroom, number_of_students=10)
+
+                teachers = list(classroom.teachers.all())
+                # create_mock_materials_for_classroom(
+                #     classroom, teachers=teachers, count_per_type=5)
+
+                # # Add mock assignments
+                # print("Creating mock assignments...")
+                # create_mock_assignments_for_classroom(
+                #     classroom, teachers=teachers, count=8)
+                # print("Mock assignments creation completed.")
+
+                materials = create_mock_materials_for_classroom(
+                    classroom, teachers=teachers, count_per_type=15)
+
+                # Populate all mock data: units, weeks, materials, tests, homeworks, etc.
+                # create_mock_deliverables_for_classroom(
+                #     materials, classroom.id, students=students)
+
+                return Response(
+                    ClassroomSerializer(classroom, context={
+                                        "request": request}).data,
+                    status=status.HTTP_201_CREATED
+                )
             return Response(
                 ClassroomSerializer(classroom, context={"request": request}).data,
                 status=status.HTTP_201_CREATED
