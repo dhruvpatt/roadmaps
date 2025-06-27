@@ -24,7 +24,7 @@ function AnnouncementBadges({ contents = [], limit = 1 }) {
       {items.map((c, i) => (
         <div
           key={i}
-          className="inline-flex items-center gap-2 px-2 py-2 rounded-lg text-xs font-semibold w-fit max-w-full bg-amber-100 text-amber-700"
+          className="inline-flex items-center gap-2 px-2 py-0.5 mb-1 rounded-lg text-xs font-semibold w-fit max-w-full bg-amber-100 text-amber-700"
           style={{ maxWidth: "95%" }}
           title={c.text}
         >

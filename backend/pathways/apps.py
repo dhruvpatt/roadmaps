@@ -19,6 +19,6 @@ class PathwaysConfig(AppConfig):
                     if not _bootstrap_started:
                         _bootstrap_started = True
                         from backend.autobootstrap import start_in_background
-                        start_in_background()
+                        # start_in_background()
         except Exception as e:
             print("🚨 Failed to start autobootstrap in DEBUG mode:", e)

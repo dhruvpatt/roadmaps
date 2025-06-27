@@ -12,7 +12,7 @@ export default function SimpleAccordion({
   const [toggled, setToggled] = React.useState(false);
 
   return (
-    <div className="mb-4">
+    <div className="">
       <button
         type="button"
         onClick={() => setToggled(prev => !prev)}

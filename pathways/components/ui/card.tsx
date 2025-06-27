@@ -1,21 +1,29 @@
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
+import { Resizable } from "@components/animations/Resizeable"
 
-const Card = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn(
-      "rounded-lg bg-card text-card-foreground shadow-sm shadow-sm border border-gray-200",
-      className
-    )}
-    {...props}
-  />
-))
-Card.displayName = "Card"
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+  disableAnimation?: boolean;
+}
+
+
+const Card = React.forwardRef<HTMLDivElement, CardProps>(
+  ({ className, disableAnimation, ...props }, ref) => (
+    <Resizable disableAnimation={disableAnimation}>
+      <div
+        ref={ref}
+        className={cn(
+          "rounded-lg bg-card text-card-foreground shadow-sm border border-gray-200",
+          className
+        )}
+        {...props}
+      />
+    </Resizable>
+  )
+);
+Card.displayName = "Card";
+
 
 const CardHeader = React.forwardRef<
   HTMLDivElement,

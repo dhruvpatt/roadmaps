@@ -148,6 +148,7 @@ export default function ClassroomStream({ classroom, isTeacher, user }) {
         <div className="space-y-6">
           {filteredPosts.map((post) => (
             <StreamCard
+              user={user}
               key={post.id}
               post={post}
               formatDate={formatDate}

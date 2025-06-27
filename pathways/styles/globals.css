@@ -16,13 +16,16 @@ body {
 
 /* Root light theme variables (merged from both files) */
 :root {
-  --background: 0 0% 98%; /* picked from your second file (more 'app-like' than 100%) */
-  --foreground: 0 0% 10%; /* from your second file */
+  --background: 0 0% 98%;
+  /* picked from your second file (more 'app-like' than 100%) */
+  --foreground: 0 0% 10%;
+  /* from your second file */
   --card: 0 0% 100%;
   --card-foreground: 0 0% 10%;
   --popover: 0 0% 100%;
   --popover-foreground: 0 0% 10%;
-  --primary: 40 100% 50%; /* from your second file; if you prefer blue, swap to 221.2 83.2% 53.3% */
+  --primary: 40 100% 50%;
+  /* from your second file; if you prefer blue, swap to 221.2 83.2% 53.3% */
   --primary-foreground: 0 0% 100%;
   --secondary: 240 4.8% 95.9%;
   --secondary-foreground: 222.2 47.4% 11.2%;
@@ -32,16 +35,21 @@ body {
   --accent-foreground: 222.2 47.4% 11.2%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 210 40% 98%;
-  --border: 0 0% 85%; /* from your second file */
-  --input: 0 0% 100%;  /* from your second file */
-  --ring: 220 100% 50%; /* from your second file */
+  --border: 0 0% 85%;
+  /* from your second file */
+  --input: 0 0% 100%;
+  /* from your second file */
+  --ring: 220 100% 50%;
+  /* from your second file */
   --radius: 0.5rem;
 }
 
 /* Dark mode merged variables */
 .dark {
-  --background: 0 0% 10%; /* from your second file (dark background) */
-  --foreground: 0 0% 90%; /* from your second file */
+  --background: 0 0% 10%;
+  /* from your second file (dark background) */
+  --foreground: 0 0% 90%;
+  /* from your second file */
   --input: 0 0% 20%;
   --border: 0 0% 25%;
   --card: 0 0% 15%;
@@ -77,6 +85,7 @@ body {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -86,11 +95,13 @@ body {
   .animate-slide-up {
     animation: slideUp 0.3s ease-out;
   }
+
   @keyframes slideUp {
     0% {
       transform: translateY(100%);
       opacity: 0;
     }
+
     100% {
       transform: translateY(0%);
       opacity: 1;
@@ -103,42 +114,105 @@ body {
   0% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
+
   100% {
     background-position: 0% 50%;
   }
 }
+
 .bg-animated-gradient {
   background: linear-gradient(270deg, #f3d470, #fea269, #ffa135);
   background-size: 600% 600%;
   animation: gradientShift 40s ease infinite;
 }
 
+
 /* Fade-in animation */
 @keyframes fadeIn {
   0% {
     opacity: 0;
-    transform: translateX(20px);
+    transform: translateX(50px) translateZ(0);
   }
+
   100% {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateX(0) translateZ(0);
   }
 }
+
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out forwards;
 }
 
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+}
+
+.animate-fade-out {
+  animation: fadeOut 0.3s ease-in forwards;
+}
+
+@keyframes fadeOutOpacity {
+  0% {
+    opacity: 1;
+    transform: translateZ(0); /* triggers GPU compositing */
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateZ(0);
+  }
+}
+
+.animate-fade-out-opacity {
+  animation: fadeOutOpacity 0.3s linear forwards;
+}
+
+
+.resizable {
+  will-change: transform, opacity;
+  transition: height 0.3s ease, width 0.3s ease;
+}
+
+.smooth-move {
+  transition:
+    margin 0.3s ease,
+    padding 0.3s ease,
+    transform 0.3s ease,
+    opacity 0.3s ease;
+}
+
 /* Accordion animations (if you use them) */
 @keyframes accordion-down {
-  from { height: 0 }
-  to   { height: var(--radix-accordion-content-height) }
+  from {
+    height: 0
+  }
+
+  to {
+    height: var(--radix-accordion-content-height)
+  }
 }
+
 @keyframes accordion-up {
-  from { height: var(--radix-accordion-content-height) }
-  to   { height: 0 }
+  from {
+    height: var(--radix-accordion-content-height)
+  }
+
+  to {
+    height: 0
+  }
 }
 
 /* =======================
@@ -146,16 +220,22 @@ body {
    ======================= */
 
 .react-calendar {
-  color: #1f2937; /* tailwind's gray-800 */
-  font-size: 0.875rem; /* text-sm */
+  color: #1f2937;
+  /* tailwind's gray-800 */
+  font-size: 0.875rem;
+  /* text-sm */
 }
+
 .react-calendar abbr {
   text-decoration: none;
   color: #1f2937;
 }
+
 .react-calendar__tile--active {
-  background-color: #facc15 !important; /* amber-400 */
-  color: #111827 !important; /* gray-900 */
+  background-color: #facc15 !important;
+  /* amber-400 */
+  color: #111827 !important;
+  /* gray-900 */
 }
 
 /* KaTeX styling */
@@ -165,6 +245,7 @@ body {
   overflow-y: hidden;
   text-align: center;
 }
+
 .katex-inline {
   padding: 0 0.2rem;
   display: inline-block;
@@ -181,23 +262,29 @@ body {
   line-height: 1.7;
   color: #374151;
 }
+
 .math-content p {
   margin-bottom: 1.25rem;
 }
+
 .math-content strong {
   font-weight: 600;
 }
+
 .math-content ul,
 .math-content ol {
   margin: 1.25rem 0;
   padding-left: 1.5rem;
 }
+
 .math-content ul {
   list-style-type: disc;
 }
+
 .math-content ol {
   list-style-type: decimal;
 }
+
 .math-content li {
   margin: 0.5rem 0;
 }
@@ -216,17 +303,60 @@ body {
 }
 
 /* Custom styling for block types */
-.block-introduction      { background-color: #ebf5ff; border-left: 4px solid #3b82f6; }
-.block-learning-objectives { background-color: #ecfdf5; border-left: 4px solid #10b981; }
-.block-definition        { background-color: #f5f3ff; border-left: 4px solid #8b5cf6; }
-.block-concept-explanation { background-color: #fffbeb; border-left: 4px solid #f59e0b; }
-.block-worked-example    { background-color: #eef2ff; border-left: 4px solid #6366f1; }
-.block-practice-exercise { background-color: #d1fae5; border-left: 4px solid #10b981; }
-.block-visual-aid        { background-color: #ecfeff; border-left: 4px solid #06b6d4; }
-.block-real-world-link   { background-color: #fff1f2; border-left: 4px solid #e11d48; }
-.block-misconception     { background-color: #fee2e2; border-left: 4px solid #ef4444; }
-.block-summary           { background-color: #ccfbf1; border-left: 4px solid #14b8a6; }
-.block-reflection        { background-color: #f5f3ff; border-left: 4px solid #8b5cf6; }
+.block-introduction {
+  background-color: #ebf5ff;
+  border-left: 4px solid #3b82f6;
+}
+
+.block-learning-objectives {
+  background-color: #ecfdf5;
+  border-left: 4px solid #10b981;
+}
+
+.block-definition {
+  background-color: #f5f3ff;
+  border-left: 4px solid #8b5cf6;
+}
+
+.block-concept-explanation {
+  background-color: #fffbeb;
+  border-left: 4px solid #f59e0b;
+}
+
+.block-worked-example {
+  background-color: #eef2ff;
+  border-left: 4px solid #6366f1;
+}
+
+.block-practice-exercise {
+  background-color: #d1fae5;
+  border-left: 4px solid #10b981;
+}
+
+.block-visual-aid {
+  background-color: #ecfeff;
+  border-left: 4px solid #06b6d4;
+}
+
+.block-real-world-link {
+  background-color: #fff1f2;
+  border-left: 4px solid #e11d48;
+}
+
+.block-misconception {
+  background-color: #fee2e2;
+  border-left: 4px solid #ef4444;
+}
+
+.block-summary {
+  background-color: #ccfbf1;
+  border-left: 4px solid #14b8a6;
+}
+
+.block-reflection {
+  background-color: #f5f3ff;
+  border-left: 4px solid #8b5cf6;
+}
 
 /* Prose styles for better math rendering */
 .prose {
@@ -234,22 +364,27 @@ body {
   color: #374151;
   line-height: 1.75;
 }
+
 .prose :where(p):not(:where([class~="not-prose"] *)) {
   margin-top: 1.25em;
   margin-bottom: 1.25em;
 }
+
 .prose :where(ul):not(:where([class~="not-prose"] *)) {
   list-style-type: disc;
   padding-left: 1.625em;
 }
+
 .prose :where(ol):not(:where([class~="not-prose"] *)) {
   list-style-type: decimal;
   padding-left: 1.625em;
 }
+
 .prose :where(li):not(:where([class~="not-prose"] *)) {
   margin-top: 0.5em;
   margin-bottom: 0.5em;
 }
+
 .prose :where(h3):not(:where([class~="not-prose"] *)) {
   color: #111827;
   font-weight: 600;
@@ -258,6 +393,7 @@ body {
   margin-bottom: 0.6em;
   line-height: 1.6;
 }
+
 .prose :where(h4):not(:where([class~="not-prose"] *)) {
   color: #111827;
   font-weight: 600;
@@ -272,16 +408,19 @@ body {
 .edge-hover path {
   transition: stroke 0.2s ease, stroke-width 0.2s ease;
 }
+
 .react-flow__edge path {
   stroke-width: 3px;
   stroke: #999;
   transition: stroke 0.2s ease, stroke-width 0.2s ease;
 }
+
 .edge-connected path,
 .edge-hover:hover path {
   stroke: #0070f3 !important;
   stroke-width: 5px !important;
 }
+
 .node-hovered::before {
   content: '';
   position: absolute;
@@ -295,17 +434,20 @@ body {
   background-size: 300% 300%;
   animation: gradientShift 3s ease infinite;
 }
+
 .node-hovered {
   filter: brightness(1.05);
   transform: scale(1.03);
   transition: transform 0.2s ease, box-shadow 0.3s ease;
   box-shadow: 0 0 8px 2px rgba(133, 144, 247, 0.6), 0 0 12px 4px rgba(184, 179, 255, 0.4);
 }
+
 .react-flow__node {
   z-index: 2 !important;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .react-flow__edge path {
   z-index: 999 !important;
   pointer-events: visibleStroke;
