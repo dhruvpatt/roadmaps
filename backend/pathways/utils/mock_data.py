@@ -2,9 +2,10 @@ import random
 from datetime import timedelta
 from django.utils import timezone
 from pathways.models import (
-    Classroom, Unit, Week, Material, Test, Homework, CheckIn, Resource,
-    Question, Comment, User, MaterialType, ClassroomAssignment, AssignmentSubmission
+    Classroom, Unit, Week, Material, Test, Homework, CheckIn,
+    Question, Comment, User, MaterialType, AssignmentSubmission
 )
+from pathways.models.deliverable import Assignment
 
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
@@ -183,11 +184,10 @@ def create_mock_deliverables_for_classroom(materials, classroom_id: int, student
     # Now create other deliverables that reference materials:
     for i in range(3):
         test = Test.objects.create(
-            type="test",
             title=f"Test {i}",
-            details="Test details",
+            description="Test details",
             mandatory=True,
-            out_of=random.choice([20, 25, 30]),
+            points_possible=random.choice([20, 25, 30]),
             number_of_questions=5 + i,
             estimated_time=timedelta(minutes=30 + 5 * i),
             shuffle_questions=bool(i % 2),
@@ -200,11 +200,10 @@ def create_mock_deliverables_for_classroom(materials, classroom_id: int, student
 
     for i in range(3):
         hw = Homework.objects.create(
-            type="homework",
             title=f"Homework {i}",
-            details=f"Complete exercise set {i}",
+            description=f"Complete exercise set {i}",
             mandatory=True,
-            out_of=10 + i * 5,
+            points_possible=10 + i * 5,
             estimated_time=timedelta(minutes=20 + 5 * i)
         )
         hw.save()
@@ -213,9 +212,8 @@ def create_mock_deliverables_for_classroom(materials, classroom_id: int, student
 
     for i in range(2):
         checkin = CheckIn.objects.create(
-            type="checkin",
             title=f"Check-In {i}",
-            details="Wellness check",
+            description="Wellness check",
             max_responses=3 + i
         )
         checkin.save()
@@ -355,10 +353,9 @@ def create_mock_assignments_for_classroom(classroom, teachers=None, count=8):
     
     students = list(classroom.students.all())
     
-    assignment_types = ['essay', 'quiz', 'project', 'homework']
+    assignment_types = ['essay', 'project', 'homework']
     assignment_titles = {
         'essay': ['Argumentative Essay on Climate Change', 'Personal Narrative Essay', 'Compare and Contrast Essay'],
-        'quiz': ['Chapter 5 Quiz', 'Midterm Quiz', 'Weekly Knowledge Check'],
         'project': ['Science Fair Project', 'Group Research Project', 'Creative Portfolio'],
         'homework': ['Math Problem Set 1', 'Reading Assignment Ch. 3', 'Practice Exercises']
     }
@@ -380,19 +377,17 @@ def create_mock_assignments_for_classroom(classroom, teachers=None, count=8):
         
         descriptions = {
             'essay': 'Write a well-structured essay with proper citations and arguments.',
-            'quiz': 'Complete the quiz covering the material from recent lectures.',
             'project': 'Work individually or in groups to complete this comprehensive project.',
             'homework': 'Complete the assigned exercises and submit your work.'
         }
         
         instructions = {
             'essay': 'Your essay should be 3-5 pages, double-spaced, with at least 3 credible sources.',
-            'quiz': 'You have 30 minutes to complete this quiz. Make sure to read each question carefully.',
             'project': 'Follow the project guidelines provided in class. Include a bibliography.',
             'homework': 'Show all your work. Partial credit will be given for correct methodology.'
         }
         
-        assignment = ClassroomAssignment.objects.create(
+        assignment = Assignment.objects.create(
             title=title,
             description=descriptions[assignment_type],
             instructions=instructions[assignment_type],
@@ -401,7 +396,6 @@ def create_mock_assignments_for_classroom(classroom, teachers=None, count=8):
             due_date=due_date,
             points_possible=points_possible,
             assignment_type=assignment_type,
-            content={},
             is_published=True
         )
         

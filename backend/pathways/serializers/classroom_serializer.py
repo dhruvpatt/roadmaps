@@ -1,8 +1,9 @@
 import secrets
 from rest_framework import serializers
-from pathways.models import Material, Unit, Week, Comment, Classroom, MaterialType, ClassroomAssignment, AssignmentSubmission, ALLOWED_MATERIAL_TYPES
+from pathways.models import Material, Unit, Week, Comment, Classroom, MaterialType, AssignmentSubmission, ALLOWED_MATERIAL_TYPES
 from pathways.serializers.user_serializer import UserSerializer
 from pathways.serializers.analytics_serializer import AnalyticsSerializer
+from pathways.serializers.deliverable_serializer import AssignmentSerializer
 
 class MaterialTypeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -56,6 +57,10 @@ class MaterialSerializer(serializers.ModelSerializer):
             instance.types.set(types)
         instance.save()
         return instance
+
+    def get_assignments(self, obj):
+        from pathways.serializers.deliverable_serializer import AssignmentSerializer
+        return AssignmentSerializer(obj.assignments.all(), many=True).data
     def validate(self, data):
         title = data.get('title', '') or getattr(self.instance, 'title', '')
         content = data.get('content', []) or getattr(self.instance, 'content', [])
@@ -204,28 +209,14 @@ class AssignmentSubmissionSerializer(serializers.ModelSerializer):
         model = AssignmentSubmission
         fields = ['id', 'assignment', 'student', 'content', 'submitted_at', 'grade', 'feedback', 'status']
 
-class ClassroomAssignmentSerializer(serializers.ModelSerializer):
-    created_by = UserSerializer(read_only=True)
-    submissions = AssignmentSubmissionSerializer(many=True, read_only=True)
-    submission_count = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = ClassroomAssignment
-        fields = [
-            'id', 'title', 'description', 'instructions', 'created_by', 'classroom',
-            'due_date', 'points_possible', 'assignment_type', 'content', 'is_published',
-            'created_at', 'updated_at', 'submissions', 'submission_count'
-        ]
-    
-    def get_submission_count(self, obj):
-        return obj.submissions.count()
+
 
 class ClassroomSerializer(serializers.ModelSerializer):
     teachers = UserSerializer(many=True, read_only=True)
     students = UserSerializer(many=True, read_only=True)
     units = UnitSerializer(many=True, read_only=True)
     materials = MaterialSerializer(many=True, read_only=True)
-    assignments = ClassroomAssignmentSerializer(many=True, read_only=True)
+    assignments = serializers.SerializerMethodField()
 
     class Meta:
         model = Classroom
@@ -240,3 +231,6 @@ class ClassroomSerializer(serializers.ModelSerializer):
             "assignments",
             "units",
         ]
+        
+    def get_assignments(self, obj):
+        return AssignmentSerializer(obj.assignments.all(), many=True).data

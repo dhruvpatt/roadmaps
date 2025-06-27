@@ -1,27 +1,30 @@
 from django.db import models
-from pathways.models import User
 
 
 class Deliverable(models.Model):
-    TYPE_CHOICES = [
-        ("homework", "Homework"),
-        ("test", "Test"),
-        ("checkin", "Check-in"),
-        ("resource", "Resource"),
-    ]
-    
-    type = models.CharField(max_length=20, choices=TYPE_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
-    due_at = models.DateTimeField(null=True, blank=True)
-    assigned_to = models.ManyToManyField(User, blank=True)
+    created_by = models.ForeignKey('pathways.User', on_delete=models.CASCADE, related_name='created_%(class)ss')
+    assigned_to = models.ManyToManyField(
+        'pathways.User',
+        blank=True,
+        related_name='%(class)s_assigned_to'
+    )
+    due_date = models.DateTimeField()
     title = models.CharField(max_length=255)
-    details = models.TextField(blank=True)
+    description = models.TextField(blank=True)
     mandatory = models.BooleanField(default=True)
-    out_of = models.IntegerField(null=True, blank=True)
+    points_possible = models.IntegerField(default=100)
     estimated_time = models.DurationField(null=True, blank=True)
-    number_of_questions = models.IntegerField(null=True, blank=True)
-    tags = models.JSONField(default=list, blank=True)  # str[]
-    handouts = models.ManyToManyField('Material', blank=True)
+    tags = models.JSONField(default=list, blank=True)
+    handouts = models.ManyToManyField('pathways.Material', blank=True)
+    classroom = models.ForeignKey(
+        'pathways.Classroom',
+        on_delete=models.CASCADE,
+        related_name='%(class)ss'
+    )
+    is_published = models.BooleanField(default=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    instructions = models.TextField(blank=True)
     
     class Meta:
         abstract = True
@@ -30,6 +33,7 @@ class Test(Deliverable):
     shuffle_questions = models.BooleanField(default=False)
     time_limit = models.DurationField(null=True, blank=True)
     show_correct_answers = models.BooleanField(default=False)
+    number_of_questions = models.IntegerField(null=True, blank=True)
 
 class Homework(Deliverable):
     pass
@@ -37,9 +41,14 @@ class Homework(Deliverable):
 class CheckIn(Deliverable):
     max_responses = models.IntegerField(null=True, blank=True)
 
-class Resource(Deliverable):
-    # Overrides: no submission, grade, out_of, due_at
-    pass
+class Assignment(Deliverable):
+    ASSIGNMENT_TYPES = (
+        ('essay', 'Essay'),
+        ('project', 'Project'),
+        ('homework', 'Homework'),
+    )
+
+    assignment_type = models.CharField(max_length=20, choices=ASSIGNMENT_TYPES, default='homework')
 
 class Question(models.Model):
     content = models.TextField()
@@ -58,9 +67,9 @@ class Question(models.Model):
     difficulty = models.IntegerField()  # 1 = easy, 2 = medium, 3 = hard
 
 class UserSubmission(models.Model):
-    submitted_by = models.ForeignKey(User, on_delete=models.CASCADE)
-    submission = models.ManyToManyField('Material', blank=True)
-    comments = models.ManyToManyField('Comment', blank=True)
+    submitted_by = models.ForeignKey('pathways.User', on_delete=models.CASCADE)
+    submission = models.ManyToManyField('pathways.Material', blank=True)
+    comments = models.ManyToManyField('pathways.Comment', blank=True)
     date_submitted = models.DateTimeField(auto_now_add=True)
     grade = models.IntegerField(null=True, blank=True)
     attempts = models.IntegerField(default=1)
