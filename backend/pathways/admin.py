@@ -109,7 +109,7 @@ class AssignmentAdmin(admin.ModelAdmin):
 
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'content', 'points', 'difficulty', 'first_correct_attempt')
+    list_display = ('id', 'points', 'difficulty')
     search_fields = ('content', 'tags')
 
 

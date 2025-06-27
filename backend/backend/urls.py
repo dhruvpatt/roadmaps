@@ -19,6 +19,12 @@ from pathways.views.classroom_views import (
     AssignmentListView,
     AssignmentCreateView,
     AssignmentDetailView,
+    TestListView,
+    TestCreateView,
+    TestDetailView,
+    QuestionListView,
+    QuestionCreateView,
+    QuestionDetailView,
     submit_assignment,
     assignment_submissions,
     grade_submission,
@@ -62,6 +68,16 @@ urlpatterns = [
     path("api/assignments/<int:assignment_id>/submit/", submit_assignment, name="submit-assignment"),
     path("api/assignments/<int:assignment_id>/submissions/", assignment_submissions, name="assignment-submissions"),
     path("api/submissions/<int:submission_id>/grade/", grade_submission, name="grade-submission"),
+
+    # Test endpoints
+    path("api/classrooms/<int:classroom_id>/tests/", TestListView.as_view(), name="test-list"),
+    path("api/classrooms/<int:classroom_id>/tests/create/", TestCreateView.as_view(), name="test-create"),
+    path("api/tests/<int:id>/", TestDetailView.as_view(), name="test-detail"),
+
+    # Question endpoints
+    path("api/tests/<int:test_id>/questions/", QuestionListView.as_view(), name="question-list"),
+    path("api/tests/<int:test_id>/questions/create/", QuestionCreateView.as_view(), name="question-create"),
+    path("api/questions/<int:id>/", QuestionDetailView.as_view(), name="question-detail"),
 
     path('api/classroom/materials/<int:material_id>/comments/', comment_view, name='material-comments'),
     path('api/classroom/comments/<int:comment_id>/', comment_view, name='comment-detail'),

@@ -5,47 +5,54 @@ import PropTypes from "prop-types";
 import { Plus, Calendar, Clock, FileText, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 import SearchAndFilterBar from "@components/SearchAndFilterBar";
 import PaginationControls from "@/components/PaginationControls";
 import AssignmentCreationModal from "./AssignmentCreationModal";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import fetchWithAuth from "@/lib/fetch_with_auth";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 9;
 
 export default function ClassroomAssignments({ classroom, isTeacher, user }) {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState(null);
-  const [filterType, setFilterType] = useState("all");
+  const [filterType, setFilterType] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-
   useEffect(() => {
     if (!classroom?.id) return;
     setLoading(true);
-    const params = new URLSearchParams({
-      page,
-      ...(filterType !== "all" ? { type: filterType } : {}),
-      ...(searchTerm ? { search: searchTerm } : {}),
-    });
-    fetchWithAuth(`/api/classrooms/${classroom.id}/assignments/?${params}`)
+    fetchWithAuth(`/api/classrooms/${classroom.id}/assignments/`)
       .then(async (res) => {
         if (!res.ok) throw new Error("Failed to fetch assignments");
         const data = await res.json();
         setAssignments(data.results || data);
-        setTotalPages(data.total_pages || data.totalPages || 1);
       })
-      .catch((err) => {
+      .catch(() => {
         setAssignments([]);
-        setTotalPages(1);
       })
       .finally(() => setLoading(false));
-  }, [classroom?.id, filterType, searchTerm, page]);
+  }, [classroom?.id]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, filterType]);
 
   const formatDate = (dateStr) =>
     new Date(dateStr).toLocaleString("en-US", {
@@ -126,21 +133,24 @@ export default function ClassroomAssignments({ classroom, isTeacher, user }) {
   const filtered = assignments.filter((a) => {
     const text = (a.title + " " + a.description).toLowerCase();
     const matchesSearch = text.includes(searchTerm.toLowerCase());
-    const matchesType = filterType === "all" || a.assignment_type === filterType;
+    const matchesType = filterType.length === 0 || filterType.includes(a.assignment_type);
     return matchesSearch && matchesType;
-  });
+  }).sort((a, b) => new Date(b.due_date) - new Date(a.due_date));
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginatedAssignments = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
-    <section className="bg-white min-h-screen py-8">
-      <div className="max-w-6xl mx-auto px-6 space-y-8">
+    <section className="bg-gray-50 min-h-screen py-8">
+      <div className="max-w-7xl mx-auto px-6 space-y-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h2 className="text-3xl font-bold text-black">Assignments</h2>
-            <p className="text-gray-600">Course assignments and tasks</p>
+            <h2 className="text-4xl font-extrabold text-black">Assignments</h2>
+            <p className="text-gray-600">Manage and track classroom tasks</p>
           </div>
           {isTeacher && (
             <Button
-              className="flex items-center gap-2 bg-blue-500 text-white hover:bg-blue-600"
+              className="flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700 shadow-md"
               onClick={() => {
                 setEditingAssignment(null);
                 setShowModal(true);
@@ -155,60 +165,60 @@ export default function ClassroomAssignments({ classroom, isTeacher, user }) {
         <SearchAndFilterBar
           searchQuery={searchTerm}
           setSearchQuery={setSearchTerm}
-          filterType={filterType}
-          setFilterType={setFilterType}
+          filterTypes={filterType}
+          setFilterTypes={setFilterType}
           filterOptions={[
             { value: "essay", label: "Essays" },
-            { value: "quiz", label: "Quizzes" },
             { value: "project", label: "Projects" },
             { value: "homework", label: "Homework" },
           ]}
           placeholder="Search assignments..."
         />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {loading ? (
             <div className="col-span-full text-center py-12 text-gray-400">Loading...</div>
           ) : filtered.length === 0 ? (
             <div className="col-span-full text-center py-12">
               <FileText className="mx-auto w-12 h-12 text-gray-300 mb-4" />
-              <h3 className="text-lg font-medium text-gray-600">No assignments found</h3>
+              <h3 className="text-xl font-semibold text-gray-700">No assignments found</h3>
               <p className="text-gray-500 mt-2">
-                {filterType === "all" ? "No assignments created yet." : `No ${filterType}s available.`}
+                {filterType.length === 0
+                  ? "No assignments have been created yet."
+                  : `No ${filterType.join(', ')}s available.`}
               </p>
             </div>
           ) : (
-            filtered.map((assignment) => (
+            paginatedAssignments.map((assignment) => (
               <Card
                 key={assignment.id}
                 onClick={() => setSelectedAssignment(assignment)}
-                className="bg-white rounded-2xl shadow-sm hover:shadow-md hover:-translate-y-1 transition cursor-pointer p-6 relative"
+                className="bg-white rounded-2xl shadow hover:shadow-lg transform hover:-translate-y-1 transition p-6 cursor-pointer"
               >
-                <div className="absolute top-4 right-4 z-10">
-                  {isTeacher && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="text-gray-500 hover:text-gray-700">
-                          <MoreVertical className="w-5 h-5" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="z-50">
-                        <DropdownMenuItem onClick={() => handleEdit(assignment)}>Edit</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(assignment.id)}>Delete</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                </div>
-
                 <div className="space-y-3">
-                  <div className="flex items-start justify-between">
-                    <h3 className="font-semibold text-gray-800 line-clamp-2">{assignment.title}</h3>
-                    {getStatusBadge(assignment)}
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-900 text-lg line-clamp-2 pr-2">
+                      {assignment.title}
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      {getStatusBadge(assignment)}
+                      {isTeacher && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-600">
+                              <MoreVertical className="w-5 h-5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEdit(assignment); }}>Edit</DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDelete(assignment.id); }}>Delete</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </div>
                   </div>
-                  
-                  <p className="text-sm text-gray-600 line-clamp-2">{assignment.description}</p>
-                  
-                  <div className="flex items-center gap-4 text-xs text-gray-500">
+                  <p className="text-sm text-gray-600 line-clamp-3">{assignment.description}</p>
+                  <div className="flex flex-wrap gap-4 text-xs text-gray-500 mt-3">
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
                       <span>Due {formatDate(assignment.due_date)}</span>
@@ -218,14 +228,9 @@ export default function ClassroomAssignments({ classroom, isTeacher, user }) {
                       <span>{assignment.points_possible} pts</span>
                     </div>
                   </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500 capitalize">{assignment.assignment_type}</span>
-                    {isTeacher && (
-                      <span className="text-xs text-gray-500">
-                        {assignment.submission_count || 0} submissions
-                      </span>
-                    )}
+                  <div className="flex justify-between text-xs text-gray-400 mt-3">
+                    <span className="capitalize">{assignment.assignment_type}</span>
+                    {isTeacher && <span>{assignment.submission_count || 0} submissions</span>}
                   </div>
                 </div>
               </Card>
@@ -233,13 +238,10 @@ export default function ClassroomAssignments({ classroom, isTeacher, user }) {
           )}
         </div>
 
-        <PaginationControls
-          page={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-        />
+        <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
       </div>
 
+      {/* Assignment Dialog */}
       {selectedAssignment && (
         <Dialog open={!!selectedAssignment} onOpenChange={() => setSelectedAssignment(null)}>
           <DialogContent className="max-w-2xl">
@@ -254,7 +256,7 @@ export default function ClassroomAssignments({ classroom, isTeacher, user }) {
                   <p className="text-gray-700">{selectedAssignment.instructions}</p>
                 </div>
               )}
-              <div className="flex items-center gap-4 text-sm text-gray-600">
+              <div className="flex gap-4 text-sm text-gray-600">
                 <span>Due: {formatDate(selectedAssignment.due_date)}</span>
                 <span>Points: {selectedAssignment.points_possible}</span>
                 <span className="capitalize">{selectedAssignment.assignment_type}</span>
@@ -269,22 +271,12 @@ export default function ClassroomAssignments({ classroom, isTeacher, user }) {
         </Dialog>
       )}
 
+      {/* Create/Edit Modal */}
       {showModal && isTeacher && (
         <AssignmentCreationModal
           open={showModal}
           onClose={() => setShowModal(false)}
-          initialData={
-            editingAssignment
-              ? {
-                title: editingAssignment.title,
-                description: editingAssignment.description,
-                instructions: editingAssignment.instructions,
-                due_date: editingAssignment.due_date,
-                points_possible: editingAssignment.points_possible,
-                assignment_type: editingAssignment.assignment_type,
-              }
-              : {}
-          }
+          initialData={editingAssignment || {}}
           isEditing={!!editingAssignment}
           onSave={handleSave}
         />

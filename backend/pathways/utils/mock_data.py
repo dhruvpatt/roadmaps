@@ -171,71 +171,71 @@ def create_mock_deliverables_for_classroom(materials, classroom_id: int, student
         classroom.teachers.add(t)
 
     # Add Units and Weeks (optional, but kept for demo)
-    for i in range(1, 3):
-        unit = Unit.objects.create(
-            name=f"Unit {i}",
-            classroom=classroom,
-            description=f"Unit {i} description"
-        )
-        for j in range(1, 3):
-            Week.objects.create(unit=unit, learning_goal=f"Goal {i}.{j}")
+    # for i in range(1, 3):
+    #     unit = Unit.objects.create(
+    #         name=f"Unit {i}",
+    #         classroom=classroom,
+    #         description=f"Unit {i} description"
+    #     )
+    #     for j in range(1, 3):
+    #         Week.objects.create(unit=unit, learning_goal=f"Goal {i}.{j}")
 
 
     # Now create other deliverables that reference materials:
-    for i in range(3):
-        test = Test.objects.create(
-            title=f"Test {i}",
-            description="Test details",
-            mandatory=True,
-            points_possible=random.choice([20, 25, 30]),
-            number_of_questions=5 + i,
-            estimated_time=timedelta(minutes=30 + 5 * i),
-            shuffle_questions=bool(i % 2),
-            time_limit=timedelta(minutes=30),
-            show_correct_answers=bool(i % 2)
-        )
-        test.save()
-        test.assigned_to.set(students)
-        test.handouts.set(materials)
+    # for i in range(3):
+    #     test = Test.objects.create(
+    #         title=f"Test {i}",
+    #         description="Test details",
+    #         mandatory=True,
+    #         points_possible=random.choice([20, 25, 30]),
+    #         number_of_questions=5 + i,
+    #         estimated_time=timedelta(minutes=30 + 5 * i),
+    #         shuffle_questions=bool(i % 2),
+    #         time_limit=timedelta(minutes=30),
+    #         show_correct_answers=bool(i % 2)
+    #     )
+    #     test.save()
+    #     test.assigned_to.set(students)
+    #     test.handouts.set(materials)
 
-    for i in range(3):
-        hw = Homework.objects.create(
-            title=f"Homework {i}",
-            description=f"Complete exercise set {i}",
-            mandatory=True,
-            points_possible=10 + i * 5,
-            estimated_time=timedelta(minutes=20 + 5 * i)
-        )
-        hw.save()
-        hw.assigned_to.set(students)
-        hw.handouts.set(materials)
+    # for i in range(3):
+    #     hw = Homework.objects.create(
+    #         title=f"Homework {i}",
+    #         description=f"Complete exercise set {i}",
+    #         mandatory=True,
+    #         points_possible=10 + i * 5,
+    #         estimated_time=timedelta(minutes=20 + 5 * i)
+    #     )
+    #     hw.save()
+    #     hw.assigned_to.set(students)
+    #     hw.handouts.set(materials)
 
-    for i in range(2):
-        checkin = CheckIn.objects.create(
-            title=f"Check-In {i}",
-            description="Wellness check",
-            max_responses=3 + i
-        )
-        checkin.save()
-        checkin.assigned_to.set(students)
-        checkin.handouts.set(materials)
+    # for i in range(2):
+    #     checkin = CheckIn.objects.create(
+    #         title=f"Check-In {i}",
+    #         description="Wellness check",
+    #         max_responses=3 + i
+    #     )
+    #     checkin.save()
+    #     checkin.assigned_to.set(students)
+    #     checkin.handouts.set(materials)
 
-    for i in range(5):
-        Question.objects.create(
-            content=f"What is {i} + {i}?",
-            options=[str(2 * i), str(i), str(i + 1)],
-            solution=str(2 * i),
-            explanation="Basic math",
-            points=1,
-            type="mcq",
-            difficulty=random.choice([1, 2, 3])
-        )
+    # for i in range(5):
+    #     Question.objects.create(
+    #         content=f"What is {i} + {i}?",
+    #         options=[str(2 * i), str(i), str(i + 1)],
+    #         solution=str(2 * i),
+    #         explanation="Basic math",
+    #         points=1,
+    #         type="mcq",
+    #         difficulty=random.choice([1, 2, 3])
+    #     )
 
-    for i in range(3):
-        Comment.objects.create(
-            content=f"This is comment {i}",
-            posted_by=random.choice(students + teachers)
-        )
+    # for i in range(3):
+    #     Comment.objects.create(
+    #         content=f"This is comment {i}",
+    #         posted_by=random.choice(students + teachers)
+        # )
 
     print(
         f"✅ Successfully populated classroom '{classroom.name}' with full mock data (including deliverables and {len(materials)} materials).")

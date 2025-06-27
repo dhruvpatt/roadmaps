@@ -37,11 +37,16 @@ class AssignmentSerializer(DeliverableSerializer):
 
 
 class TestSerializer(DeliverableSerializer):
+    submission_count = serializers.SerializerMethodField()
+
     class Meta(DeliverableSerializer.Meta):
         model = Test
         fields = DeliverableSerializer.Meta.fields + [
-            'shuffle_questions', 'time_limit', 'show_correct_answers', 'number_of_questions'
+            'shuffle_questions', 'time_limit', 'show_correct_answers', 'number_of_questions', 'attempts', 'submission_count'
         ]
+
+    def get_submission_count(self, obj):
+        return obj.submissions.count() if hasattr(obj, 'submissions') else 0
 
 
 class HomeworkSerializer(DeliverableSerializer):
@@ -57,7 +62,12 @@ class CheckInSerializer(DeliverableSerializer):
 
 
 class QuestionSerializer(serializers.ModelSerializer):
+    difficulty_display = serializers.CharField(source='get_difficulty_display', read_only=True)
+    
     class Meta:
         model = Question
-        fields = '__all__'
-        
+        fields = [
+            'id', 'test', 'type', 'prompt', 'options', 'correct', 'difficulty', 'difficulty_display',
+            'points', 'category', 'explanation', 'tags', 'order', 'created_at', 'updated_at',
+            'left_items', 'right_items', 'matches'
+        ]
