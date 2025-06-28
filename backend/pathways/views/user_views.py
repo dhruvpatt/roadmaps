@@ -6,11 +6,30 @@ from rest_framework.permissions import AllowAny
 from rest_framework import status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.generics import ListAPIView
+from pathways.serializers import ClassroomStudentSerializer
 from pathways.serializers.user_serializer import UserSerializer
-
-
+from pathways.models import User, Classroom
 from django.middleware.csrf import get_token
+from django.db.models import Prefetch
+from pathways.models.analytics import Analytics
 
+class StudentListView(ListAPIView):         
+    serializer_class = ClassroomStudentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        classroom_id = self.kwargs["classroom_id"]
+        classroom = Classroom.objects.get(pk=classroom_id)
+
+        return classroom.students.all()
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        classroom = Classroom.objects.get(pk=self.kwargs["classroom_id"])
+        context["classroom"] = classroom
+        return context
+    
 @api_view(["GET"])
 @permission_classes([AllowAny])
 @ensure_csrf_cookie
@@ -18,9 +37,8 @@ def get_csrf_token(request):
     return Response({"detail": "CSRF cookie set"})
 
 
-
 class UserView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
     def get(self, request):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)

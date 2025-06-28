@@ -21,7 +21,6 @@ export default function ClassroomHeader({
 }) {
   const router = useRouter();
   const { toast } = useToast();
-
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(code);
@@ -39,7 +38,6 @@ export default function ClassroomHeader({
     <ToastProvider>
       {/* <header className="bg-gradient-to-r from-amber-500 via-amber-500 to-amber-500 text-white shadow-lg overflow-hidden"> */}
       <header className="bg-animated-gradient text-white drop-shadow-lg backdrop-blur-md bg-opacity-90">
-
         <div className="max-w-7xl mx-auto px-8 py-6 flex flex-col text-gray-100 md:flex-row md:items-center md:justify-between gap-6">
           {/* Title & Subject */}
           <div className="flex items-start md:items-center gap-4">
@@ -88,10 +86,10 @@ export default function ClassroomHeader({
         </div>
         <div className="border-t border-white/30 py-3">
           <div className="max-w-7xl mx-auto px-8 text-sm text-white/80">
-            Teacher{teachers.length > 1 ? "s" : ""} :{" "}
+            Teacher{teachers?.length > 1 ? "s" : ""} :{" "}
             <span className="font-medium text-white">
               {teachers
-                ?.map(t => `${t.first_name[0]}. ${t.last_name}`)
+                ?.map((t) => `${t.first_name[0]}. ${t.last_name}`)
                 .join(", ")}
             </span>
           </div>
@@ -114,6 +112,6 @@ ClassroomHeader.propTypes = {
 ClassroomHeader.defaultProps = {
   subtitle: "",
   subject: "",
-  onInviteClick: () => { },
-  onSettingsClick: () => { },
+  onInviteClick: () => {},
+  onSettingsClick: () => {},
 };

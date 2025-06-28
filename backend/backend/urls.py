@@ -25,11 +25,12 @@ from pathways.views.classroom_views import (
     join_classroom_student,
     join_classroom_teacher,
     comment_view,
+    teacher_feedback,
+    delete_teacher_note
 )
-from pathways.views.curriculum_builder import create_curriculum, process_pdf_curriculum, upload_csv_curriculum, get_classroom_curriculum
+from pathways.views.curriculum_builder import create_curriculum, process_pdf_curriculum, upload_csv_curriculum, get_classroom_curriculum, update_curriculum
 from pathways.views.attendance_views import get_attendance_dashboard, sessions_view, update_attendance
 from pathways.views.assistant_views import AssistantView
-
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -42,7 +43,6 @@ urlpatterns = [
     path("api/user/", UserView.as_view(), name="user"),
 
     path('api/ask-assistant/', AssistantView.as_view(), name='ask-assistant'),
-
 
     # API endpoints for Classroom management
     path("api/classroom/", ClassroomListView.as_view(), name="classroom-list"),
@@ -66,16 +66,23 @@ urlpatterns = [
     path('api/classroom/materials/<int:material_id>/comments/', comment_view, name='material-comments'),
     path('api/classroom/comments/<int:comment_id>/', comment_view, name='comment-detail'),
 
-
     # API endpoints for Curriculum Builder
     path('api/curriculum/process-pdf/', process_pdf_curriculum, name='process_pdf_curriculum'),
     path('api/curriculum/upload/', upload_csv_curriculum, name='upload_csv_curriculum'),
     path('api/curriculum/create/', create_curriculum, name='create_curriculum'),
     path('api/curriculum/<int:classroom_id>/', get_classroom_curriculum, name='get_classroom_curriculum'),
+    path('api/curriculum/update/', update_curriculum),
+
 
     # API endpoints for Attendance and Session management
     path("api/classrooms/<int:classroom_id>/attendance/", get_attendance_dashboard, name="attendance-dashboard"),
     path("api/classrooms/<int:classroom_id>/attendance/<int:session_id>/", update_attendance, name="update-attendance"),
     path("api/classrooms/<int:classroom_id>/sessions/", sessions_view, name="sessions"),
+
+    # API endpoints for the Students tab 
+    path("api/classrooms/<int:classroom_id>/students/", StudentListView.as_view(), name="student-list"),
+    path("api/classrooms/<int:classroom_id>/students/<int:student_id>/notes/", teacher_feedback, name="teacher-feedback"),
+    path("api/classrooms/<int:classroom_id>/students/<int:student_id>/delete_note/", delete_teacher_note),
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

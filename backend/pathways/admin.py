@@ -7,6 +7,7 @@ from .models import (
     Test, Homework, CheckIn, Resource,
     Question, Comment
 )
+from .models.analytics import Analytics, DifficultyBreakdown
 
 # —— User admin —— #
 @admin.register(User)
@@ -117,3 +118,20 @@ class QuestionAdmin(admin.ModelAdmin):
 class CommentAdmin(admin.ModelAdmin):
     list_display = ('id', 'content', 'posted_by', 'date', 'replied_to')
     search_fields = ('content', 'posted_by__username')
+
+@admin.register(Analytics)
+class AnalyticsAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'student',
+        'classroom',
+        'average_grade',
+        'completion_rate',
+        'engagement_score',
+    )
+    search_fields = ('student__email', 'classroom__name')
+    list_filter = ('classroom',)
+
+@admin.register(DifficultyBreakdown)
+class DifficultyBreakdownAdmin(admin.ModelAdmin):
+    list_display = ('id', 'count', 'accuracy')

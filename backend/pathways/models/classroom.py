@@ -36,7 +36,7 @@ class Material(models.Model):
     content = models.JSONField(blank=True, null=True)
     likes = models.IntegerField(default=0)
     viewed_by = models.ManyToManyField(
-        'User',
+        'pathways.User',
         through='MaterialView',
         related_name='viewed_materials',
         blank=True
@@ -44,12 +44,8 @@ class Material(models.Model):
     classroom = models.ForeignKey('Classroom', on_delete=models.CASCADE, related_name="materials", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
-
-
-
 class Classroom(models.Model):
     name = models.CharField(max_length=255)
-    analytics = models.OneToOneField("pathways.Analytics", on_delete=models.CASCADE, null=True, blank=True)
     join_id = models.CharField(max_length=20, unique=True)
     students = models.ManyToManyField('pathways.User', related_name='joined_classrooms', blank=True)
     teachers = models.ManyToManyField('pathways.User', related_name='teaching_classrooms', blank=True)
@@ -80,7 +76,7 @@ class ClassroomAssignment(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     instructions = models.TextField(blank=True)
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_by = models.ForeignKey("pathways.User", on_delete=models.CASCADE)
     classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name='assignments')
     due_date = models.DateTimeField()
     points_possible = models.IntegerField(default=100)
@@ -99,7 +95,7 @@ class AssignmentSubmission(models.Model):
     )
     
     assignment = models.ForeignKey(ClassroomAssignment, on_delete=models.CASCADE, related_name='submissions')
-    student = models.ForeignKey(User, on_delete=models.CASCADE)
+    student = models.ForeignKey("pathways.User", on_delete=models.CASCADE)
     content = models.JSONField(blank=True, null=True)
     submitted_at = models.DateTimeField(auto_now_add=True)
     grade = models.FloatField(null=True, blank=True)

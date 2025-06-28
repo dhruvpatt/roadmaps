@@ -1,8 +1,9 @@
 import secrets
 from rest_framework import serializers
-from pathways.models import Material, Unit, Week, Comment, Classroom, MaterialType, ClassroomAssignment, AssignmentSubmission
+from pathways.models import Material, Unit, Week, Comment, Classroom, MaterialType, ClassroomAssignment, AssignmentSubmission, User, Analytics
 from pathways.serializers.user_serializer import UserSerializer
 from pathways.serializers.analytics_serializer import AnalyticsSerializer
+from pathways.utils.student_analytics import calculate_student_analytics
 
 class MaterialTypeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -204,3 +205,37 @@ class ClassroomSerializer(serializers.ModelSerializer):
             "assignments",
             "units",
         ]
+
+
+class ClassroomStudentSerializer(serializers.ModelSerializer):
+    name       = serializers.SerializerMethodField()
+    enrolledAt = serializers.DateTimeField(source="date_joined")
+    lastActive = serializers.DateTimeField(source="last_login")
+    analytics  = serializers.SerializerMethodField()
+    notes      = serializers.SerializerMethodField()  # maps to teacher_feedback
+
+    class Meta:
+        model = User
+        fields = [
+            "id", "name", "email",
+            "enrolledAt", "lastActive",
+            "notes", "analytics",
+        ]
+
+    def get_name(self, obj):
+        return f"{obj.first_name} {obj.last_name}".strip() or obj.username
+
+    def get_notes(self, obj):
+        classroom = self.context.get("classroom")
+        if not classroom:
+            return []
+        try:
+            analytics = obj.analytics_rows.get(classroom=classroom)
+            return analytics.teacher_feedback or []
+        except Analytics.DoesNotExist:
+            return []
+
+    def get_analytics(self, obj):
+        classroom = self.context["classroom"]
+        return calculate_student_analytics(student=obj, classroom=classroom)
+

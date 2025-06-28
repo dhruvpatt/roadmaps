@@ -229,13 +229,6 @@ const CurriculumBuilder = ({
               </div>
               <div className="flex gap-3">
                 <button
-                  onClick={onCancel}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
-                  disabled={uploading}
-                >
-                  Cancel
-                </button>
-                <button
                   onClick={handleSaveCurriculum}
                   disabled={uploading || units.length === 0}
                   className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200"
