@@ -202,7 +202,7 @@ export default function StreamCard({
                 <div className="mt-4">
                     <Button
                         variant="default"
-                        size="sm"
+                        size="iconlg"
                         onClick={(e) => {
                             e.stopPropagation();
                             setShowComments((prev) => !prev);
