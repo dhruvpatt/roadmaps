@@ -1,102 +1,57 @@
-import React, { useRef, useState, useLayoutEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React from "react";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils"; // or your preferred classNames merge function
 
-// Helper: ResizeObserver hook
-function useResizeObserver<T extends HTMLElement>(
-  callback: (height: number) => void
-) {
-  const ref = useRef<T | null>(null);
-
-  useLayoutEffect(() => {
-    if (!ref.current) return;
-    const element = ref.current;
-    function report() {
-      callback(element.getBoundingClientRect().height);
-    }
-    report();
-
-    // Listen for all resizes
-    const ro = new window.ResizeObserver(() => {
-      report();
-    });
-    ro.observe(element);
-
-    return () => ro.disconnect();
-    // We only want this to run once, not on every callback change!
-    // eslint-disable-next-line
-  }, []);
-  return ref;
-}
-
-// Main component
-export function Resizable({
-  show,
-  children,
-  fade = false,
-  duration = 0.3,
-  className,
-  style,
-}: {
-  show: boolean;
+interface ResizableProps {
   children: React.ReactNode;
+  className?: string;
   fade?: boolean;
   duration?: number;
-  className?: string;
   style?: React.CSSProperties;
-}) {
-  const [height, setHeight] = useState<number>(0);
-  const contentRef = useResizeObserver<HTMLDivElement>((h) => setHeight(h));
+  show?: boolean;
+}
 
-  // Used to keep the children in DOM while animating out
-  const [shouldRender, setShouldRender] = useState(show);
+export function Resizable({
+  children,
+  className,
+  fade = false,
+  duration = 0.3,
+  style,
+  show = true,
+}: ResizableProps) {
+  const [height, setHeight] = React.useState<number | "auto">("auto");
+  const resizeObserverRef = React.useRef<ResizeObserver | null>(null);
 
-  // Track show/hide to manage mounting/unmounting
-  React.useEffect(() => {
-    if (show) setShouldRender(true);
-  }, [show, children]);
+  const containerRef = React.useCallback((node: HTMLDivElement) => {
+    if (node !== null) {
+      resizeObserverRef.current = new ResizeObserver((entries) => {
+        var observedHeight = entries?.[0]?.contentRect?.height + 20;
+        if (show) {
+          console.log(observedHeight)
+          setHeight(observedHeight ?? "auto");
+        }
+      });
+      resizeObserverRef.current.observe(node);
+    } else if (resizeObserverRef.current) {
+      resizeObserverRef.current.disconnect();
+    }
+  }, [show]);
 
-  function handleCollapseEnd() {
-    if (!show) setShouldRender(false);
-  }
+  const motionStyle: React.CSSProperties = {
+    height: show ? height : 0,
+    opacity: fade ? (show ? 1 : 0) : 1,
+    overflow: "hidden",
+    ...style,
+  };
 
   return (
-    <AnimatePresence initial={false}>
-      {shouldRender && (
-        <motion.div
-          key="resize"
-          initial={{
-            height: 0,
-            opacity: fade ? 0 : 1,
-          }}
-          animate={{
-            height: show ? height : "auto",
-            opacity: show ? 1 : (fade ? 0 : 1),
-            transition: {
-              height: { duration, ease: [0.4, 0, 0.2, 1] },
-              opacity: { duration: fade ? duration : 0 },
-            },
-          }}
-          exit={{
-            height: 0,
-            opacity: fade ? 0 : 1,
-            transition: {
-              height: { duration, ease: [0.4, 0, 0.2, 1] },
-              opacity: { duration: fade ? duration : 0 },
-            },
-          }}
-          style={{
-            overflow: "hidden",
-            ...style,
-          }}
-          className={className}
-          onAnimationComplete={handleCollapseEnd}
-        >
-          {/* The observed content */}
-          <div ref={contentRef}>
-            {children}
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <motion.div
+      style={motionStyle}
+      animate={motionStyle}
+      transition={{ duration, ease: [0.4, 0, 0.2, 1] }}
+      className={cn("overflow-hidden", className)}
+    >
+      <div ref={containerRef}>{children}</div>
+    </motion.div>
   );
 }

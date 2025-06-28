@@ -214,7 +214,7 @@ export default function StreamCard({
                 </div>
 
                 {/* Comments */}
-                <Resizable show={showComments} fade duration={0.3}>
+                <Resizable show={showComments} fade duration={0.4}>
                     <div className="mt-3 bg-gray-100 rounded-lg p-4 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
                         <CommentSection materialId={post.id} currentUser={user} />
                     </div>
