@@ -33,6 +33,8 @@ from pathways.serializers import (
     AssignmentSubmissionSerializer,
     UpdateCommentSerializer,
 )
+from pathways.utils.helpers import *
+
 from pathways.serializers.deliverable_serializer import AssignmentSerializer, TestSerializer, QuestionSerializer
 from pathways.utils import attach_mock_students_to_classroom, create_mock_deliverables_for_classroom, create_mock_materials_for_classroom, create_mock_assignments_for_classroom
 from pathways.models.classroom import Classroom, Material
@@ -56,34 +58,6 @@ ALLOWED_MIME_TYPES = {
     "application/vnd.openxmlformats-officedocument.presentationml.presentation",
 }
 MAX_FILE_SIZE_MB = 10
-
-# region Helpers
-
-
-def is_teacher_in_classroom(user, classroom):
-    return classroom.teachers.filter(id=user.id).exists()
-
-
-def is_student_in_classroom(user, classroom):
-    return classroom.students.filter(id=user.id).exists()
-
-
-def is_member_in_classroom(user, classroom):
-    return is_teacher_in_classroom(user, classroom) or is_student_in_classroom(user, classroom)
-
-
-def is_teacher(user, classroom):
-    return classroom.teachers.filter(id=user.id).exists()
-
-
-def is_student(user, classroom):
-    return classroom.students.filter(id=user.id).exists()
-
-
-def is_member(user, classroom):
-    return is_teacher(user, classroom) or is_student(user, classroom)
-
-# endregion
 
 
 class StandardResultsSetPagination(PageNumberPagination):

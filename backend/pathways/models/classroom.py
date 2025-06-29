@@ -67,6 +67,16 @@ class Week(models.Model):
     learning_goal = models.TextField(blank=True)
     analytics = models.OneToOneField("pathways.Analytics", on_delete=models.CASCADE, null=True, blank=True)
     student_analytics = models.ManyToManyField("pathways.Analytics", related_name='week_student_analytics', blank=True)
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+    materials = models.ManyToManyField('Material', related_name='weeks', blank=True)
+    tests = models.ManyToManyField('Test', related_name='weeks', blank=True)
+    assignments = models.ManyToManyField('Assignment', related_name='weeks', blank=True)
+
+
+    def __str__(self):
+        return f"Week {self.pk} ({self.start_date} - {self.end_date})"
+
 
 
 

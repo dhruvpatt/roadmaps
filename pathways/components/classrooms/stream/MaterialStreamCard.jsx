@@ -99,11 +99,11 @@ export default function MaterialStreamCard({
 
             {/* General (text under title) */}
             {generals.length > 0 && (
-                <div className="mb-1">
+                <div className="mb-1 mt-1">
                     {generals.map((item, index) => (
                         <p
                             key={index}
-                            className="text-gray-800 text-m break-words line-clamp-2"
+                            className="text-gray-600 font-semibold text-m break-words line-clamp-2"
                         >
                             {item.text}
                         </p>

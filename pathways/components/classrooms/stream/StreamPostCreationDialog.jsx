@@ -70,7 +70,7 @@ export default function PostCreationDialog({ open, onClose, onSelectType }) {
             </button>
           ))}
         </div>
-        <DialogFooter className="mr-6 flex-row flex justify-end items-center pt-5 gap-3">
+        <DialogFooter className="flex-row flex justify-end items-center pt-5 gap-3">
           <DialogClose asChild>
             <Button variant="cancel" className="w-full">Cancel</Button>
           </DialogClose>
