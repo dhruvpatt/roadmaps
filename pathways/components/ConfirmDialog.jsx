@@ -22,7 +22,7 @@ export default function ConfirmDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onCancel}>
-      <DialogContent>
+      <DialogContent className="pt-4">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>

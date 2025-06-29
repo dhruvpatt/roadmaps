@@ -7,10 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Check, X, Megaphone, MessageCircle, Link as LinkIcon, FileText, Edit } from "lucide-react";
-import { ContentSection } from "./ContentSection";
+import { ContentSection } from "../ContentSection";
 import { TYPE_META } from "./MaterialTypeMeta";
-import { EditableContentItem } from "./EditableContentItem";
-import { PendingInputList } from "./PendingInputList";
+import { EditableContentItem } from "../EditableContentItem";
+import { PendingInputList } from "../PendingInputList";
 
 
 
@@ -186,6 +186,7 @@ export default function MaterialCreationModal({
 
   const addPending = (type) => {
     setPendingInputs(prev => [...prev, { type, value: "", id: crypto.randomUUID() }]);
+    console.log('pending added')
   };
 
   const handleFileUpload = async (e, type, idx) => {
@@ -570,7 +571,7 @@ export default function MaterialCreationModal({
           <Button
             variant="ok"
             onClick={handleSubmit}
-            disabled={pendingInputs.length > 0}
+            disabled={pendingInputs.length > 0 || editingIdx != null}
           >
             {isEditing ? "Update" : "Add"}
           </Button>

@@ -14,6 +14,9 @@ export default function CommentThread({
     currentUser,
     onUpdate,
     materialId,
+    onEdit,
+    onDelete,
+    onReply,
 }) {
     const [isReplying, setIsReplying] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -22,52 +25,6 @@ export default function CommentThread({
     const [replyText, setReplyText] = useState("");
 
     const isOwnComment = comment.posted_by?.id === currentUser?.id;
-
-    const handleEdit = async () => {
-        try {
-            const res = await fetchWithAuth(`/api/classroom/comments/${comment.id}/`, {
-                method: "PATCH",
-                body: JSON.stringify({ content: input }),
-            });
-            const updated = await res.json();
-            setIsEditing(false);
-            onUpdate(comment.id, updated);
-        } catch (e) {
-            console.error("Edit failed", e);
-        }
-    };
-
-    const handleDelete = async () => {
-        try {
-            await fetchWithAuth(`/api/classroom/comments/${comment.id}/`, {
-                method: "DELETE",
-            });
-            onUpdate(comment.id, { deleted: true });
-        } catch (e) {
-            console.error("Delete failed", e);
-        }
-    };
-
-    const handleReply = async () => {
-        try {
-            const res = await fetchWithAuth(
-                `/api/classroom/materials/${materialId}/comments/`,
-                {
-                    method: "POST",
-                    body: JSON.stringify({
-                        content: replyText,
-                        replied_to: comment.id,
-                    }),
-                }
-            );
-            const newReply = await res.json();
-            setReplyText("");
-            setIsReplying(false);
-            onUpdate(null, newReply); // Let parent append reply
-        } catch (e) {
-            console.error("Reply failed", e);
-        }
-    };
 
     const renderContent = () => {
         if (comment.deleted) {
@@ -90,25 +47,33 @@ export default function CommentThread({
                             <Trash2
                                 size={14}
                                 className="cursor-pointer text-red-500 hover:text-red-700"
-                                onClick={handleDelete}
+                                onClick={() => onDelete(comment.id)}
                             />
                         </div>
                     )}
                 </div>
 
                 {isEditing ? (
-                    <div className="space-y-2 mt-1">
+                    <div className="space-y-2 space-x-2 mt-1">
                         <Input
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                         />
-                        <Button size="sm" className="text-xs" onClick={handleEdit}>
+                        <Button size="sm" variant="cancel" className="text-xs" onClick={() => setIsEditing(false)}>
+                            Cancel
+                        </Button>
+                        <Button size="sm" variant="ok" className="text-xs" onClick={() => {
+                            onEdit(comment.id, input)
+                            setIsEditing(false)
+                        }}>
                             Save
                         </Button>
+
+
                     </div>
                 ) : (
                     <>
-                        <p className="text-sm text-gray-700">
+                        <p className="text-sm text-gray-700 break-words max-w-full">
                             {comment.content}
                             {comment.edited && (
                                 <span className="text-xs text-gray-500 ml-1">(edited)</span>
@@ -131,7 +96,7 @@ export default function CommentThread({
                         {comment.posted_by?.first_name?.[0] ?? "?"}
                     </AvatarFallback>
                 </Avatar>
-                <div className={cn("bg-gray-200 p-3 rounded-lg flex-1", comment.deleted && "bg-gray-50")}>
+                <div className={cn("bg-gray-200 p-3 rounded-lg flex-1 w-full max-w-full overflow-x-hidden", comment.deleted && "bg-gray-50")}>
                     {renderContent()}
                 </div>
             </div>
@@ -145,7 +110,7 @@ export default function CommentThread({
                         {collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
                         {collapsed ? "Show replies" : "Hide replies"}
                     </button>
-                    <Resizable show={!collapsed} fade duration={100} className="mt-2 space-y-2">
+                    <Resizable show={!collapsed} fade className="mt-2 space-y-2">
                         {comment.replies.map((reply) => (
                             <CommentThread
                                 key={reply.id || `${reply.posted_by?.id}-${reply.date || Math.random()}`}
@@ -160,7 +125,7 @@ export default function CommentThread({
                 </div>
             )}
 
-            {!comment.deleted && (
+            {comment.posted_by && !comment.is_deleted && (
                 <>
                     {isReplying ? (
                         <div className="flex items-center gap-2 mt-2 ml-6">
@@ -174,7 +139,7 @@ export default function CommentThread({
                                 variant="ghost"
                                 className="text-amber-600"
                                 size="icon"
-                                onClick={handleReply}
+                                onClick={() => onReply(comment.id)}
                             >
                                 <Send size={16} />
                             </Button>

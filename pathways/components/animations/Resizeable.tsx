@@ -27,7 +27,6 @@ export function Resizable({
       resizeObserverRef.current = new ResizeObserver((entries) => {
         var observedHeight = entries?.[0]?.contentRect?.height + 20;
         if (show) {
-          console.log(observedHeight)
           setHeight(observedHeight ?? "auto");
         }
       });

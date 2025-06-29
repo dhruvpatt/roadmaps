@@ -74,3 +74,50 @@ export async function saveMaterial({
 
   return await response.json();
 }
+
+// Fetch a single page of materials for a classroom
+export async function fetchMaterials({
+  classroomId,
+  search=null,
+  page = 1,
+  pageSize = 10,
+  signal = undefined,
+}) {
+  if (!classroomId) throw new Error("classroomId is required");
+  let searchString = ""
+  if (search) {
+    searchString = `&search=${search}`
+  }
+
+  console.log("search string", searchString)
+  const url = `/api/classroom/materials/?classroom=${classroomId}${searchString}&page=${page}&page_size=${pageSize}`;
+  console.log(url)
+  const res = await fetchWithAuth(url, { signal });
+  if (!res.ok) throw new Error("Failed to fetch materials");
+
+  const data = await res.json();
+  // Normalize results: ensure you always get an array (handles pagination and plain arrays)
+  const results = Array.isArray(data) ? data : (data.results || []);
+  // Add type field to each post for stream rendering
+  const materials = results.map(mat => ({ ...mat, type: "material" }));
+
+  return {
+    materials,
+    // For pagination
+    next: data.next ?? null,
+    previous: data.previous ?? null,
+    count: data.count ?? materials.length,
+  };
+}
+
+export async function deleteMaterial(materialId) {
+  const res = await fetchWithAuth(`/api/classroom/materials/${materialId}/`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to delete material");
+  return true;
+}
+
+
+
+

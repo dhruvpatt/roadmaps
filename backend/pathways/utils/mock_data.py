@@ -323,8 +323,11 @@ def create_mock_materials_for_classroom(classroom, teachers=None, count_per_type
                 has_general = True
 
         # Ensure validation: title XOR announcement
-        use_title = not has_announcement and random.choice([True, False])
-        title = f"Material {i+1}" if use_title else ""
+        if has_announcement:
+            title = ""
+        else:
+            # If no announcement, title is present (or random if you want sometimes no title and just other content)
+            title = f"Material {i+1}"
 
         material = Material.objects.create(
             title=title,

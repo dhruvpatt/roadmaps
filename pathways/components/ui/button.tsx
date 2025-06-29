@@ -17,6 +17,8 @@ const buttonVariants = cva(
         cancel: "bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-xl shadow border border-blue-50",
         edit: "bg-blue-500 hover:bg-blue-600 text-white rounded-xl shadow-md shadow-blue-100 border border-blue-100",
 
+        add: "flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700 shadow-md rounded-4xl",
+
         default2: "bg-orange-500 text-white hover:bg-orange-600 shadow-[inset_-4px_-4px_8px_rgba(255,255,255,0.4),inset_4px_4px_8px_rgba(0,0,0,0.2)] rounded-full border border-orange-700",
         destructive: "bg-red-600 text-white hover:bg-red-700 rounded-xl shadow border border-red-50",
         outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",

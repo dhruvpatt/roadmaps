@@ -4,9 +4,9 @@ import React, { useState } from "react";
 import { useRouter } from "next/router";
 import PropTypes from "prop-types";
 import { cn } from "@/lib/utils";
-import ClassroomStream from "./classroom-stream";
-import ClassroomAssignments from "./classroom-assignments";
-import ClassroomMaterials from "./classroom-materials";
+import ClassroomStream from "./stream/classroom-stream";
+import ClassroomAssignments from "./assignment/classroom-assignments";
+import ClassroomMaterials from "./material/classroom-materials";
 import ClassroomTests from "./classroom-tests";
 import ClassroomGradebook from "./classroom-gradebook";
 import ClassroomStudents from "./classroom-students";
@@ -17,7 +17,6 @@ import CurriculumEditPage from "./CurriculumEditPage";
 
 export default function ClassroomTabs({ classroom, isTeacher, user }) {
   const router = useRouter();
-  console.log(router.query.tab)
   const initialTab = router.query.tab || "stream";
   const [activeTab, setActiveTab] = useState(initialTab);
 

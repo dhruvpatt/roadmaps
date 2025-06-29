@@ -14,7 +14,7 @@ import fetchWithAuth from "@/lib/fetch_with_auth";
 import MaterialViewerModal from "./MaterialViewerModal";
 import MaterialCard from "./MaterialCard";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { saveMaterial } from "@/lib/api/materials";
+import { saveMaterial, fetchMaterials, deleteMaterial } from "@/lib/api/materials";
 
 
 const PAGE_SIZE = 9;
@@ -35,15 +35,19 @@ export default function ClassroomMaterials({ classroom, isTeacher, user }) {
 
   // Fetch materials from backend
 
-  const fetchMaterials = async (params) => {
+  const getMaterials = async (params) => {
+    setLoading(true);
     try {
-      const res = await fetchWithAuth(`/api/classroom/materials/?${params}&page_size=${PAGE_SIZE}`);
-      if (!res.ok) throw new Error("Failed to fetch materials");
-
-      const data = await res.json();
-      console.log("Fetched materials", data);
-
-      setMaterials(data.results || data); // Support paginated and non-paginated
+      // Use the params directly!
+      const data = await fetchMaterials({
+        classroomId: params.classroom,
+        page: params.page,
+        search: params.search,
+        types: params.types,
+        pageSize: PAGE_SIZE,
+      });
+      console.log(data)
+      setMaterials(data.materials || data);
       setTotalPages(Math.ceil((data.count || 1) / PAGE_SIZE));
     } catch (err) {
       setMaterials([]);
@@ -53,20 +57,18 @@ export default function ClassroomMaterials({ classroom, isTeacher, user }) {
     }
   };
 
-
   useEffect(() => {
     if (!classroom?.id) return;
 
     const fetchData = async () => {
       setLoading(true);
-      const params = new URLSearchParams({
+      const params = {
         classroom: classroom.id,
         page,
         ...(filterTypes.length > 0 ? { types: filterTypes.join(",") } : {}),
-        ...(searchTerm ? { search: searchTerm } : {}),
-      });
-
-      await fetchMaterials(params);
+        ...(searchTerm ? { search: searchTerm } : null),
+      };
+      await getMaterials(params);
     };
 
     fetchData();
@@ -92,11 +94,11 @@ export default function ClassroomMaterials({ classroom, isTeacher, user }) {
     if (!pendingDeleteId) return;
     setLoading(true);
     try {
-      const res = await fetchWithAuth(`/api/classroom/materials/${pendingDeleteId}/`, {
-        method: "DELETE",
-      });
-      if (!res.ok) throw new Error("Failed to delete");
+      await deleteMaterial(pendingDeleteId);
       setMaterials((prev) => prev.filter((m) => m.id !== pendingDeleteId));
+    } catch (err) {
+      // Optionally show an error message here
+      console.error("Failed to delete:", err);
     } finally {
       setPendingDeleteId(null);
       setLoading(false);
@@ -140,11 +142,6 @@ export default function ClassroomMaterials({ classroom, isTeacher, user }) {
         m.types.some((t) => filterTypes.includes(t.key))
       );
 
-  const filtered = byType.filter((m) => {
-    const text = ((m.title || "") + " " + (m.details || "")).toLowerCase();
-    return text.includes(searchTerm.toLowerCase());
-  });
-
   return (
     <section className="bg-white min-h-screen py-8">
       <div className="max-w-6xl mx-auto px-6 space-y-8">
@@ -155,7 +152,7 @@ export default function ClassroomMaterials({ classroom, isTeacher, user }) {
           </div>
           {isTeacher && (
             <Button
-              className="flex items-center gap-2 bg-blue-500 text-white hover:bg-blue-600 focus:ring-2 focus:ring-offset-1 focus:ring-blue-400 rounded-lg"
+              variant="add"
               onClick={() => {
                 setEditingMaterial(null);
                 setShowModal(true);
@@ -185,7 +182,7 @@ export default function ClassroomMaterials({ classroom, isTeacher, user }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {loading ? (
             <div className="col-span-full text-center py-12 text-gray-400">Loading...</div>
-          ) : filtered.length === 0 ? (
+          ) : materials.length === 0 ? (
             <div className="col-span-full text-center py-12">
               <FileText className="mx-auto w-12 h-12 text-gray-300 mb-4" />
               <h3 className="text-lg font-medium text-gray-600">No materials found</h3>
@@ -196,8 +193,9 @@ export default function ClassroomMaterials({ classroom, isTeacher, user }) {
               </p>
             </div>
           ) : (
-            filtered.map((mat) => (
+            materials.map((mat) => (
               <MaterialCard
+                key={crypto.randomUUID()}
                 material={mat}
                 onClick={() => setSelectedMaterial(mat)}
                 onEdit={isTeacher ? handleEdit : undefined}
@@ -228,10 +226,11 @@ export default function ClassroomMaterials({ classroom, isTeacher, user }) {
       </div>
 
       <MaterialViewerModal
-        material={selectedMaterial}
+        propMaterial={selectedMaterial}
         open={!!selectedMaterial}
         onClose={() => setSelectedMaterial(null)}
         formatDate={formatDate}
+        user={user}
       />
 
 

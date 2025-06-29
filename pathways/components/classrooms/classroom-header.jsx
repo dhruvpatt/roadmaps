@@ -46,7 +46,7 @@ export default function ClassroomHeader({
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => router.back()}
+              onClick={() => router.push("/classrooms")}
               aria-label="Go back"
               className="text-white hover:bg-white/25"
             >

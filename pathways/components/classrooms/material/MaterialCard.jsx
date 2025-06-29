@@ -203,7 +203,7 @@ export default function MaterialCard({
         ))}
       </FadeRowPreview>
 
-      <div className="flex items-center text-xs text-gray-500 gap-1 mt-2">
+      <div className="flex items-center text-xs break-words line-clamp-1 text-gray-500 gap-1 mt-2">
         <span>
           By {material.created_by?.first_name || "Unknown"}
           {material.created_by?.last_name ? ` ${material.created_by.last_name}` : ""}

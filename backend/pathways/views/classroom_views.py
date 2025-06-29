@@ -9,6 +9,7 @@ from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 
+
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import ValidationError, PermissionDenied
@@ -18,6 +19,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
 
 from pathways.models.classroom import Classroom, Material, Comment, MaterialType, AssignmentSubmission
 from pathways.models.deliverable import Assignment, Test, Question
@@ -29,6 +31,7 @@ from pathways.serializers import (
     CommentSerializer,
     CreateCommentSerializer,
     AssignmentSubmissionSerializer,
+    UpdateCommentSerializer,
 )
 from pathways.serializers.deliverable_serializer import AssignmentSerializer, TestSerializer, QuestionSerializer
 from pathways.utils import attach_mock_students_to_classroom, create_mock_deliverables_for_classroom, create_mock_materials_for_classroom, create_mock_assignments_for_classroom
@@ -280,49 +283,60 @@ class MaterialListView(ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        search_query = self.request.query_params.get(
-            "search", "").strip().lower()
+        search_query = self.request.query_params.get("search", "").strip().lower()
+        classroom_id = self.kwargs.get("classroom_id") or self.request.query_params.get("classroom")
 
-        classrooms = Classroom.objects.filter(
-            Q(students=user) | Q(teachers=user)).distinct()
-        queryset = Material.objects.filter(classroom__in=classrooms)
-
-        if search_query:
-            queryset = queryset.filter(
-                Q(title__icontains=search_query) |
-                Q(details__icontains=search_query)
-            )
-
+        print(f"[MaterialListView] User: {user} | Classroom ID: {classroom_id} | Search: '{search_query}'")
+        
+        if classroom_id:
+            classroom = get_object_or_404(Classroom, id=classroom_id)
+            if not (classroom.students.filter(id=user.id).exists() or classroom.teachers.filter(id=user.id).exists()):
+                print(f"[MaterialListView] User {user.id} is not a member of classroom {classroom_id}")
+                return Material.objects.none()
+            queryset = Material.objects.filter(classroom=classroom)
+        else:
+            classrooms = Classroom.objects.filter(Q(students=user) | Q(teachers=user)).distinct()
+            queryset = Material.objects.filter(classroom__in=classrooms)
+        
+        print(f"[MaterialListView] Base queryset count: {queryset.count()}")
         return queryset.order_by("-created_at")
 
     def list(self, request, *args, **kwargs):
-        try:
-            queryset = self.get_queryset()
-            page = self.paginate_queryset(queryset)
-            if page is not None:
-                print(f"Materials on this page: {len(page)}")  # ✅ Add this
-                serializer = self.get_serializer(
-                    page, many=True, context={"request": request})
-                return self.get_paginated_response(serializer.data)
+        queryset = self.get_queryset()
+        search_query = self.request.query_params.get("search", "").strip().lower()
 
-            print(f"Total materials before pagination: {queryset.count()}")
-            serializer = self.get_serializer(
-                queryset, many=True, context={"request": request})
-            return Response(serializer.data)
-        except NotFound:
-            return Response({
-                'count': queryset.count(),
-                'next': None,
-                'previous': None,
-                'results': [],
-            })
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            return Response(
-                {"detail": "Failed to fetch materials", "error": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+        if search_query:
+            queryset = list(queryset)
+            filtered = []
+            for m in queryset:
+                title_str = (m.title or "").lower()
+                content = m.content or []
+                title_match = search_query in title_str
+                content_match = any(
+                    isinstance(item, dict) and (
+                        search_query in (item.get('text', '').lower()) or
+                        search_query in (item.get('link', '').lower()) or
+                        search_query in (item.get('filename', '').lower())
+                    ) for item in content
+                )
+                if title_match or content_match:
+                    filtered.append(m)
+            print(f"[MaterialListView] Filtered by search '{search_query}': {len(filtered)} materials matched out of {len(queryset)}")
+            queryset = filtered
+
+        else:
+            print(f"[MaterialListView] No search query. Total materials: {len(queryset) if isinstance(queryset, list) else queryset.count()}")
+
+        # Now paginate the filtered results (queryset is a list)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            print(f"[MaterialListView] Paginated: page has {len(page)} items")
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        print(f"[MaterialListView] No pagination, returning all {len(queryset)} items")
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class MaterialCreateView(APIView):
@@ -557,24 +571,52 @@ class MaterialDetailView(APIView):
 
 # region Assignment Views
 
-
 class AssignmentListView(ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = AssignmentSerializer
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        classroom_id = self.kwargs.get('classroom_id')
-        classroom = get_object_or_404(Classroom, id=classroom_id)
         user = self.request.user
+        search_query = self.request.query_params.get("search", "").strip().lower()
+        classroom_id = self.kwargs.get("classroom_id") or self.request.query_params.get("classroom")
+        classroom = get_object_or_404(Classroom, id=classroom_id)
 
-        if not is_member(user, classroom):
+        # Check membership
+        if not (classroom.students.filter(id=user.id).exists() or classroom.teachers.filter(id=user.id).exists()):
             return Assignment.objects.none()
 
-        queryset = Assignment.objects.filter(
-            classroom=classroom, is_published=True)
-        return queryset.order_by('-created_at')
+        queryset = Assignment.objects.filter(classroom=classroom, is_published=True)
+        if search_query:
+            queryset = queryset.filter(
+                Q(title__icontains=search_query) |
+                Q(description__icontains=search_query)
+            )
+        return queryset.order_by("-created_at")
 
+    def list(self, request, *args, **kwargs):
+        try:
+            queryset = self.get_queryset()
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True, context={"request": request})
+                return self.get_paginated_response(serializer.data)
+            serializer = self.get_serializer(queryset, many=True, context={"request": request})
+            return Response(serializer.data)
+        except NotFound:
+            return Response({
+                'count': 0,
+                'next': None,
+                'previous': None,
+                'results': [],
+            })
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response(
+                {"detail": "Failed to fetch assignments", "error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class AssignmentCreateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -702,21 +744,51 @@ class TestListView(ListAPIView):
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        classroom_id = self.kwargs.get('classroom_id')
-        classroom = get_object_or_404(Classroom, id=classroom_id)
         user = self.request.user
+        search_query = self.request.query_params.get("search", "").strip().lower()
+        classroom_id = self.kwargs.get("classroom_id") or self.request.query_params.get("classroom")
+        classroom = get_object_or_404(Classroom, id=classroom_id)
 
-        if not is_member(user, classroom):
+        # Check membership
+        if not (classroom.students.filter(id=user.id).exists() or classroom.teachers.filter(id=user.id).exists()):
             return Test.objects.none()
 
-        # Teachers can see all tests (published and unpublished)
-        # Students can only see published tests
-        if is_teacher(user, classroom):
+        # Teachers see all, students only published
+        if classroom.teachers.filter(id=user.id).exists():
             queryset = Test.objects.filter(classroom=classroom)
         else:
             queryset = Test.objects.filter(classroom=classroom, is_published=True)
-        
-        return queryset.order_by('-created_at')
+
+        if search_query:
+            queryset = queryset.filter(
+                Q(title__icontains=search_query) |
+                Q(description__icontains=search_query)
+            )
+        return queryset.order_by("-created_at")
+
+    def list(self, request, *args, **kwargs):
+        try:
+            queryset = self.get_queryset()
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True, context={"request": request})
+                return self.get_paginated_response(serializer.data)
+            serializer = self.get_serializer(queryset, many=True, context={"request": request})
+            return Response(serializer.data)
+        except NotFound:
+            return Response({
+                'count': 0,
+                'next': None,
+                'previous': None,
+                'results': [],
+            })
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response(
+                {"detail": "Failed to fetch tests", "error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class TestCreateView(APIView):
@@ -866,52 +938,84 @@ def comment_view(request, material_id=None, comment_id=None):
     user = request.user
 
     try:
-        # GET comments for a material
-        if request.method == "GET" and material_id:
-            material = get_object_or_404(Material, id=material_id)
-            comments = Comment.objects.filter(
-                material=material, replied_to=None).exclude(is_deleted=True)
+        # --- Material fetch for context ---
+        material = get_object_or_404(Material, id=material_id)
+        classroom = material.classroom
+
+        # --- RBAC: Only members can do anything ---
+        if not is_member_in_classroom(user, classroom):
+            return Response({"error": "You do not have access to this material."}, status=403)
+
+        # --- GET: List all top-level comments for a material ---
+        if request.method == "GET" and not comment_id:
+            comments = Comment.objects.filter(material=material, replied_to=None, is_deleted=False)
             return Response(CommentSerializer(comments, many=True).data)
 
-        # POST new comment or reply
-        if request.method == "POST":
+        # --- POST: Create new comment or reply ---
+        if request.method == "POST" and not comment_id:
             data = request.data.copy()
-            parent_comment = None
-
-            if comment_id:
-                parent_comment = get_object_or_404(Comment, id=comment_id)
-                material = parent_comment.material
-                data["replied_to"] = parent_comment.id
-            else:
-                material = get_object_or_404(Material, id=material_id)
-
+            replied_to_id = data.get("replied_to")
+            # Validate replied_to (if present)
+            if replied_to_id:
+                try:
+                    parent_comment = Comment.objects.get(id=replied_to_id)
+                    if parent_comment.material_id != material.id:
+                        return Response(
+                            {"error": "Cannot reply to comment from another material."},
+                            status=400
+                        )
+                    if parent_comment.is_deleted:
+                        return Response(
+                            {"error": "Cannot reply to a deleted comment."},
+                            status=400
+                        )
+                except Comment.DoesNotExist:
+                    return Response({"error": "Parent comment does not exist."}, status=404)
             serializer = CreateCommentSerializer(data=data)
             if serializer.is_valid(raise_exception=True):
                 comment = serializer.save(posted_by=user, material=material)
                 return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
 
+        # --- PATCH: Update a specific comment (author or teacher only) ---
         if request.method == "PATCH" and comment_id:
-            comment = get_object_or_404(Comment, id=comment_id)
-            if comment.posted_by != user:
+            comment = get_object_or_404(Comment, id=comment_id, material=material)
+            if not (comment.posted_by == user or is_teacher(user, classroom)):
                 return Response({"error": "Unauthorized"}, status=403)
-
-            serializer = CreateCommentSerializer(
-                comment, data=request.data, partial=True)
+            # Prevent moving comment to another material or changing parent in another material
+            data = request.data.copy()
+            if 'material' in data and int(data['material']) != material.id:
+                return Response({"error": "Cannot change comment material."}, status=400)
+            if 'replied_to' in data:
+                replied_to_id = data.get('replied_to')
+                if replied_to_id:
+                    try:
+                        parent_comment = Comment.objects.get(id=replied_to_id)
+                        if parent_comment.material_id != material.id:
+                            return Response(
+                                {"error": "Cannot reply to comment from another material."}, status=400
+                            )
+                        if parent_comment.is_deleted:
+                            return Response(
+                                {"error": "Cannot set a deleted comment as parent."}, status=400
+                            )
+                    except Comment.DoesNotExist:
+                        return Response({"error": "Parent comment does not exist."}, status=404)
+            serializer = UpdateCommentSerializer(comment, data=data, partial=True)
             if serializer.is_valid(raise_exception=True):
-                serializer.save(edited=True)  # 👈 Flag it as edited
+                serializer.save(edited=True)
                 return Response(CommentSerializer(comment).data)
 
-        # DELETE = soft-delete
+        # --- DELETE: Soft-delete a specific comment (author or teacher only) ---
         if request.method == "DELETE" and comment_id:
-            comment = get_object_or_404(Comment, id=comment_id)
-            if comment.posted_by != user:
+            comment = get_object_or_404(Comment, id=comment_id, material=material)
+            if not (comment.posted_by == user or is_teacher(user, classroom)):
                 return Response({"error": "Unauthorized"}, status=403)
             comment.is_deleted = True
             comment.content = ""
             comment.save()
             return Response({"message": "Comment deleted"}, status=204)
 
-        return Response({"error": "Unsupported operation"}, status=400)
+        return Response({"error": "Unsupported operation or missing parameters."}, status=400)
 
     except Exception as e:
         import traceback

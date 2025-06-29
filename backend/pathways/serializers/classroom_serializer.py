@@ -11,11 +11,14 @@ class MaterialTypeSerializer(serializers.ModelSerializer):
         model = MaterialType
         fields = ("key", "label")
 
+
 class MaterialViewSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
+
     class Meta:
         model = Material
         fields = ("user", "time_viewed", "last_viewed")
+
 
 class MaterialSerializer(serializers.ModelSerializer):
     types = MaterialTypeSerializer(many=True, read_only=True)
@@ -62,9 +65,11 @@ class MaterialSerializer(serializers.ModelSerializer):
     def get_assignments(self, obj):
         from pathways.serializers.deliverable_serializer import AssignmentSerializer
         return AssignmentSerializer(obj.assignments.all(), many=True).data
+
     def validate(self, data):
         title = data.get('title', '') or getattr(self.instance, 'title', '')
-        content = data.get('content', []) or getattr(self.instance, 'content', [])
+        content = data.get('content', []) or getattr(
+            self.instance, 'content', [])
 
         has_title = bool(title.strip())
         has_content = bool(content)
@@ -81,21 +86,26 @@ class MaterialSerializer(serializers.ModelSerializer):
                 )
 
         # Enforce: title XOR announcement
-        has_announcement = any(item.get("type") == "announcement" for item in content)
+        has_announcement = any(
+            item.get("type") == "announcement" for item in content)
         if has_title and has_announcement:
-            raise serializers.ValidationError("Material cannot have both a title and an announcement.")
+            raise serializers.ValidationError(
+                "Material cannot have both a title and an announcement.")
 
         # Enforce: at least one of title or content
         if not has_title and not has_content:
-            raise serializers.ValidationError("Material must have at least a title or a content item.")
+            raise serializers.ValidationError(
+                "Material must have at least a title or a content item.")
 
         # Enforce: only one announcement allowed
         if sum(1 for item in content if item.get("type") == "announcement") > 1:
-            raise serializers.ValidationError("Only one announcement is allowed per material.")
+            raise serializers.ValidationError(
+                "Only one announcement is allowed per material.")
 
         # Enforce: only one general allowed
         if sum(1 for item in content if item.get("type") == "general") > 1:
-            raise serializers.ValidationError("Only one general content item is allowed per material.")
+            raise serializers.ValidationError(
+                "Only one general content item is allowed per material.")
 
         return data
 
@@ -112,6 +122,24 @@ class CreateCommentSerializer(serializers.ModelSerializer):
         return value
 
 
+class UpdateCommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = ['content', 'replied_to', 'edited']
+        read_only_fields = ['edited']
+
+    def update(self, instance, validated_data):
+        instance.content = validated_data.get('content', instance.content)
+        replied_to = validated_data.get('replied_to', instance.replied_to)
+        if replied_to and replied_to.material_id != instance.material_id:
+            raise serializers.ValidationError(
+                "Cannot reply to comment from another material.")
+        instance.replied_to = replied_to
+        instance.edited = True
+        instance.save()
+        return instance
+
+
 class CommentSerializer(serializers.ModelSerializer):
     posted_by = UserSerializer(read_only=True)
     replied_to = serializers.PrimaryKeyRelatedField(
@@ -121,7 +149,7 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = ["id", "content", "posted_by",
-                  "date", "replied_to", "edited", "replies"]
+                  "date", "replied_to", "edited", "is_deleted", "replies"]
 
     def get_replies(self, obj):
         replies = Comment.objects.filter(replied_to=obj)
@@ -181,10 +209,12 @@ class CreateClassroomSerializer(serializers.ModelSerializer):
 
 class AssignmentSubmissionSerializer(serializers.ModelSerializer):
     student = UserSerializer(read_only=True)
-    
+
     class Meta:
         model = AssignmentSubmission
-        fields = ['id', 'assignment', 'student', 'content', 'submitted_at', 'grade', 'feedback', 'status']
+        fields = ['id', 'assignment', 'student', 'content',
+                  'submitted_at', 'grade', 'feedback', 'status']
+
 
 class ClassroomSerializer(serializers.ModelSerializer):
     teachers = UserSerializer(many=True, read_only=True)
@@ -206,6 +236,6 @@ class ClassroomSerializer(serializers.ModelSerializer):
             "assignments",
             "units",
         ]
-        
+
     def get_assignments(self, obj):
         return AssignmentSerializer(obj.assignments.all(), many=True).data
