@@ -1,120 +1,140 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { useAuth } from "../contexts/useAuth"; // <-- Use the shared auth context
+import { useAuth } from "../contexts/useAuth";
+import { Input } from "@components/ui/input";
+import { Button } from "@components/ui/button";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [orgCode, setOrgCode] = useState("");
   const [error, setError] = useState("");
   const { login, isLoading } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    const stored = localStorage.getItem("organization_code");
+    if (stored) setOrgCode(stored);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
     try {
-      const user = await login({ username, password });
-      console.log("Login successful:", user);
-      router.push("/dashboard");
+      const res = await login({ username, password, organization_code: orgCode });
+      console.log("res", res)
+      if (res.ok || res.organization) {
+        localStorage.setItem("organization_code", orgCode);
+        router.push("/dashboard");
+      }
+      else{
+        let error = await res.json()
+        setError(error.detail);
+      }
     } catch (err) {
-      console.error("Login failed:", err);
-      setError("Invalid username or password");
+      console.log("err", err)
+      setError("Unexpected error occurred");
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-amber-50 px-6 py-24">
-      <div className="w-full max-w-2xl">
+      <div className="w-full max-w-2xl space-y-6">
         {/* Header row */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center">
           <button
             type="button"
             onClick={() => router.push("/")}
-            className="p-0 inline-flex items-center justify-center rounded-md px-4 py-2 font-medium transition-colors focus:outline-none text-amber-700 hover:text-amber-900 hover:bg-transparent"
+            className="inline-flex items-center text-amber-700 hover:text-amber-900 text-sm font-medium"
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
+            <ArrowLeft className="w-4 h-4 mr-1" />
             Back to home
           </button>
-          <div className="flex items-center gap-1 text-xl font-bold">
+          <div className="text-xl font-bold">
             <span className="text-amber-600">Path</span>
             <span className="text-amber-800">ways</span>
           </div>
         </div>
 
-        {/* Form Card */}
-        <div className="bg-white p-8 rounded-lg shadow-md">
-          <h1 className="text-2xl font-bold text-amber-900 mb-6">Log in to your account</h1>
+        {/* Org Code Input Card */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold text-amber-800 mb-2">Organization Code</h2>
+          <p className="text-sm text-gray-600 mb-3">
+            Please enter your organization code. This links your login to the correct school or group.
+          </p>
+          <Input
+            placeholder="Enter organization code"
+            value={orgCode}
+            onChange={(e) => setOrgCode(e.target.value)}
+          />
+        </div>
 
-          {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-md mb-4">{error}</div>
-          )}
+        {/* Login Form */}
+        <div className="bg-white p-8 rounded-lg shadow space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold text-amber-900">Log in to your account</h1>
+            <p className="text-sm text-gray-600 mt-1">
+              Enter your username and password to access your dashboard.
+            </p>
+          </div>
+
+          {error != "" && <div className="bg-red-50 text-red-600 p-3 rounded-md">{error}</div>}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="username" className="text-sm font-medium text-gray-700">
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
                 Username
               </label>
-              <input
+              <Input
                 id="username"
-                type="text"
                 placeholder="yourusername"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
-                className="block w-full rounded-md border border-gray-300 bg-white text-black px-3 py-2 text-sm shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:border-amber-600"
               />
             </div>
 
-            <div className="space-y-2">
+            <div>
               <div className="flex items-center justify-between">
                 <label htmlFor="password" className="text-sm font-medium text-gray-700">
                   Password
                 </label>
-                <Link href="/forgot-password" className="text-sm text-amber-600 hover:text-amber-800">
+                <Link href="/request-password-reset" className="text-sm text-amber-600 hover:text-amber-800">
                   Forgot password?
                 </Link>
               </div>
-              <input
+              <Input
                 id="password"
                 type="password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="block w-full rounded-md border border-gray-300 bg-white text-black px-3 py-2 text-sm shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:border-amber-600"
               />
             </div>
 
-            <button
-              type="submit"
+            <Button
+              variant="ok"
+              className="w-full"
               disabled={isLoading}
-              className="w-full inline-flex items-center justify-center rounded-md px-4 py-2 font-medium transition-colors focus:outline-none bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? "Logging in..." : "Log in"}
-            </button>
+            </Button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-sm text-amber-700">
+          <div className="text-center text-sm mt-4">
+            <p className="text-amber-700">
               Don&apos;t have an account?{" "}
               <Link href="/signup" className="text-amber-600 hover:text-amber-800 font-medium">
                 Sign up
               </Link>
             </p>
           </div>
-        </div>
-
-        {/* Demo credentials section */}
-        <div className="mt-8 text-center text-sm text-amber-700">
-          <p>For demo purposes:</p>
-          <p>Teacher login: <strong>teacher1</strong></p>
-          <p>Student login: <strong>student1</strong></p>
-          <p>Any password will work (on dev)</p>
         </div>
       </div>
     </div>

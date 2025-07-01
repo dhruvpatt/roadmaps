@@ -3,6 +3,7 @@ import { Bot, Send } from "lucide-react";
 import fetchWithAuth from "@/lib/fetch_with_auth";
 import { Input } from "./ui/input";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSidebar } from "@/contexts/SidebarContext";
 
 export default function AssistantWidget() {
     const [open, setOpen] = useState(false);
@@ -13,6 +14,9 @@ export default function AssistantWidget() {
     const textareaRef = useRef();
     const widgetRef = useRef();
     const messageEndRef = useRef(null);
+    const { collapsed } = useSidebar();
+
+    const leftOffset = collapsed ? "5rem" : "17rem";
 
     useEffect(() => {
         if (messageEndRef.current) {
@@ -101,6 +105,7 @@ export default function AssistantWidget() {
             <button
                 onClick={toggleChat}
                 className="fixed bottom-6 left-75 z-50 rounded-full bg-blue-600 text-white p-4 shadow-lg hover:bg-blue-700 transition"
+                style={{ left: leftOffset }}
             >
                 <Bot size={24} />
             </button>
@@ -115,6 +120,8 @@ export default function AssistantWidget() {
                         exit={{ opacity: 0, y: 30 }}
                         transition={{ duration: 0.25 }}
                         className="fixed bottom-20 left-75 z-50 w-80 max-h-[50vh] bg-white shadow-xl rounded-xl flex flex-col overflow-hidden"
+                        style={{ left: leftOffset }}
+
                     >
                         <div className="p-4 border-b font-semibold bg-blue-50">Assistant</div>
                         <div

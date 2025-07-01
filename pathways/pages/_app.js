@@ -5,12 +5,15 @@ import { useRouter } from "next/router";
 import { AuthProvider } from "@/contexts/useAuth";
 import ErudaDevTools from "@components/devtools";
 
-import AssistantWidget from "@/components/AssistantWidget"; // 👈 import
 
 export default function App({ Component, pageProps }) {
   const router = useRouter();
-  const noLayoutRoutes = ["/", "/login", "/signup"];
-  const shouldUseLayout = !noLayoutRoutes.includes(router.pathname);
+  const isNoLayoutRoute =
+    ["/", "/login", "/signup", "/signup-org", "/request-password-reset", ].includes(router.pathname) ||
+    router.pathname.startsWith("/confirm-email") ||
+    router.pathname.startsWith("/reset-password");
+
+  const shouldUseLayout = !isNoLayoutRoute;
 
   const Page = <Component {...pageProps} />;
 
@@ -88,7 +91,6 @@ export default function App({ Component, pageProps }) {
         {shouldUseLayout ? (
           <>
             <DashboardLayout>{Page}</DashboardLayout>
-            <AssistantWidget /> {/* 👈 add here */}
           </>
         ) : (
           Page

@@ -29,6 +29,7 @@ if os.path.exists(env_path):
     load_dotenv(dotenv_path)
 else:
     print("unable to find env file")
+
 LLM_API_KEY = os.getenv("LLM_API_KEY")
 YT_API_KEY = os.getenv("YT_API_KEY")
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
@@ -65,6 +66,16 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "100/day",         # All anonymous requests
+        "user": "1000/day",        # Authenticated users
+        "login": "5/minute",       # Custom throttle for login view
+        "signup": "3/minute",      # Custom throttle for signup view
+    },
 }
 
 ROOT_URLCONF = 'backend.urls'
@@ -143,8 +154,25 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# For production (use real email service)
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.yourprovider.com'
+# EMAIL_PORT = 587
+# EMAIL_HOST_USER = 'your@email.com'
+# EMAIL_HOST_PASSWORD = 'yourpassword'
+# EMAIL_USE_TLS = True
+
+
+FRONTEND_URL = "http://localhost:3000"
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = "no-reply@yourdomain.com"
+
+ALLOWED_ORG_ADMIN_EMAILS = ["admin@test.com", "admin@admin.com"]
+
+
 # --- CORS Settings ---
-CORS_ALLOW_CREDENTIALS = True  # Required to allow cookies (sessionid, csrftoken) to be sent
+# Required to allow cookies (sessionid, csrftoken) to be sent
+CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = False  # Must be False when using credentials
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # Frontend origin
@@ -154,13 +182,12 @@ CORS_ALLOWED_ORIGINS = [
 # --- CSRF & Session Cookie Settings ---
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
-    "http://127.0.0.1:3000" # Ensures CSRF validation works across origins
+    "http://127.0.0.1:3000"  # Ensures CSRF validation works across origins
 ]
 
 CSRF_COOKIE_SECURE = True  # Set to True in production with HTTPS
-CSRF_COOKIE_HTTPONLY = False  # Allows JavaScript access to read csrftoken (needed for X-CSRFToken header)
+# Allows JavaScript access to read csrftoken (needed for X-CSRFToken header)
+CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = "Lax"  # Allows POSTs from localhost:3000 → localhost:8000
-SESSION_COOKIE_SAMESITE = "Lax"  # SameSite policy for session cookie (allows login sessions across localhost ports)
-
-
-
+# SameSite policy for session cookie (allows login sessions across localhost ports)
+SESSION_COOKIE_SAMESITE = "Lax"

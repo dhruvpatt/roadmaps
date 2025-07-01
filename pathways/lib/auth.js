@@ -1,7 +1,7 @@
 import { getCookie, getCsrfToken } from "./csrf";
 import backendUrl from "../backendUrl";
 
-export async function login({ username, password }) {
+export async function login({ username, password, organization_code }) {
   await getCsrfToken(backendUrl);
 
   const res = await fetch(`${backendUrl}/api/login/`, {
@@ -11,10 +11,13 @@ export async function login({ username, password }) {
       "Content-Type": "application/json",
       "X-CSRFToken": getCookie("csrftoken"),
     },
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ username, password, organization_code }),
   });
 
-  if (!res.ok) console.error("Login failed", res.statusText);
+  if (!res.ok) {
+    console.log("Login failed", res.statusText)
+    return res
+  };
   return await fetchCurrentUser();
 }
 
@@ -33,7 +36,7 @@ export async function signup(data) {
 
   if (!res.ok) console.error("Login failed", res.statusText);
   console.log(data)
-  await login({username: data.username, password: data.password});
+  await login({ username: data.username, password: data.password });
   return await fetchCurrentUser();
 }
 
@@ -58,7 +61,8 @@ export async function fetchCurrentUser() {
     credentials: "include",
     headers: {
       "X-CSRFToken": getCookie("csrftoken"),
-      "Content-Type": "application/json"},
+      "Content-Type": "application/json"
+    },
   });
 
   if (!res.ok) return null;

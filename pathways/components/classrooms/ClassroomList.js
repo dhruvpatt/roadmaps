@@ -16,7 +16,7 @@ export default function ClassroomList({
 }) {
     const [classrooms, setClassrooms] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [isTeacher, setIsTeacher] = useState(user?.role === "teacher");
+    const [isTeacher, setIsTeacher] = useState(user?.role === "teacher" || user?.role === "org_admin");
     const [showModal, setShowModal] = useState(false);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);

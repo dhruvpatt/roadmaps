@@ -9,29 +9,7 @@ from django.conf.urls.static import static
 
 from pathways.views.user_views import *
 from django.urls import path
-from pathways.views.classroom_views import (
-    ClassroomListView,
-    ClassroomCreateView,
-    ClassroomDetailView,
-    MaterialListView,
-    MaterialCreateView,
-    MaterialDetailView,
-    AssignmentListView,
-    AssignmentCreateView,
-    AssignmentDetailView,
-    TestListView,
-    TestCreateView,
-    TestDetailView,
-    QuestionListView,
-    QuestionCreateView,
-    QuestionDetailView,
-    submit_assignment,
-    assignment_submissions,
-    grade_submission,
-    join_classroom_student,
-    join_classroom_teacher,
-    comment_view,
-)
+from pathways.views.classroom_views import *
 from pathways.views.curriculum_builder import create_curriculum, process_pdf_curriculum, upload_csv_curriculum, get_classroom_curriculum
 from pathways.views.attendance_views import get_attendance_dashboard, sessions_view, update_attendance
 from pathways.views.assistant_views import AssistantView
@@ -46,6 +24,15 @@ urlpatterns = [
     path("api/logout/", LogoutView.as_view()),
     path("api/signup/", UserSignupView.as_view()),
     path("api/user/", UserView.as_view(), name="user"),
+    
+    path("api/parent-invite/<uuid:invite_token>/", accept_parent_invite),
+    path("api/create-organization/", CreateOrganizationView.as_view()),
+
+    path ("api/confirm-email/<uuid:token>/", confirm_email),
+    path("api/request-password-reset/", request_password_reset),
+    path("api/reset-password/<uuid:token>/", reset_password),
+
+
 
     path('api/assistant/', AssistantView.as_view(), name='ask-assistant'),
 

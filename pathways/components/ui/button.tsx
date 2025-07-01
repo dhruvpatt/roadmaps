@@ -11,11 +11,11 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-orange-400 hover:bg-orange-700 text-white shadow-md shadow-orange-100 rounded-2xl border border-sm",
+        default: "bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-md shadow-amber-100 border border-amber-100",
 
         ok: "bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl shadow-md shadow-green-100 border border-green-100",
-        cancel: "bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-xl shadow border border-blue-50",
-        edit: "bg-blue-500 hover:bg-blue-600 text-white rounded-xl shadow-md shadow-blue-100 border border-blue-100",
+        cancel: "bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold rounded-xl shadow border border-blue-50",
+        edit: "bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl shadow-md shadow-blue-100 border border-blue-100",
 
         add: "flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700 shadow-md rounded-4xl",
 

@@ -6,7 +6,6 @@ import withAuth from "@/lib/with_auth";
 import QuickActions from "@/components/dashboard/DashboardQuickActions";
 import RecentActivity from "@/components/dashboard/DashboardRecentActivity";
 import CreateClassroomModal from "@components/modals/CreateClassroomModal";
-import emitter from "@/mitt";
 
 const Dashboard = ({ user }) => {
   const [classroomCount, setClassroomCount] = useState(0);
@@ -29,9 +28,9 @@ const Dashboard = ({ user }) => {
               Welcome Back {user?.first_name}
             </h1>
             <p className="text-gray-600 text-lg md:text-2xl text-center md:text-left">
-              {user?.role === "student"
+              {user?.role === "student" || user?.role === "parent"
                 ? "Continue your learning journey"
-                : "Continue your teaching journey"}
+               : "Continue your teaching journey"}
             </p>
           </div>
 

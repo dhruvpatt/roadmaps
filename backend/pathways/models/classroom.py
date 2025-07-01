@@ -1,5 +1,6 @@
 # models/classroom.py
 from django.db import models
+from pathways.models.organization import Organization
 
 ALLOWED_MATERIAL_TYPES = (
     ("file", "File"),
@@ -47,6 +48,11 @@ class Material(models.Model):
 
 
 class Classroom(models.Model):
+    organization = models.ForeignKey(
+        Organization, 
+        on_delete=models.CASCADE,
+        related_name="classrooms"
+    )
     name = models.CharField(max_length=255)
     analytics = models.OneToOneField("pathways.Analytics", on_delete=models.CASCADE, null=True, blank=True)
     join_id = models.CharField(max_length=20, unique=True)

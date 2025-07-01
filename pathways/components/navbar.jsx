@@ -8,11 +8,12 @@ import { useAuth } from "@/contexts/useAuth";
 import withAuth from "@/lib/with_auth";
 
 
-const Navbar = ({user}) => {
+const Navbar = ({ user }) => {
   const router = useRouter();
   const [role, setRole] = useState("");
+  const [organization, setOrganization] = useState(user?.organization?.name)
 
-  
+
 
   useEffect(() => {
     if (user?.role) {
@@ -47,10 +48,16 @@ const Navbar = ({user}) => {
       {/* Right: Icons */}
       <div className="flex items-center space-x-4">
         {role && (
-          <span className="text-sm text-gray-600 font-medium bg-gray-100 px-2 py-0.5 rounded">
+          <span className="text-m text-gray-800 font-medium bg-amber-100 px-2 py-1 rounded">
             {role}
           </span>
         )}
+        {organization && (
+          <span className="text-m text-gray-800 font-medium bg-blue-100 px-2 py-1 rounded">
+            {organization}
+          </span>
+        )}
+
         {/* Notification Bell */}
         <button
           type="button"

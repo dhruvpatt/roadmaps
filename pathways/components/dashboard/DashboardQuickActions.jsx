@@ -1,7 +1,7 @@
 import { Plus, Megaphone, FileText } from "lucide-react";
 
 export default function QuickActions({ user, onCreateClassroomClick }) {
-  if (user.role !== "teacher") return null;
+  if (user.role !== "teacher" || user.role !== "org_admin") return null;
 
   const actions = [
     {

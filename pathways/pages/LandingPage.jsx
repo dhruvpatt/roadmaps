@@ -2,35 +2,6 @@ import React from "react";
 import Link from "next/link";
 import { ArrowRight, BookOpen, Brain, Users, Sparkles } from "lucide-react";
 
-/**
- * A simple Button component for demonstration.
- * Adjust classes/logic as needed for your own UI.
- */
-function Button({ variant = "default", size = "md", className = "", children, ...props }) {
-  const baseStyles =
-    "inline-flex items-center justify-center rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2";
-  const variants = {
-    default: "bg-amber-600 text-white hover:bg-amber-700",
-    outline: "border border-amber-600 text-amber-600 hover:bg-amber-50",
-  };
-  const sizes = {
-    sm: "px-3 py-1.5 text-sm",
-    md: "px-4 py-2 text-base",
-  };
-
-  const variantStyles = variants[variant] || variants.default;
-  const sizeStyles = sizes[size] || sizes.md;
-
-  return (
-    <button
-      className={`${baseStyles} ${variantStyles} ${sizeStyles} ${className}`}
-      {...props}
-    >
-      {children}
-    </button>
-  );
-}
-
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
@@ -50,12 +21,16 @@ export default function Home() {
           </nav>
           <div className="ml-4 flex items-center gap-4">
             <Link href="/login">
-              <Button variant="outline" size="sm">
+              <button className="p-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-md shadow-amber-100 border border-amber-100">
                 Log in
-              </Button>
+              </button>
             </Link>
             <Link href="/signup">
-              <Button size="sm">Get Started</Button>
+              <button className="p-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl shadow-md shadow-blue-100 border border-blue-100">Get Started</button>
+            </Link>
+
+            <Link href="/signup-org">
+              <button className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold rounded-xl shadow border border-blue-50">Create Organization</button>
             </Link>
           </div>
         </div>
@@ -80,10 +55,10 @@ export default function Home() {
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
                   <Link href="/signup">
-                    <Button className="px-8">
+                    <button className="px-8">
                       Start Learning
                       <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
+                    </button>
                   </Link>
 
                 </div>
