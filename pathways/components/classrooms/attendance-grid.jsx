@@ -79,9 +79,9 @@ export default function AttendanceGrid({ classroomId }) {
       const startStr = getWeekStart(selectedWeek).toISOString().split("T")[0];
       const [sessRes, attRes] = await Promise.all([
         fetchWithAuth(
-          `/api/classrooms/${classroomId}/sessions/?week=${startStr}`
+          `/api/classroom/${classroomId}/sessions/?week=${startStr}`
         ),
-        fetchWithAuth(`/api/classrooms/${classroomId}/attendance/`),
+        fetchWithAuth(`/api/classroom/${classroomId}/attendance/`),
       ]);
       if (!sessRes.ok || !attRes.ok) {
         throw new Error("Failed to load data");
@@ -114,7 +114,7 @@ export default function AttendanceGrid({ classroomId }) {
     });
     try {
       const res = await fetchWithAuth(
-        `/api/classrooms/${classroomId}/attendance/${sessionId}/`,
+        `/api/classroom/${classroomId}/attendance/${sessionId}/`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },

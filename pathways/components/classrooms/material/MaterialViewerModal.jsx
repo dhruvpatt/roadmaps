@@ -1,0 +1,271 @@
+import React, { useState, useEffect } from "react";
+import PropTypes from "prop-types";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import {
+  FileText,
+  Link as LinkIcon,
+  Megaphone,
+  MessageCircle,
+  ImageIcon,
+  User,
+} from "lucide-react";
+import backendUrl from "@backendUrl";
+import SimpleAccordion from "@components/SimpleAccordian";
+import { TYPE_META, fileIcon } from "./MaterialTypeMeta";
+import { Resizable } from "@components/animations/Resizeable";
+import CommentSection from "@components/CommentSection";
+import fetchWithAuth from "@/lib/fetch_with_auth";
+
+
+
+export default function MaterialViewerModal({
+  propMaterial,
+  open,
+  onClose,
+  user,
+  formatDate = (d) =>
+    new Date(d).toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+}) {
+  if (!propMaterial) return null;
+
+  const content = Array.isArray(propMaterial.content) ? propMaterial.content : [];
+
+  const announcement = content.filter((c) => c.type === "announcement");
+  const general = content.filter((c) => c.type === "general");
+  const links = content.filter((c) => c.type === "link");
+  const files = content.filter((c) => c.type === "file");
+  const [showComments, setShowComments] = useState(false);
+
+  const [onChange, setOnChange] = useState(false)
+
+  const [material, setMaterial] = useState(propMaterial);
+
+  useEffect(() => {
+    setMaterial(propMaterial); // Keep in sync if parent updates post
+  }, [propMaterial]);
+
+  useEffect(() => {
+    if (onChange) {
+      console.log("change triggered")
+      // Only handle for materials
+      // Fetch latest material
+      fetchWithAuth(`/api/classroom/materials/${propMaterial.id}/`)
+        .then(async res => {
+          if (!res.ok) throw new Error("Failed to fetch material");
+          const data = await res.json();
+          console.log(data)
+          setMaterial(data);
+        })
+        .catch(err => {
+          console.error("Failed to update material after comment", err);
+        });
+    }
+    setOnChange(false);
+  }, [onChange, propMaterial.id]);
+
+
+  const [collapsed, setCollapsed] = useState({
+    announcement: false,
+    general: false,
+    link: false,
+    file: false,
+  });
+
+  const toggle = (key) =>
+    setCollapsed((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent
+        className="max-w-6xl px-0 pt-0 max-h-[calc(100vh-64px)] overflow-y-auto flex-1 min-w-0"
+      >
+        <DialogHeader className="flex-1 min-w-0 w-full bg-gradient-to-r from-blue-50 via-amber-50 to-green-50 rounded-t-xl px-6 py-5 shadow-sm">
+          <div className="flex items-center justify-between gap-4 min-w-0">
+            <div className="flex-1 min-w-0">
+              {material.title ? (
+                <DialogTitle className="text-3xl w-full font-semibold text-gray-900 mb-1 break-words">
+                  {material.title}
+                </DialogTitle>
+              ) : announcement.length > 0 ? (
+                <div
+                  className={`rounded-xl ${TYPE_META.announcement.color} ${TYPE_META.announcement.border} px-4 py-3 text-amber-800 text-lg font-semibold`}
+                >
+                  <div className="flex items-start gap-2">
+                    <Megaphone className="w-6 h-6 text-amber-600 mt-0.5" />
+                    <span className="whitespace-pre-wrap">{announcement[0].text}</span>
+                  </div>
+                </div>
+              ) : null}
+
+              {general.length > 0 && (
+                <div className="text-lg text-gray-700 mt-2 whitespace-pre-wrap break-words">
+                  {general[0].text}
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2 mt-1 flex-wrap">
+              {(material.types || []).map((type) => (
+                <span
+                  key={type.key}
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium capitalize ${TYPE_META[type.key]?.color || "bg-gray-100 text-gray-700"
+                    }`}                  >
+                  {TYPE_META[type.key]?.icon ? (
+                    React.createElement(TYPE_META[type.key].icon, { className: "w-4 h-4" })
+                  ) : (
+                    <User className="w-4 h-4" />
+                  )}
+                  {TYPE_META[type.key]?.label || type.key}
+
+                </span>
+              ))}
+            </div>
+          </div>
+        </DialogHeader>
+
+        <div className="px-6 pt-4 space-y-3">
+
+          {links.length > 0 && (
+            <div className={`rounded-xl ${TYPE_META.link.color} ${TYPE_META.link.border} p-3`}>
+              <SimpleAccordion
+                icon={LinkIcon}
+                title="Links"
+                isCollapsed={collapsed.link}
+                onToggle={() => toggle("link")}
+                count={links.length}
+              >
+                <ul className="space-y-1">
+                  {links.map((l, i) => (
+                    <li key={i}>
+                      <a
+                        href={l.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block break-all text-green-700 underline max-w-full overflow-hidden"
+                      >
+                        {l.link}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </SimpleAccordion>
+            </div>
+
+          )}
+
+          {files.length > 0 && (
+            <div className={`rounded-xl ${TYPE_META.file.color} ${TYPE_META.file.border} p-3`}>
+              <SimpleAccordion
+                icon={FileText}
+                title="Files"
+                isCollapsed={collapsed.file}
+                onToggle={() => toggle("file")}
+                count={files.length}
+              >
+                <div className="flex flex-wrap gap-3">
+                  {files.map((file, i) => (
+                    <div
+                      key={i}
+                      className="bg-white rounded-lg p-3 w-[130px] flex flex-col items-center shadow-sm border border-gray-200"
+                    >
+                      <div className="mb-2">
+                        {file.mimetype?.startsWith("image/") ? (
+                          <ImageIcon className="w-7 h-7 text-blue-400" />
+                        ) : file.mimetype?.includes("pdf") ? (
+                          <FileText className="w-7 h-7 text-red-500" />
+                        ) : (
+                          <FileText className="w-7 h-7 text-gray-400" />
+                        )}
+                      </div>
+                      <span className="text-xs text-gray-700 mb-1 break-words line-clamp-2 max-w-[100px] text-center">
+                        {file.filename}
+                      </span>
+                      <a
+                        href={backendUrl + file.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 text-xs font-medium underline"
+                      >
+                        Download
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </SimpleAccordion>
+            </div>
+
+          )}
+
+        </div>
+
+        {/* Comment Toggle */}
+        <div className="mt-4 ml-5">
+          <Button
+            variant="cancel"
+            size="iconlg"
+            className="flex items-center justify-center gap-1.5 p-0"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowComments((prev) => !prev);
+            }}
+          >
+            <MessageCircle className="w-5 h-5" />
+            <span className="text-base font-semibold">{material.comments?.filter((item) => item.is_deleted == false).length > 99 ? "99+" : material.comments?.filter((item) => item.is_deleted == false).length}</span>
+          </Button>
+
+        </div>
+
+        <Resizable show={showComments} fade duration={0.2}>
+          <div className="mt-3 m-5 bg-gray-100 rounded-lg p-4 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <CommentSection materialId={material.id} comments={material.comments} currentUser={user} setOnChange={setOnChange} />
+          </div>
+        </Resizable>
+
+
+        <DialogFooter className="relative mt-4 px-6 text-sm text-gray-500">
+          <div className="flex items-center justify-between w-full">
+            {/* LEFT SIDE */}
+            <div className="flex items-center gap-2 min-w-0 overflow-hidden flex-wrap">
+              <User className="w-4 h-4 shrink-0" />
+              <span className="truncate">
+                Uploaded by{" "}
+                <span className="font-medium text-gray-700">
+                  {material.created_by?.first_name
+                    ? `${material.created_by.first_name} ${material.created_by.last_name ?? ""}`
+                    : material.uploadedBy || "Unknown"}
+                </span>
+              </span>
+              <span className="mx-1">•</span>
+              <span className="truncate">{formatDate(material.created_at || material.uploadedAt)}</span>
+            </div>
+            {/* RIGHT SIDE */}
+            <DialogClose asChild>
+              <Button variant="cancel">Close</Button>
+            </DialogClose>
+          </div>
+        </DialogFooter>
+
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+MaterialViewerModal.propTypes = {
+  material: PropTypes.object,
+  open: PropTypes.bool,
+  onClose: PropTypes.func,
+  formatDate: PropTypes.func,
+};

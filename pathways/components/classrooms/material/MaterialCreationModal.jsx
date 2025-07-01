@@ -7,10 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Check, X, Megaphone, MessageCircle, Link as LinkIcon, FileText, Edit } from "lucide-react";
-import { ContentSection } from "./ContentSection";
+import { ContentSection } from "../ContentSection";
 import { TYPE_META } from "./MaterialTypeMeta";
-import { EditableContentItem } from "./EditableContentItem";
-import { PendingInputList } from "./PendingInputList";
+import { EditableContentItem } from "../EditableContentItem";
+import { PendingInputList } from "../PendingInputList";
 
 
 
@@ -186,6 +186,7 @@ export default function MaterialCreationModal({
 
   const addPending = (type) => {
     setPendingInputs(prev => [...prev, { type, value: "", id: crypto.randomUUID() }]);
+    console.log('pending added')
   };
 
   const handleFileUpload = async (e, type, idx) => {
@@ -283,7 +284,7 @@ export default function MaterialCreationModal({
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent
-        className="max-w-6xl px-0 pt-0 pb-6 max-h-[calc(100vh-64px)] overflow-y-auto flex-1 min-w-0"
+        className="max-w-6xl px-0 pt-0 max-h-[calc(100vh-64px)] overflow-y-auto flex-1 min-w-0"
       >
         <DialogHeader className="flex-1 min-w-0 w-full bg-gradient-to-r from-blue-50 via-amber-50 to-green-50 rounded-t-xl px-6 py-5 shadow-sm">
           <DialogTitle className="text-2xl font-semibold text-gray-900 ">
@@ -295,7 +296,7 @@ export default function MaterialCreationModal({
           {/* TITLE + ANNOUNCEMENT BADGE */}
           
           <div>
-            <div className="mb-1 font-bold text-lg text-gray-700">Add:</div>
+            <div className="mb-1 font-bold text-lg text-gray-700 mt-2">Add:</div>
             <p className="text-m text-gray-500 mb-2">
               Choose one: Use a <strong>title</strong> or an <strong>announcement</strong> badge to label your material.
             </p>
@@ -570,7 +571,7 @@ export default function MaterialCreationModal({
           <Button
             variant="ok"
             onClick={handleSubmit}
-            disabled={pendingInputs.length > 0}
+            disabled={pendingInputs.length > 0 || editingIdx != null}
           >
             {isEditing ? "Update" : "Add"}
           </Button>

@@ -34,7 +34,7 @@ export default function ClassroomTests({ classroom, isTeacher, user }) {
   const fetchTests = async () => {
     setLoading(true);
     try {
-      const response = await fetchWithAuth(`/api/classrooms/${classroom.id}/tests/`);
+      const response = await fetchWithAuth(`/api/classroom/${classroom.id}/tests/`);
       if (response.ok) {
         const data = await response.json();
         setTests(data.results || data);

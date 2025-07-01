@@ -6,16 +6,9 @@ import fetchWithAuth from "@/lib/fetch_with_auth";
 import CommentThread from "./classrooms/CommentThread";
 import { Send } from "lucide-react";
 
-export default function CommentSection({ materialId, currentUser }) {
-    const [comments, setComments] = useState([]);
+export default function CommentSection({ materialId, comments, currentUser, setOnChange }) {
+    //TODO: load comments with pagination
     const [newComment, setNewComment] = useState("");
-
-    useEffect(() => {
-        fetchWithAuth(`/api/classroom/materials/${materialId}/comments/`)
-            .then(res => res.json())
-            .then(data => setComments(data))
-            .catch(err => console.error("Failed to load comments", err));
-    }, [materialId]);
 
     const handleAdd = async () => {
         if (!newComment.trim()) return;
@@ -23,37 +16,61 @@ export default function CommentSection({ materialId, currentUser }) {
             const res = await fetchWithAuth(`/api/classroom/materials/${materialId}/comments/`, {
                 method: "POST",
                 body: JSON.stringify({ content: newComment }),
+                headers: { "Content-Type": "application/json" },
             });
+            if (!res.ok) throw new Error("Failed to add comment");
             const comment = await res.json();
-            setComments(prev => [...prev, comment]);
+            if (setOnChange) setOnChange(true);
             setNewComment("");
         } catch (err) {
             console.error("Failed to add comment", err);
         }
     };
 
-    const handleUpdate = (id, updatedData) => {
-        if (updatedData?.deleted) {
-            setComments(prev => prev.filter(c => c.id !== id));
-        } else if (id) {
-            setComments(prev => prev.map(c => (c.id === id ? updatedData : c)));
-        } else {
-            // New reply
-            setComments(prev => {
-                const last = prev[prev.length - 1];
-                return [
-                    ...prev.slice(0, -1),
-                    {
-                        ...last,
-                        replies: [...(last.replies || []), updatedData],
-                    },
-                ];
+    const handleEdit = async (id, content) => {
+        try {
+            const res = await fetchWithAuth(`/api/classroom/materials/${materialId}/comments/${id}/`, {
+                method: "PATCH",
+                body: JSON.stringify({ content }),
+                headers: { "Content-Type": "application/json" },
             });
+            if (!res.ok) throw new Error("Failed to update comment");
+            if (setOnChange) setOnChange(true);
+        } catch (err) {
+            console.error("Failed to update comment", err);
         }
     };
 
+    const handleDelete = async (id) => {
+        try {
+            const res = await fetchWithAuth(`/api/classroom/materials/${materialId}/comments/${id}/`, {
+                method: "DELETE",
+            });
+            if (!res.ok) throw new Error("Failed to delete comment");
+            if (setOnChange) setOnChange(true);
+        } catch (err) {
+            console.error("Failed to delete comment", err);
+        }
+    };
+
+    const handleReply = async (parentId, content) => {
+        try {
+            const res = await fetchWithAuth(`/api/classroom/materials/${materialId}/comments/`, {
+                method: "POST",
+                body: JSON.stringify({ content, replied_to: parentId }),
+                headers: { "Content-Type": "application/json" },
+            });
+            if (!res.ok) throw new Error("Failed to reply");
+            if (setOnChange) setOnChange(true);
+        } catch (err) {
+            console.error("Failed to reply to comment", err);
+        }
+    };
+
+
+
     return (
-        <div className="relative bg-gray-100 rounded-lg p-4 max-h-[400px] overflow-hidden">
+        <div className="relative bg-gray-100 rounded-lg p-4 max-h-[400px] max-w-full overflow-hidden overflow-x-hidden">
             {/* Scrollable comments list */}
             <div className="overflow-y-auto pr-2 pb-20 max-h-[300px] space-y-4 mb-10">
                 {comments.map((comment) => (
@@ -61,7 +78,9 @@ export default function CommentSection({ materialId, currentUser }) {
                         key={comment.id}
                         comment={comment}
                         currentUser={currentUser}
-                        onUpdate={handleUpdate}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                        onReply={handleReply}
                         materialId={materialId}
                     />
                 ))}
@@ -93,4 +112,6 @@ export default function CommentSection({ materialId, currentUser }) {
 CommentSection.propTypes = {
     materialId: PropTypes.number.isRequired,
     currentUser: PropTypes.object.isRequired,
+    comments: PropTypes.array,
+    setOnChange: PropTypes.func,
 };

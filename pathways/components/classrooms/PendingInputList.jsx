@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Check, X } from "lucide-react";
-import { TYPE_META } from "./MaterialTypeMeta";
+import { TYPE_META } from "./material/MaterialTypeMeta";
 
 export function PendingInputList({
     type,

@@ -32,7 +32,7 @@ export default function AttendancePage({ classroom, user }) {
   const createSession = async () => {
     if (!newSession.topic) return;
     const res = await fetchWithAuth(
-      `/api/classrooms/${classroomId}/sessions/`,
+      `/api/classroom/${classroomId}/sessions/`,
       {
         method: "POST",
         body: JSON.stringify(newSession),

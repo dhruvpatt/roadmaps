@@ -33,8 +33,8 @@ export default async function fetchWithAuth(endpoint, options = {}) {
       endpoint = endpoint.slice(1);
     }
 
-    console.log("Fetching:", `${backendUrl}/${endpoint}`);
-    console.log("Final options:", finalOptions);
+    // console.log("Fetching:", `${backendUrl}/${endpoint}`);
+    // console.log("Final options:", finalOptions);
 
     const res = await fetch(`${backendUrl}/${endpoint}`, finalOptions);
 

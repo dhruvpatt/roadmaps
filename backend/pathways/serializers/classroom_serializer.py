@@ -113,6 +113,24 @@ class CreateCommentSerializer(serializers.ModelSerializer):
         return value
 
 
+class UpdateCommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = ['content', 'replied_to', 'edited']
+        read_only_fields = ['edited']
+
+    def update(self, instance, validated_data):
+        instance.content = validated_data.get('content', instance.content)
+        replied_to = validated_data.get('replied_to', instance.replied_to)
+        if replied_to and replied_to.material_id != instance.material_id:
+            raise serializers.ValidationError(
+                "Cannot reply to comment from another material.")
+        instance.replied_to = replied_to
+        instance.edited = True
+        instance.save()
+        return instance
+
+
 class CommentSerializer(serializers.ModelSerializer):
     posted_by = UserSerializer(read_only=True)
     replied_to = serializers.PrimaryKeyRelatedField(
@@ -122,7 +140,7 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = ["id", "content", "posted_by",
-                  "date", "replied_to", "edited", "replies"]
+                  "date", "replied_to", "edited", "is_deleted", "replies"]
 
     def get_replies(self, obj):
         replies = Comment.objects.filter(replied_to=obj)
@@ -182,10 +200,12 @@ class CreateClassroomSerializer(serializers.ModelSerializer):
 
 class AssignmentSubmissionSerializer(serializers.ModelSerializer):
     student = UserSerializer(read_only=True)
-    
+
     class Meta:
         model = AssignmentSubmission
-        fields = ['id', 'assignment', 'student', 'content', 'submitted_at', 'grade', 'feedback', 'status']
+        fields = ['id', 'assignment', 'student', 'content',
+                  'submitted_at', 'grade', 'feedback', 'status']
+
 
 class ClassroomSerializer(serializers.ModelSerializer):
     teachers = UserSerializer(many=True, read_only=True)
@@ -207,7 +227,7 @@ class ClassroomSerializer(serializers.ModelSerializer):
             "assignments",
             "units",
         ]
-        
+
     def get_assignments(self, obj):
         return AssignmentSerializer(obj.assignments.all(), many=True).data
 

@@ -24,7 +24,9 @@ const CurriculumBuilder = ({
       setShowUnitsEditor(true);
       setActiveTab("manual");
     }
-  }, [initialUnits]);
+    // Only run on mount, NOT when initialUnits changes again!
+    // eslint-disable-next-line
+  }, []);
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -106,9 +108,18 @@ const CurriculumBuilder = ({
     }
   };
 
+  const handleUpdateWeekField = (unitIndex, weekIndex, field, value) => {
+    setUnits(prevUnits => {
+      const updatedUnits = [...prevUnits];
+      updatedUnits[unitIndex].weeks[weekIndex][field] = value;
+      return updatedUnits;
+    });
+  };
+
+
   const handleAddUnit = () => {
     const newUnit = {
-      id: Date.now(), // Temporary ID
+      id: crypto.randomUUID(),
       name: "",
       description: "",
       weeks: [],
@@ -128,22 +139,84 @@ const CurriculumBuilder = ({
   };
 
   const handleAddWeek = (unitIndex) => {
-    const updatedUnits = [...units];
-    if (!updatedUnits[unitIndex].weeks) {
-      updatedUnits[unitIndex].weeks = [];
-    }
-    updatedUnits[unitIndex].weeks.push({
-      id: Date.now(), // Temporary ID
-      learning_goal: "",
+    setUnits(prevUnits => {
+      // deep clone the unit and its weeks
+      const updatedUnits = prevUnits.map((unit, i) => {
+        if (i === unitIndex) {
+          const newWeeks = unit.weeks ? [...unit.weeks] : [];
+          // calculate start_date and end_date as before...
+          let start_date = "";
+          let end_date = "";
+          if (newWeeks.length > 0) {
+            const lastWeek = newWeeks[newWeeks.length - 1];
+            if (lastWeek.end_date) {
+              const lastEnd = new Date(lastWeek.end_date);
+              const newStart = new Date(lastEnd);
+              newStart.setDate(newStart.getDate() + 1);
+              start_date = newStart.toISOString().split("T")[0];
+              const newEnd = new Date(newStart);
+              newEnd.setDate(newEnd.getDate() + 6);
+              end_date = newEnd.toISOString().split("T")[0];
+            }
+          }
+          if (!start_date) {
+            const today = new Date();
+            start_date = today.toISOString().split("T")[0];
+            const next = new Date(today);
+            next.setDate(next.getDate() + 6);
+            end_date = next.toISOString().split("T")[0];
+          }
+
+          newWeeks.push({
+            id: crypto.randomUUID(),
+            learning_goal: "",
+            start_date,
+            end_date,
+          });
+          return { ...unit, weeks: newWeeks };
+        }
+        return unit;
+      });
+      return updatedUnits;
     });
-    setUnits(updatedUnits);
   };
+
+
 
   const handleUpdateWeek = (unitIndex, weekIndex, value) => {
     const updatedUnits = [...units];
     updatedUnits[unitIndex].weeks[weekIndex].learning_goal = value;
     setUnits(updatedUnits);
   };
+
+  const handleStartDateChange = (unitIndex, weekIndex, value) => {
+    setUnits(prevUnits => {
+      const updatedUnits = [...prevUnits];
+      const week = updatedUnits[unitIndex].weeks[weekIndex];
+      week.start_date = value;
+
+      // Only update end date if user hasn't manually set it, or reset to +6 days
+      if (!week.end_date || new Date(week.end_date) <= new Date(value)) {
+        const start = new Date(value);
+        start.setDate(start.getDate() + 6);
+        week.end_date = start.toISOString().split("T")[0];
+      }
+
+      // Optionally, auto-set the next week's start/end
+      if (updatedUnits[unitIndex].weeks[weekIndex + 1]) {
+        const nextWeek = updatedUnits[unitIndex].weeks[weekIndex + 1];
+        const newNextStart = new Date(week.end_date);
+        newNextStart.setDate(newNextStart.getDate() + 1);
+        nextWeek.start_date = newNextStart.toISOString().split("T")[0];
+        const newNextEnd = new Date(newNextStart);
+        newNextEnd.setDate(newNextEnd.getDate() + 6);
+        nextWeek.end_date = newNextEnd.toISOString().split("T")[0];
+      }
+
+      return updatedUnits;
+    });
+  };
+
 
   const handleDeleteWeek = (unitIndex, weekIndex) => {
     const updatedUnits = [...units];
@@ -198,7 +271,7 @@ const CurriculumBuilder = ({
   const handleStartFromScratch = () => {
     setUnits([
       {
-        id: Date.now(),
+        id: crypto.randomUUID(),
         name: "",
         description: "",
         weeks: [],
@@ -326,32 +399,38 @@ const CurriculumBuilder = ({
                   {unit.weeks && unit.weeks.length > 0 ? (
                     <div className="space-y-3">
                       {unit.weeks.map((week, weekIndex) => (
-                        <div
-                          key={week.id || weekIndex}
-                          className="flex items-center gap-3"
-                        >
-                          <span className="text-sm text-gray-500 min-w-[60px]">
-                            Week {weekIndex + 1}:
-                          </span>
+                        <div key={week.id || weekIndex} className="flex flex-col md:flex-row md:items-center gap-3">
+                          <span className="text-sm text-gray-500 min-w-[60px]">Week {weekIndex + 1}:</span>
                           <input
                             type="text"
                             value={week.learning_goal}
-                            onChange={(e) =>
-                              handleUpdateWeek(
-                                unitIndex,
-                                weekIndex,
-                                e.target.value
-                              )
+                            onChange={e =>
+                              handleUpdateWeekField(unitIndex, weekIndex, "learning_goal", e.target.value)
                             }
                             placeholder="What will students learn this week?"
                             className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           />
+                          {/* Start Date Picker */}
+                          <input
+                            type="date"
+                            value={week.start_date || ""}
+                            onChange={e => handleStartDateChange(unitIndex, weekIndex, e.target.value)}
+                            className="w-40 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Start date"
+                          />
+                          {/* End Date Picker */}
+                          <input
+                            type="date"
+                            value={week.end_date || ""}
+                            onChange={e => handleUpdateWeekField(unitIndex, weekIndex, "end_date", e.target.value)}
+                            className="w-40 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="End date"
+                          />
                           <button
-                            onClick={() =>
-                              handleDeleteWeek(unitIndex, weekIndex)
-                            }
+                            onClick={() => handleDeleteWeek(unitIndex, weekIndex)}
                             className="text-red-600 hover:text-red-800 p-1"
                             title="Delete week"
+                            type="button"
                           >
                             <svg
                               className="w-4 h-4"
@@ -367,8 +446,10 @@ const CurriculumBuilder = ({
                               />
                             </svg>
                           </button>
+
                         </div>
                       ))}
+
                     </div>
                   ) : (
                     <p className="text-gray-500 text-sm italic">
@@ -425,21 +506,19 @@ const CurriculumBuilder = ({
         <div className="flex border-b border-gray-200 mb-8">
           <button
             onClick={() => setActiveTab("upload")}
-            className={`px-6 py-3 font-medium border-b-2 transition-colors duration-200 ${
-              activeTab === "upload"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
+            className={`px-6 py-3 font-medium border-b-2 transition-colors duration-200 ${activeTab === "upload"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
           >
             Upload Files
           </button>
           <button
             onClick={() => setActiveTab("manual")}
-            className={`px-6 py-3 font-medium border-b-2 transition-colors duration-200 ${
-              activeTab === "manual"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
+            className={`px-6 py-3 font-medium border-b-2 transition-colors duration-200 ${activeTab === "manual"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
           >
             Create from Scratch
           </button>
@@ -457,11 +536,10 @@ const CurriculumBuilder = ({
           <div className="space-y-6">
             {/* File Upload Area */}
             <div
-              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-200 ${
-                dragActive
-                  ? "border-blue-400 bg-blue-50"
-                  : "border-gray-300 hover:border-gray-400"
-              }`}
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-200 ${dragActive
+                ? "border-blue-400 bg-blue-50"
+                : "border-gray-300 hover:border-gray-400"
+                }`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
               onDragOver={handleDrag}

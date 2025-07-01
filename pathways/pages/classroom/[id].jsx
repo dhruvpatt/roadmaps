@@ -18,42 +18,48 @@ const ClassroomPage = ({ user }) => {
   const [showCurriculumBuilder, setShowCurriculumBuilder] = useState(false);
   const [hasUnits, setHasUnits] = useState(false);
 
+  const fetchClassroom = async () => {
+    setLoading(true);
+    try {
+      // Fetch classroom data with units
+      const res = await fetchWithAuth(`/api/classroom/${id}/`);
+      if (!res.ok) {
+        throw new Error("Failed to load classroom");
+      }
+      const data = await res.json();
+      console.log("Fetched classroom data:", data);
+      setClassroom(data);
+      setRole(user.role);
+
+      // Check if classroom has units
+      const unitsExist = data.units && data.units.length > 0;
+      setHasUnits(unitsExist);
+
+      // If no units and user is teacher, show curriculum builder
+      if (!unitsExist && user.role === "teacher") {
+        setShowCurriculumBuilder(true);
+      }
+      // trackUserActivity...
+    } catch (error) {
+      console.error("Error loading classroom:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!id) return;
-
-    const fetchClassroom = async () => {
-      setLoading(true);
-      try {
-        // Fetch classroom data with units
-        const res = await fetchWithAuth(`/api/classroom/${id}/`);
-        if (!res.ok) {
-          throw new Error("Failed to load classroom");
-        }
-        const data = await res.json();
-        console.log("Fetched classroom data:", data);
-        setClassroom(data);
-        setRole(user.role);
-
-        // Check if classroom has units
-        const unitsExist = data.units && data.units.length > 0;
-        setHasUnits(unitsExist);
-
-        // If no units and user is teacher, show curriculum builder
-        if (!unitsExist && user.role === "teacher") {
-          setShowCurriculumBuilder(true);
-        }
-
-        // Track analytics (optional)
-        // trackUserActivity({ userId: userData.id, classroomId: id, action: 'visit_classroom' });
-      } catch (error) {
-        console.error("Error loading classroom:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchClassroom();
+    // eslint-disable-next-line
   }, [id, user.role]);
+
+  const handleCurriculumCreated = async (newUnits) => {
+    await fetchClassroom();
+    setHasUnits(true);
+    setShowCurriculumBuilder(false);
+  };
+
+
 
   const handleInviteClick = () => {
     // TODO: Open invite modal
@@ -64,15 +70,7 @@ const ClassroomPage = ({ user }) => {
     router.push(`/classroom/${classroom?.id}/settings`);
   };
 
-  const handleCurriculumCreated = (newUnits) => {
-    // Update classroom with new units
-    setClassroom((prev) => ({
-      ...prev,
-      units: newUnits,
-    }));
-    setHasUnits(true);
-    setShowCurriculumBuilder(false);
-  };
+
 
   const handleCreateCurriculum = () => {
     setShowCurriculumBuilder(true);

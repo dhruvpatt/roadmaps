@@ -186,7 +186,7 @@ export default function ComprehensiveTestCreator() {
 
       const url = isEditing 
         ? `/api/tests/${testId}/`
-        : `/api/classrooms/${classroom_id}/tests/create/`;
+        : `/api/classroom/${classroom_id}/tests/create/`;
       
       const method = isEditing ? 'PUT' : 'POST';
       

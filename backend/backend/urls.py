@@ -62,16 +62,16 @@ urlpatterns = [
     path("api/classroom/materials/<int:id>/", MaterialDetailView.as_view(), name="material-detail"),
 
     # Assignment endpoints
-    path("api/classrooms/<int:classroom_id>/assignments/", AssignmentListView.as_view(), name="assignment-list"),
-    path("api/classrooms/<int:classroom_id>/assignments/create/", AssignmentCreateView.as_view(), name="assignment-create"),
+    path("api/classroom/<int:classroom_id>/assignments/", AssignmentListView.as_view(), name="assignment-list"),
+    path("api/classroom/<int:classroom_id>/assignments/create/", AssignmentCreateView.as_view(), name="assignment-create"),
     path("api/assignments/<int:id>/", AssignmentDetailView.as_view(), name="assignment-detail"),
     path("api/assignments/<int:assignment_id>/submit/", submit_assignment, name="submit-assignment"),
     path("api/assignments/<int:assignment_id>/submissions/", assignment_submissions, name="assignment-submissions"),
     path("api/submissions/<int:submission_id>/grade/", grade_submission, name="grade-submission"),
 
     # Test endpoints
-    path("api/classrooms/<int:classroom_id>/tests/", TestListView.as_view(), name="test-list"),
-    path("api/classrooms/<int:classroom_id>/tests/create/", TestCreateView.as_view(), name="test-create"),
+    path("api/classroom/<int:classroom_id>/tests/", TestListView.as_view(), name="test-list"),
+    path("api/classroom/<int:classroom_id>/tests/create/", TestCreateView.as_view(), name="test-create"),
     path("api/tests/<int:id>/", TestDetailView.as_view(), name="test-detail"),
 
     # Question endpoints
@@ -80,7 +80,8 @@ urlpatterns = [
     path("api/questions/<int:id>/", QuestionDetailView.as_view(), name="question-detail"),
 
     path('api/classroom/materials/<int:material_id>/comments/', comment_view, name='material-comments'),
-    path('api/classroom/comments/<int:comment_id>/', comment_view, name='comment-detail'),
+    path('api/classroom/materials/<int:material_id>/comments/<int:comment_id>/', comment_view, name='comment-detail'),
+
 
     # API endpoints for Curriculum Builder
     path('api/curriculum/process-pdf/', process_pdf_curriculum, name='process_pdf_curriculum'),
@@ -91,9 +92,9 @@ urlpatterns = [
 
 
     # API endpoints for Attendance and Session management
-    path("api/classrooms/<int:classroom_id>/attendance/", get_attendance_dashboard, name="attendance-dashboard"),
-    path("api/classrooms/<int:classroom_id>/attendance/<int:session_id>/", update_attendance, name="update-attendance"),
-    path("api/classrooms/<int:classroom_id>/sessions/", sessions_view, name="sessions"),
+    path("api/classroom/<int:classroom_id>/attendance/", get_attendance_dashboard, name="attendance-dashboard"),
+    path("api/classroom/<int:classroom_id>/attendance/<int:session_id>/", update_attendance, name="update-attendance"),
+    path("api/classroom/<int:classroom_id>/sessions/", sessions_view, name="sessions"),
 
     # API endpoints for the Students tab 
     path("api/classrooms/<int:classroom_id>/students/", StudentListView.as_view(), name="student-list"),

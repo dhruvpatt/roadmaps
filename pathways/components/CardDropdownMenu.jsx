@@ -40,7 +40,7 @@ export default function CardDropdownMenu({
         <div
           className={`
             absolute ${align === "right" ? "right-0" : "left-0"}
-            mt-2 w-36 bg-white border border-gray-200 rounded-lg shadow-lg z-50
+            top-7 w-36 bg-white border border-gray-200 rounded-lg shadow-lg z-50 animate-fade-in
             ${className}
           `}
         >

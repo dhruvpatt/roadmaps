@@ -23,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import fetchWithAuth from "@/lib/fetch_with_auth";
+import AssignmentCard from "./AssignmentCard";
 
 const PAGE_SIZE = 9;
 
@@ -38,7 +39,7 @@ export default function ClassroomAssignments({ classroom, isTeacher, user }) {
   useEffect(() => {
     if (!classroom?.id) return;
     setLoading(true);
-    fetchWithAuth(`/api/classrooms/${classroom.id}/assignments/`)
+    fetchWithAuth(`/api/classroom/${classroom.id}/assignments/`)
       .then(async (res) => {
         if (!res.ok) throw new Error("Failed to fetch assignments");
         const data = await res.json();
@@ -104,7 +105,7 @@ export default function ClassroomAssignments({ classroom, isTeacher, user }) {
           prev.map((a) => (a.id === editingAssignment.id ? result : a))
         );
       } else {
-        const res = await fetchWithAuth(`/api/classrooms/${classroom.id}/assignments/create/`, {
+        const res = await fetchWithAuth(`/api/classroom/${classroom.id}/assignments/create/`, {
           method: "POST",
           body: JSON.stringify(data),
           headers: { "Content-Type": "application/json" },
@@ -150,8 +151,8 @@ export default function ClassroomAssignments({ classroom, isTeacher, user }) {
           </div>
           {isTeacher && (
             <Button
-              className="flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700 shadow-md"
-              onClick={() => {
+            variant="add"
+            onClick={() => {
                 setEditingAssignment(null);
                 setShowModal(true);
               }}
@@ -190,51 +191,17 @@ export default function ClassroomAssignments({ classroom, isTeacher, user }) {
             </div>
           ) : (
             paginatedAssignments.map((assignment) => (
-              <Card
+              <AssignmentCard
                 key={assignment.id}
+                assignment={assignment}
                 onClick={() => setSelectedAssignment(assignment)}
-                className="bg-white rounded-2xl shadow hover:shadow-lg transform hover:-translate-y-1 transition p-6 cursor-pointer"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-900 text-lg line-clamp-2 pr-2">
-                      {assignment.title}
-                    </h3>
-                    <div className="flex items-center gap-2">
-                      {getStatusBadge(assignment)}
-                      {isTeacher && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-600">
-                              <MoreVertical className="w-5 h-5" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEdit(assignment); }}>Edit</DropdownMenuItem>
-                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDelete(assignment.id); }}>Delete</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-600 line-clamp-3">{assignment.description}</p>
-                  <div className="flex flex-wrap gap-4 text-xs text-gray-500 mt-3">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4" />
-                      <span>Due {formatDate(assignment.due_date)}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-4 h-4" />
-                      <span>{assignment.points_possible} pts</span>
-                    </div>
-                  </div>
-                  <div className="flex justify-between text-xs text-gray-400 mt-3">
-                    <span className="capitalize">{assignment.assignment_type}</span>
-                    {isTeacher && <span>{assignment.submission_count || 0} submissions</span>}
-                  </div>
-                </div>
-              </Card>
+                onEdit={isTeacher ? handleEdit : undefined}
+                onDelete={isTeacher ? handleDelete : undefined}
+                formatDate={formatDate}
+                isTeacher={isTeacher}
+              />
             ))
+
           )}
         </div>
 
