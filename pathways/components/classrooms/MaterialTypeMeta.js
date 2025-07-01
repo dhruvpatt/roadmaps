@@ -9,6 +9,18 @@ import {
 
 // Unified config for types used across views
 export const TYPE_META = {
+
+  title: {
+    key: "title",
+    label: "Title",
+    icon: Megaphone, // or any icon you prefer
+    badgeIcon: <Megaphone className="w-5 h-5 text-blue-500" />,
+    badge: "bg-blue-100 text-blue-800",
+    color: "bg-blue-50 text-blue-900",
+    btn: "bg-blue-600 hover:bg-blue-700 text-white",
+    border: "border-blue-200",
+  },
+
   announcement: {
     key: "announcement",
     label: "Announcement",

@@ -1,24 +1,25 @@
-// components/ui/SimpleAccordion.jsx
-
 import React from "react";
 import { ChevronRight, ChevronDown } from "lucide-react";
+import { Resizable } from "./animations/Resizeable";
 
 export default function SimpleAccordion({
   icon: Icon,
   title,
   children,
-  isCollapsed,
-  onToggle,
   count,
+  fade = true,
+  duration = 0.3,
 }) {
+  const [toggled, setToggled] = React.useState(false);
+
   return (
-    <div className="mb-4">
+    <div>
       <button
         type="button"
-        onClick={onToggle}
+        onClick={() => setToggled(prev => !prev)}
         className="flex items-center gap-2 font-semibold text-base text-gray-800 hover:underline"
       >
-        {isCollapsed ? (
+        {toggled ? (
           <ChevronRight className="w-4 h-4" />
         ) : (
           <ChevronDown className="w-4 h-4" />
@@ -30,13 +31,9 @@ export default function SimpleAccordion({
         )}
       </button>
 
-      <div
-        className={`transition-all duration-300 ease-in-out overflow-hidden ${
-          isCollapsed ? "max-h-0 opacity-0 pointer-events-none" : "max-h-[1000px] opacity-100"
-        }`}
-      >
+      <Resizable show={!toggled} fade={fade} duration={duration}>
         <div className="mt-2">{children}</div>
-      </div>
+      </Resizable>
     </div>
   );
 }

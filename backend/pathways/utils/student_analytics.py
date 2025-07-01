@@ -3,7 +3,6 @@ from django.db.models import Avg, Count, F, Q, Sum
 from django.utils import timezone
 
 from pathways.models.classroom import (
-    ClassroomAssignment,
     AssignmentSubmission,
     MaterialView,
     MaterialType,
@@ -11,7 +10,7 @@ from pathways.models.classroom import (
 )
 from pathways.models.user import Attendance
 from pathways.models.analytics import Analytics
-
+from pathways.models.deliverable import Assignment
 
 def calculate_student_analytics(*, student, classroom) -> dict:
     """
@@ -23,7 +22,7 @@ def calculate_student_analytics(*, student, classroom) -> dict:
     """
 
     # ── Assignments & quizzes ──────────────────────────────────────────
-    assignments_qs = ClassroomAssignment.objects.filter(
+    assignments_qs = Assignment.objects.filter(
         classroom=classroom, is_published=True
     )
     total_assignments = assignments_qs.count()

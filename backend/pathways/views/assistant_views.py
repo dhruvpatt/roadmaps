@@ -10,10 +10,10 @@ class AssistantView(APIView):
 
     def post(self, request):
         html = request.data.get('html')
-        message = request.data.get('message')
+        messages = request.data.get('messages') 
 
-        if not html or not message:
+        if not html or not messages:
             return Response({"error": "Missing html or message"}, status=status.HTTP_400_BAD_REQUEST)
 
-        response = ask_assistant(html, message)
+        response = ask_assistant(html=html, messages=messages)
         return Response({"response": response}, status=status.HTTP_200_OK)

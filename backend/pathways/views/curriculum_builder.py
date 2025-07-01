@@ -205,6 +205,7 @@ def create_curriculum(request):
         }, status=status.HTTP_201_CREATED)
         
     except Exception as e:
+        print(str(e))
         return Response({
             'detail': f'Error creating curriculum: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -14,6 +14,7 @@ import fetchWithAuth from "@/lib/fetch_with_auth";
 import MaterialViewerModal from "./MaterialViewerModal";
 import MaterialCard from "./MaterialCard";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { saveMaterial } from "@/lib/api/materials";
 
 
 const PAGE_SIZE = 9;
@@ -105,79 +106,24 @@ export default function ClassroomMaterials({ classroom, isTeacher, user }) {
   const handleSave = async (data) => {
     setLoading(true);
     try {
-      let result;
-      // Always infer type_keys from content (unique types)
-      const typeKeys = Array.isArray(data.content)
-        ? [...new Set(data.content.map(item => item.type))]
-        : [];
-      const content = Array.isArray(data.content) ? data.content : [];
-
-      // Remove blob previews (frontend-only)
-      const nonBlobContent = content.filter(
-        item => !(item.type === "file" && item.url?.startsWith("blob:"))
-      );
-
-      // Actual files
-      const files = content.filter(
-        c => c.type === "file" && c.file instanceof File
-      );
-
-      const hasFile = files.length > 0;
+      const result = await saveMaterial({
+        data,
+        editingMaterial,
+        classroomId: classroom?.id,
+      });
 
       if (editingMaterial) {
-        const formData = new FormData();
-        formData.append("title", data.title);
-        formData.append("details", data.details);
-        // Use type_keys here
-        typeKeys.forEach((key) => formData.append("type_keys", key));
-        content.forEach((item) => {
-          if (item.type === "file" && item.file instanceof File) {
-            formData.append("files", item.file);
-          }
-        });
-        const res = await fetchWithAuth(
-          `/api/classroom/materials/${editingMaterial.id}/`,
-          {
-            method: "PUT",
-            body: hasFile ? formData : JSON.stringify({ ...data, type_keys: typeKeys, content }),
-            headers: hasFile ? undefined : { "Content-Type": "application/json" },
-          }
-        );
-        if (!res.ok) throw new Error("Failed to update");
-        result = await res.json();
         setMaterials((prev) =>
           prev.map((m) => (m.id === editingMaterial.id ? result : m))
         );
       } else {
-        const formData = new FormData();
-        formData.append("title", data.title);
-        formData.append("details", data.details);
-        formData.append("classroom", classroom.id);
-        typeKeys.forEach((key) => formData.append("type_keys", key));
-
-        const nonFileContent = content.map(({ file, ...rest }) => rest);
-        formData.append("content", JSON.stringify(nonBlobContent));
-
-        files.forEach((fileItem) => {
-          formData.append("files", fileItem.file); // ✅ actual File
-        });
-
-        const res = await fetchWithAuth(
-          `/api/classroom/materials/create/`,
-          {
-            method: "POST",
-            body: hasFile
-              ? formData
-              : JSON.stringify({ ...data, classroom: classroom.id, type_keys: typeKeys, content }),
-            headers: hasFile ? undefined : { "Content-Type": "application/json" },
-          }
-        );
-        if (!res.ok) throw new Error("Failed to create");
-        result = await res.json();
         setMaterials((prev) => [result, ...prev]);
       }
+
       setShowModal(false);
       setEditingMaterial(null);
+    } catch (err) {
+      console.error("Save failed:", err);
     } finally {
       setLoading(false);
     }
@@ -216,7 +162,7 @@ export default function ClassroomMaterials({ classroom, isTeacher, user }) {
               }}
               disabled={loading}
             >
-              <Plus className="w-5 h-5" /> Add Resource
+              <Plus className="w-5 h-5" /> Add Material
             </Button>
           )}
         </div>

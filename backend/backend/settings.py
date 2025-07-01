@@ -163,3 +163,4 @@ CSRF_COOKIE_SAMESITE = "Lax"  # Allows POSTs from localhost:3000 → localhost:8
 SESSION_COOKIE_SAMESITE = "Lax"  # SameSite policy for session cookie (allows login sessions across localhost ports)
 
 
+

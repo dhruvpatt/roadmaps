@@ -223,19 +223,6 @@ export default function ClassroomStudents({ classroom, user }) {
             >
               <FileText className="w-4 h-4" /> Report
             </Button>
-            <Button
-              variant="outline"
-              onClick={handleExport}
-              className="flex items-center gap-2 border-amber-300 text-amber-700 hover:bg-amber-50 rounded-xl"
-            >
-              <Download className="w-4 h-4" /> Export
-            </Button>
-            <Button
-              onClick={handleInvite}
-              className="flex items-center gap-2 bg-amber-600 text-white hover:bg-amber-700 focus:ring-2 focus:ring-offset-1 focus:ring-amber-400 rounded-xl shadow-lg transition-all duration-200"
-            >
-              <UserPlus className="w-4 h-4" /> Invite Students
-            </Button>
           </div>
         </div>
 

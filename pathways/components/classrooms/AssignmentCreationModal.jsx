@@ -27,11 +27,17 @@ export default function AssignmentCreationModal({
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
+    const formatDateForInput = (dateStr) => {
+      if (!dateStr) return "";
+      const date = new Date(dateStr);
+      return date.toISOString().slice(0, 16);
+    };
+
     setFormData({
       title: initialData.title || "",
       description: initialData.description || "",
       instructions: initialData.instructions || "",
-      due_date: initialData.due_date || "",
+      due_date: formatDateForInput(initialData.due_date),
       points_possible: initialData.points_possible || "",
       assignment_type: initialData.assignment_type || "homework",
     });
@@ -159,7 +165,6 @@ export default function AssignmentCreationModal({
               <SelectContent>
                 <SelectItem value="homework">Homework</SelectItem>
                 <SelectItem value="essay">Essay</SelectItem>
-                <SelectItem value="quiz">Quiz</SelectItem>
                 <SelectItem value="project">Project</SelectItem>
               </SelectContent>
             </Select>

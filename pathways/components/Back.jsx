@@ -8,7 +8,7 @@ export default function Back() {
     return (
         <button
             onClick={() => {
-                router.back();
+                router.push("/dashboard");
             }}
             className="flex items-center mb-5 text-gray-700 hover:text-gray-900 focus:outline-none"
         >

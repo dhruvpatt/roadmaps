@@ -4,8 +4,8 @@ from django.contrib.contenttypes.admin import GenericTabularInline
 from .models.user import User, Attendance, MissedDeliverable
 from .models import (
     Classroom, Unit, Week, Material,
-    Test, Homework, CheckIn, Resource,
-    Question, Comment
+    Test, Homework, CheckIn,
+    Question, Comment, Assignment
 )
 from .models.analytics import Analytics, DifficultyBreakdown
 
@@ -82,35 +82,35 @@ class MaterialAdmin(admin.ModelAdmin):
 
 @admin.register(Test)
 class TestAdmin(admin.ModelAdmin):
-    list_display = ('id', 'title', 'type', 'mandatory', 'out_of', 'shuffle_questions', 'time_limit')
+    list_display = ('id', 'title', 'mandatory', 'points_possible', 'shuffle_questions', 'time_limit')
     search_fields = ('title',)
     filter_horizontal = ('assigned_to', 'handouts')
 
 
 @admin.register(Homework)
 class HomeworkAdmin(admin.ModelAdmin):
-    list_display = ('id', 'title', 'type', 'mandatory', 'out_of')
+    list_display = ('id', 'title', 'mandatory', 'points_possible')
     search_fields = ('title',)
     filter_horizontal = ('assigned_to', 'handouts')
 
 
 @admin.register(CheckIn)
 class CheckInAdmin(admin.ModelAdmin):
-    list_display = ('id', 'title', 'type', 'max_responses')
+    list_display = ('id', 'title', 'max_responses')
     search_fields = ('title',)
     filter_horizontal = ('assigned_to', 'handouts')
 
 
-@admin.register(Resource)
-class ResourceAdmin(admin.ModelAdmin):
-    list_display = ('id', 'title', 'type', 'mandatory')
+@admin.register(Assignment)
+class AssignmentAdmin(admin.ModelAdmin):
+    list_display = ('id', 'title', 'mandatory', 'points_possible')
     search_fields = ('title',)
-    filter_horizontal = ('handouts',)
+    filter_horizontal = ('assigned_to', 'handouts')
 
 
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'content', 'type', 'points', 'difficulty', 'first_correct_attempt')
+    list_display = ('id', 'points', 'difficulty')
     search_fields = ('content', 'tags')
 
 

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/router";
 import PropTypes from "prop-types";
 import { cn } from "@/lib/utils";
 import ClassroomStream from "./classroom-stream";
@@ -13,8 +14,19 @@ import ClassroomAttendance from "./classroom-attendance";
 import CurriculumBuilder from "./CurriculumBuilder";
 import CurriculumEditPage from "./CurriculumEditPage";
 
+
 export default function ClassroomTabs({ classroom, isTeacher, user }) {
-  const [activeTab, setActiveTab] = useState("stream");
+  const router = useRouter();
+  console.log(router.query.tab)
+  const initialTab = router.query.tab || "stream";
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  const setTabAndPush = (tabKey) => {
+    setActiveTab(tabKey);
+    const newQuery = new URLSearchParams(window.location.search);
+    newQuery.set("tab", tabKey);
+    router.push(`${window.location.pathname}?${newQuery.toString()}`);
+  };
 
   const tabs = [
     { key: "stream", label: "Stream" },
@@ -23,11 +35,11 @@ export default function ClassroomTabs({ classroom, isTeacher, user }) {
     { key: "tests", label: "Tests" },
     ...(isTeacher
       ? [
-          { key: "gradebook", label: "Gradebook" },
-          { key: "students", label: "Students" },
-          { key: "attendance", label: "Attendance" },
-          { key: "curriculum", label: "Curriculum Builder" },
-        ]
+        { key: "gradebook", label: "Gradebook" },
+        { key: "students", label: "Students" },
+        { key: "attendance", label: "Attendance" },
+        { key: "curriculum", label: "Curriculum Builder" },
+      ]
       : []),
   ];
 
@@ -40,7 +52,7 @@ export default function ClassroomTabs({ classroom, isTeacher, user }) {
             <button
               key={tab.key}
               type="button"
-              onClick={() => setActiveTab(tab.key)}
+              onClick={() => setTabAndPush(tab.key)}
               className={cn(
                 "flex-shrink-0 px-4 py-3 text-m font-medium transition-colors whitespace-nowrap cursor-pointer",
                 activeTab === tab.key

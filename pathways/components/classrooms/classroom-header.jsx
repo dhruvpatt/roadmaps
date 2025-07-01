@@ -103,7 +103,7 @@ ClassroomHeader.propTypes = {
   title: PropTypes.string.isRequired,
   subtitle: PropTypes.string,
   code: PropTypes.string.isRequired,
-  teacher: PropTypes.string.isRequired,
+  teachers: PropTypes.arrayOf(PropTypes.object),
   subject: PropTypes.string,
   onInviteClick: PropTypes.func,
   onSettingsClick: PropTypes.func,
@@ -111,6 +111,7 @@ ClassroomHeader.propTypes = {
 
 ClassroomHeader.defaultProps = {
   subtitle: "",
+  teachers: [],
   subject: "",
   onInviteClick: () => {},
   onSettingsClick: () => {},

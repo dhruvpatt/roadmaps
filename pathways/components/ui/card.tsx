@@ -1,21 +1,40 @@
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
+import { Resizable } from "@components/animations/Resizeable"
 
-const Card = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn(
-      "rounded-lg bg-card text-card-foreground shadow-sm shadow-sm border border-gray-200",
-      className
-    )}
-    {...props}
-  />
-))
-Card.displayName = "Card"
+interface ResizableProps {
+  children: React.ReactNode;
+  duration?: number;
+  easing?: string;
+  disableAnimation?: boolean;
+  refToAnimate?: React.RefObject<HTMLElement>;
+  collapseStart?: boolean; // <-- Add this!
+  onCollapseComplete?: () => void;
+}
+
+
+type CardProps = React.HTMLAttributes<HTMLDivElement> & {
+  disableAnimation?: boolean;
+  resizableProps?: Partial<ResizableProps>;
+};
+
+
+const Card = React.forwardRef<HTMLDivElement, CardProps>(
+  ({ className, resizableProps, ...props }, ref) => (
+      <div
+        ref={ref}
+        className={cn(
+          "rounded-lg bg-card text-card-foreground shadow-sm border border-gray-200",
+          className
+        )}
+        {...props}
+      />
+  )
+);
+Card.displayName = "Card";
+
+
 
 const CardHeader = React.forwardRef<
   HTMLDivElement,

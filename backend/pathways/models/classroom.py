@@ -30,8 +30,7 @@ class MaterialView(models.Model):
 
 class Material(models.Model):
     types = models.ManyToManyField(MaterialType, related_name="materials")
-    title = models.CharField(max_length=255)
-    details = models.TextField(blank=True)
+    title = models.CharField(max_length=1000, null=True, blank=True)
     created_by = models.ForeignKey('pathways.User', on_delete=models.CASCADE)
     content = models.JSONField(blank=True, null=True)
     likes = models.IntegerField(default=0)
@@ -65,26 +64,7 @@ class Week(models.Model):
     analytics = models.OneToOneField("pathways.Analytics", on_delete=models.CASCADE, null=True, blank=True)
     student_analytics = models.ManyToManyField("pathways.Analytics", related_name='week_student_analytics', blank=True)
 
-class ClassroomAssignment(models.Model):
-    ASSIGNMENT_TYPES = (
-        ('essay', 'Essay'),
-        ('quiz', 'Quiz'),
-        ('project', 'Project'),
-        ('homework', 'Homework'),
-    )
-    
-    title = models.CharField(max_length=255)
-    description = models.TextField(blank=True)
-    instructions = models.TextField(blank=True)
-    created_by = models.ForeignKey("pathways.User", on_delete=models.CASCADE)
-    classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name='assignments')
-    due_date = models.DateTimeField()
-    points_possible = models.IntegerField(default=100)
-    assignment_type = models.CharField(max_length=20, choices=ASSIGNMENT_TYPES, default='homework')
-    content = models.JSONField(blank=True, null=True)
-    is_published = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+
 
 class AssignmentSubmission(models.Model):
     STATUS_CHOICES = (
@@ -94,7 +74,7 @@ class AssignmentSubmission(models.Model):
         ('missing', 'Missing'),
     )
     
-    assignment = models.ForeignKey(ClassroomAssignment, on_delete=models.CASCADE, related_name='submissions')
+    assignment = models.ForeignKey('pathways.Assignment', on_delete=models.CASCADE, related_name='submissions')
     student = models.ForeignKey("pathways.User", on_delete=models.CASCADE)
     content = models.JSONField(blank=True, null=True)
     submitted_at = models.DateTimeField(auto_now_add=True)

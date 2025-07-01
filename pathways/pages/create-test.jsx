@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/router";
+import fetchWithAuth from "@/lib/fetch_with_auth";
 import {
   FileQuestion,
   Clock,
@@ -92,10 +94,17 @@ const CATEGORIES = [
 ];
 
 export default function ComprehensiveTestCreator() {
+  const router = useRouter();
+  const { classroom_id, edit } = router.query;
+  
   // Form state
   const [activeTab, setActiveTab] = useState("details");
   const [PDFfile, setPDFfile] = useState(null);
   const [questions, setQuestions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [testId, setTestId] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [errors, setErrors] = useState({});
   const [testMeta, setTestMeta] = useState({
     title: "",
     description: "",
@@ -137,6 +146,192 @@ export default function ComprehensiveTestCreator() {
   };
 
   const stats = getTestStats();
+
+  // API Functions
+  const saveTest = async () => {
+    const newErrors = {};
+    
+    if (!testMeta.title.trim()) {
+      newErrors.title = "Test title is required";
+    }
+    if (!testMeta.dueDate) {
+      newErrors.dueDate = "Due date is required";
+    }
+    if (testMeta.totalPoints <= 0) {
+      newErrors.totalPoints = "Total points must be greater than 0";
+    }
+    
+    setErrors(newErrors);
+    
+    if (Object.keys(newErrors).length > 0) {
+      setActiveTab('details');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const testData = {
+        title: testMeta.title,
+        description: testMeta.description,
+        due_date: testMeta.dueDate,
+        points_possible: testMeta.totalPoints,
+        instructions: testMeta.instructions,
+        time_limit: `00:${testMeta.timeLimit}:00`, // Convert minutes to duration format
+        shuffle_questions: testMeta.shuffleQuestions,
+        show_correct_answers: testMeta.showCorrectAnswers,
+        number_of_questions: questions.length,
+        attempts: testMeta.maxAttempts,
+        is_published: false, // Always save as draft
+      };
+
+      const url = isEditing 
+        ? `/api/tests/${testId}/`
+        : `/api/classrooms/${classroom_id}/tests/create/`;
+      
+      const method = isEditing ? 'PUT' : 'POST';
+      
+      const response = await fetchWithAuth(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(testData),
+      });
+
+      if (!response.ok) throw new Error('Failed to save test');
+      
+      const savedTest = await response.json();
+      setTestId(savedTest.id);
+      
+      // Save questions if test was created successfully
+      if (questions.length > 0) {
+        await saveQuestions(savedTest.id);
+      }
+      
+      if (!isEditing) {
+        router.push(`/classroom/${classroom_id}?tab=tests`);
+      }
+    } catch (error) {
+      console.error('Error saving test:', error);
+      alert('Failed to save test. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveQuestions = async (testIdToUse) => {
+    const currentTestId = testIdToUse || testId;
+    if (!currentTestId) return;
+
+    try {
+      // Delete existing questions if editing
+      if (isEditing) {
+        const existingQuestions = await fetchWithAuth(`/api/tests/${currentTestId}/questions/`);
+        if (existingQuestions.ok) {
+          const questionsData = await existingQuestions.json();
+          for (const q of questionsData.results || questionsData) {
+            await fetchWithAuth(`/api/questions/${q.id}/`, { method: 'DELETE' });
+          }
+        }
+      }
+
+      // Save new questions
+      for (let i = 0; i < questions.length; i++) {
+        const question = questions[i];
+        const questionData = {
+          type: question.type,
+          prompt: question.prompt,
+          options: question.options || [],
+          correct: question.correct,
+          difficulty: question.difficulty === 'Easy' ? 1 : question.difficulty === 'Medium' ? 2 : 3,
+          points: question.points || 0,
+          category: question.category || '',
+          explanation: question.explanation || '',
+          tags: question.tags || [],
+          order: i,
+          left_items: question.leftItems || [],
+          right_items: question.rightItems || [],
+          matches: question.matches || {},
+        };
+
+        const response = await fetchWithAuth(`/api/tests/${currentTestId}/questions/create/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(questionData),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to save question ${i + 1}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error saving questions:', error);
+      throw error;
+    }
+  };
+
+  const loadTest = async () => {
+    if (!edit) return;
+    
+    setLoading(true);
+    try {
+      const response = await fetchWithAuth(`/api/tests/${edit}/`);
+      if (!response.ok) throw new Error('Failed to load test');
+      
+      const test = await response.json();
+      setTestId(test.id);
+      setIsEditing(true);
+      
+      // Convert backend data to frontend format
+      setTestMeta({
+        title: test.title || '',
+        description: test.description || '',
+        category: 'Other', // Backend doesn't have category
+        timeLimit: test.time_limit ? parseInt(test.time_limit.split(':')[1]) : 60,
+        totalPoints: test.points_possible || 100,
+        dueDate: test.due_date ? test.due_date.slice(0, 16) : '',
+        instructions: test.instructions || '',
+        passingScore: 70, // Backend doesn't have this
+        allowRetakes: test.attempts > 1,
+        maxAttempts: test.attempts || 1,
+        shuffleQuestions: test.shuffle_questions || false,
+        showCorrectAnswers: test.show_correct_answers || false,
+        showScoreImmediately: true, // Backend doesn't have this
+        requireProctoring: false, // Backend doesn't have this
+      });
+      
+      // Load questions
+      const questionsResponse = await fetchWithAuth(`/api/tests/${edit}/questions/`);
+      if (questionsResponse.ok) {
+        const questionsData = await questionsResponse.json();
+        const loadedQuestions = (questionsData.results || questionsData).map(q => ({
+          id: q.id,
+          type: q.type,
+          prompt: q.prompt,
+          options: q.options || [],
+          correct: q.correct,
+          difficulty: q.difficulty === 1 ? 'Easy' : q.difficulty === 2 ? 'Medium' : 'Hard',
+          points: q.points,
+          category: q.category || 'Other',
+          explanation: q.explanation || '',
+          tags: q.tags || [],
+          leftItems: q.left_items || [],
+          rightItems: q.right_items || [],
+          matches: q.matches || {},
+        }));
+        setQuestions(loadedQuestions);
+      }
+    } catch (error) {
+      console.error('Error loading test:', error);
+      alert('Failed to load test data.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (edit) {
+      loadTest();
+    }
+  }, [edit]);
 
   // Handle PDF upload
   const handlePDFUpload = (e) => {
@@ -185,7 +380,7 @@ export default function ComprehensiveTestCreator() {
   // Add new question
   const addQuestion = (type = "Multiple Choice") => {
     const newQuestion = {
-      id: Date.now(),
+      id: `temp_${Date.now()}`, // Use temp ID for new questions
       type,
       prompt: "",
       options:
@@ -312,7 +507,7 @@ export default function ComprehensiveTestCreator() {
     if (question) {
       const duplicated = {
         ...question,
-        id: Date.now(),
+        id: `temp_${Date.now()}`,
         prompt: question.prompt + " (Copy)",
       };
       setQuestions((prev) => [...prev, duplicated]);
@@ -320,32 +515,19 @@ export default function ComprehensiveTestCreator() {
   };
 
   // Save test
-  const handleSaveTest = () => {
-    if (!testMeta.title.trim()) {
-      alert("Please enter a test title.");
+  const handleSaveTest = async () => {
+    if (!classroom_id) {
+      alert("No classroom selected.");
       return;
     }
-    if (questions.length === 0) {
-      alert("Please add at least one question.");
-      return;
-    }
-
-    const testData = {
-      ...testMeta,
-      questions,
-      totalQuestions: questions.length,
-      createdAt: new Date().toISOString(),
-      stats,
-    };
-
-    console.log("Saving comprehensive test:", testData);
-    alert("Test saved successfully!");
+    await saveTest();
   };
 
   const TabButton = ({ id, label, icon: Icon, isActive, count }) => (
     <button
-      onClick={() => setActiveTab(id)}
-      className={`flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-all ${
+      onClick={() => !loading && setActiveTab(id)}
+      disabled={loading}
+      className={`flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
         isActive
           ? "bg-amber-600 text-white shadow-md"
           : "bg-white text-gray-600 hover:bg-gray-50 shadow-sm border border-gray-200"
@@ -656,7 +838,15 @@ export default function ComprehensiveTestCreator() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-amber-100">
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-6 py-8 relative">
+        {loading && (
+          <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50 rounded-lg">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4"></div>
+              <p className="text-amber-600 font-medium">Loading...</p>
+            </div>
+          </div>
+        )}
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
@@ -664,8 +854,13 @@ export default function ComprehensiveTestCreator() {
               <GraduationCap className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-600 to-amber-600 bg-clip-text text-transparent">
-              Test Creator Studio
+              {isEditing ? 'Edit Test' : 'Test Creator Studio'}
             </h1>
+            {loading && (
+              <div className="text-amber-600 text-sm mt-2">
+                Loading...
+              </div>
+            )}
           </div>
         </div>
 
@@ -728,8 +923,13 @@ export default function ComprehensiveTestCreator() {
                         setTestMeta({ ...testMeta, title: e.target.value })
                       }
                       placeholder="Enter test title..."
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 ${
+                        errors.title ? 'border-red-300' : 'border-gray-300'
+                      }`}
                     />
+                    {errors.title && (
+                      <p className="text-red-500 text-sm mt-1">{errors.title}</p>
+                    )}
                   </div>
 
                   <div>
@@ -823,8 +1023,13 @@ export default function ComprehensiveTestCreator() {
                             passingScore: parseInt(e.target.value) || 70,
                           })
                         }
-                        className="w-full p-3 border border-gray-300 rounded-lg"
+                        className={`w-full p-3 border rounded-lg ${
+                          errors.totalPoints ? 'border-red-300' : 'border-gray-300'
+                        }`}
                       />
+                      {errors.totalPoints && (
+                        <p className="text-red-500 text-sm mt-1">{errors.totalPoints}</p>
+                      )}
                     </div>
                   </div>
 
@@ -838,8 +1043,13 @@ export default function ComprehensiveTestCreator() {
                       onChange={(e) =>
                         setTestMeta({ ...testMeta, dueDate: e.target.value })
                       }
-                      className="w-full p-3 border border-gray-300 rounded-lg"
+                      className={`w-full p-3 border rounded-lg ${
+                        errors.dueDate ? 'border-red-300' : 'border-gray-300'
+                      }`}
                     />
+                    {errors.dueDate && (
+                      <p className="text-red-500 text-sm mt-1">{errors.dueDate}</p>
+                    )}
                   </div>
 
                   <div>
@@ -1500,16 +1710,20 @@ export default function ComprehensiveTestCreator() {
             Reset Form
           </button>
           <div className="flex gap-3">
-            <button className="flex items-center gap-2 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+            <button 
+              onClick={() => router.push(`/classroom/${classroom_id}`)}
+              className="flex items-center gap-2 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+            >
               <X className="w-4 h-4" />
               Cancel
             </button>
             <button
               onClick={handleSaveTest}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-600 to-amber-600 text-white rounded-lg hover:from-amber-700 hover:to-amber-700 transition-all font-medium shadow-lg"
+              disabled={loading}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-600 to-amber-600 text-white rounded-lg hover:from-amber-700 hover:to-amber-700 transition-all font-medium shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Save className="w-4 h-4" />
-              Save Test
+              {loading ? 'Saving...' : isEditing ? 'Update Test' : 'Save Test'}
             </button>
           </div>
         </div>
