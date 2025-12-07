@@ -31,14 +31,6 @@ const Sidebar = ({ user }) => {
     { href: "/settings", label: "Settings", icon: <Settings className="w-5 h-5 text-gray-600" /> },
   ];
 
-  if (user?.role === "org_admin") {
-    navItems.splice(1, 0, {
-      href: "/organization",
-      label: "Organization",
-      icon: <OrgIcon className="w-5 h-5 text-gray-600" />,
-    });
-  }
-
   return (
     <aside
       className={cn(
@@ -47,9 +39,12 @@ const Sidebar = ({ user }) => {
       )}
     >
       {/* Header */}
-      <div className="relative border-gray-200 rounded shadow-sm bg-amber-50 px-3 py-2 flex items-center gap-2">
+      <div className="relative border-gray-200 rounded shadow-sm bg-amber-50 px-3 py-2 hover:bg-amber-100 flex items-center gap-2">
         {/* Icon + Org Name */}
-        <div className="flex items-center gap-2 overflow-hidden">
+        <Link
+          href="/organization"
+          className="flex items-center gap-2 overflow-hidden rounded px-1 py-1 transition"
+        >
           <div className="p-2 mt-1 mb-1 bg-white rounded-3xl shadow">
             <Landmark className="w-5 h-5 text-amber-600" />
           </div>
@@ -66,12 +61,12 @@ const Sidebar = ({ user }) => {
               </motion.span>
             )}
           </AnimatePresence>
-        </div>
+        </Link>
 
-        {/* Collapse Button - absolutely positioned to avoid shifting */}
+        {/* Collapse Button */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 "
+          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 outline-none"
         >
           {collapsed ? (
             <ChevronRight className="w-4 h-4 text-gray-500" />
@@ -80,6 +75,7 @@ const Sidebar = ({ user }) => {
           )}
         </button>
       </div>
+
 
 
       {/* Navigation */}

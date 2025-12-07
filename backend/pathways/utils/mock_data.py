@@ -190,16 +190,17 @@ def create_mock_deliverables_for_classroom(materials, classroom_id: int, student
 
     for i in range(3):
         test = Test.objects.create(
-            type="test",
+            classroom=classroom,
+            created_by=random.choice(teachers),
             title=f"Test {i}",
-            details="Test details",
+            description="Test details",
             mandatory=True,
-            out_of=random.choice([20, 25, 30]),
             number_of_questions=5 + i,
             estimated_time=timedelta(minutes=30 + 5 * i),
             shuffle_questions=bool(i % 2),
             time_limit=timedelta(minutes=30),
-            show_correct_answers=bool(i % 2)
+            show_correct_answers=bool(i % 2),
+            due_date=timezone.now() + timedelta(days=7 + i),
         )
         test.assigned_to.set(students)
         test.handouts.set(materials)
@@ -223,12 +224,13 @@ def create_mock_deliverables_for_classroom(materials, classroom_id: int, student
 
     for i in range(3):
         hw = Homework.objects.create(
-            type="homework",
+            classroom=classroom,
+            created_by=random.choice(teachers),
             title=f"Homework {i}",
-            details=f"Complete exercise set {i}",
+            description=f"Complete exercise set {i}",
             mandatory=True,
-            out_of=10 + i * 5,
-            estimated_time=timedelta(minutes=20 + 5 * i)
+            estimated_time=timedelta(minutes=20 + 5 * i),
+            due_date=timezone.now() + timedelta(days=5 + i),
         )
         hw.assigned_to.set(students)
         hw.handouts.set(materials)
@@ -245,10 +247,12 @@ def create_mock_deliverables_for_classroom(materials, classroom_id: int, student
     #     hw.handouts.set(materials)
 
     for i in range(2):
+        
         checkin = CheckIn.objects.create(
-            type="checkin",
+            classroom=classroom,
+            created_by=random.choice(teachers),
+            due_date=timezone.now() + timedelta(days=3 + i),
             title=f"Check-In {i}",
-            details="Wellness check",
             max_responses=3 + i
         )
         checkin.assigned_to.set(students)

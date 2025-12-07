@@ -11,7 +11,7 @@ def is_member_in_classroom(user, classroom):
 
 
 def is_teacher(user, classroom):
-    return classroom.teachers.filter(id=user.id).exists()
+    return classroom.teachers.filter(id=user.id).exists() or (user.organization == classroom.organization and user.is_org_admin())
 
 
 def is_student(user, classroom):
