@@ -21,3 +21,9 @@ class AnalyticsSerializer(serializers.ModelSerializer):
         model = Analytics
         fields = "__all__"
 
+class TeacherFeedbackSerializer(serializers.Serializer):
+    """
+    • GET requests don’t need a body  
+    • POST only needs one string field called “text”
+    """
+    text = serializers.CharField(max_length=500, required=True)

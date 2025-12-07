@@ -14,16 +14,18 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from io import BytesIO
 from reportlab.pdfgen import canvas
-
-
 from PIL import Image
-from io import BytesIO
+
+from pathways.models import (
+    Classroom, Unit, Week, Material, Test, Homework, CheckIn,
+    Question, Comment, User, MaterialType, AssignmentSubmission,
+    Analytics, DifficultyBreakdown
+)
 
 def create_mock_png_file(filename="demo.png", text="Hello!"):
     file_path = f"uploads/materials/{filename}"
     if not default_storage.exists(file_path):
         img = Image.new("RGB", (200, 80), color=(73, 109, 137))
-        # You could add text with PIL.ImageDraw, but simple blank is fine for UI
         buffer = BytesIO()
         img.save(buffer, format="PNG")
         buffer.seek(0)
@@ -37,8 +39,6 @@ def create_mock_txt_file(filename="demo.txt", content="This is a sample file!"):
         file_content = ContentFile(content.encode("utf-8"))
         default_storage.save(file_path, file_content)
     return default_storage.url(file_path)
-
-
 
 def create_mock_pdf_file(filename="demo.pdf", text="Hello, this is a demo PDF."):
     file_path = f"uploads/materials/{filename}"
@@ -161,16 +161,24 @@ def create_mock_deliverables_for_classroom(materials, classroom_id: int, student
     if students is None:
         students = list(classroom.students.all())
 
-    # Make sure teachers are present
     teachers = list(classroom.teachers.all())
-    mock_teacher = User.objects.filter(role="teacher").exclude(
-        id__in=[t.id for t in teachers]).first()
+    mock_teacher = User.objects.filter(role="teacher").exclude(id__in=[t.id for t in teachers]).first()
     if mock_teacher and mock_teacher not in teachers:
         teachers.append(mock_teacher)
     for t in teachers:
         classroom.teachers.add(t)
 
-    # Add Units and Weeks (optional, but kept for demo)
+    for student in students:
+        easy = DifficultyBreakdown.objects.create(count=0, accuracy=0.0)
+        medium = DifficultyBreakdown.objects.create(count=0, accuracy=0.0)
+        hard = DifficultyBreakdown.objects.create(count=0, accuracy=0.0)
+
+        Analytics.objects.get_or_create(
+            student=student,
+            classroom=classroom,
+            defaults={"easy": easy, "medium": medium, "hard": hard}
+        )
+
     # for i in range(1, 3):
     #     unit = Unit.objects.create(
     #         name=f"Unit {i}",
@@ -180,6 +188,21 @@ def create_mock_deliverables_for_classroom(materials, classroom_id: int, student
     #     for j in range(1, 3):
     #         Week.objects.create(unit=unit, learning_goal=f"Goal {i}.{j}")
 
+    for i in range(3):
+        test = Test.objects.create(
+            type="test",
+            title=f"Test {i}",
+            details="Test details",
+            mandatory=True,
+            out_of=random.choice([20, 25, 30]),
+            number_of_questions=5 + i,
+            estimated_time=timedelta(minutes=30 + 5 * i),
+            shuffle_questions=bool(i % 2),
+            time_limit=timedelta(minutes=30),
+            show_correct_answers=bool(i % 2)
+        )
+        test.assigned_to.set(students)
+        test.handouts.set(materials)
 
     # Now create other deliverables that reference materials:
     # for i in range(3):
@@ -198,6 +221,17 @@ def create_mock_deliverables_for_classroom(materials, classroom_id: int, student
     #     test.assigned_to.set(students)
     #     test.handouts.set(materials)
 
+    for i in range(3):
+        hw = Homework.objects.create(
+            type="homework",
+            title=f"Homework {i}",
+            details=f"Complete exercise set {i}",
+            mandatory=True,
+            out_of=10 + i * 5,
+            estimated_time=timedelta(minutes=20 + 5 * i)
+        )
+        hw.assigned_to.set(students)
+        hw.handouts.set(materials)
     # for i in range(3):
     #     hw = Homework.objects.create(
     #         title=f"Homework {i}",
@@ -210,6 +244,15 @@ def create_mock_deliverables_for_classroom(materials, classroom_id: int, student
     #     hw.assigned_to.set(students)
     #     hw.handouts.set(materials)
 
+    for i in range(2):
+        checkin = CheckIn.objects.create(
+            type="checkin",
+            title=f"Check-In {i}",
+            details="Wellness check",
+            max_responses=3 + i
+        )
+        checkin.assigned_to.set(students)
+        checkin.handouts.set(materials)
     # for i in range(2):
     #     checkin = CheckIn.objects.create(
     #         title=f"Check-In {i}",
@@ -237,6 +280,7 @@ def create_mock_deliverables_for_classroom(materials, classroom_id: int, student
     #         posted_by=random.choice(students + teachers)
         # )
 
+    print(f"✅ Successfully populated classroom '{classroom.name}' with full mock data (including deliverables and {len(materials)} materials).")
     print(
         f"✅ Successfully populated classroom '{classroom.name}' with full mock data (including deliverables and {len(materials)} materials).")
 
@@ -344,9 +388,6 @@ def create_mock_materials_for_classroom(classroom, teachers=None, count_per_type
     return materials
 
 def create_mock_assignments_for_classroom(classroom, teachers=None, count=8):
-    """
-    Creates mock assignments for a classroom with varied due dates and types.
-    """
     print(f"Starting to create {count} assignments for classroom: {classroom.name}")
     if teachers is None:
         teachers = list(classroom.teachers.all())
@@ -401,38 +442,16 @@ def create_mock_assignments_for_classroom(classroom, teachers=None, count=8):
             assignment_type=assignment_type,
             is_published=True
         )
-        
-        # Create some submissions for past assignments
-        if due_date < now and students:
-            # 60-90% of students submit
-            num_submissions = random.randint(int(len(students) * 0.6), int(len(students) * 0.9))
-            submitting_students = random.sample(students, min(num_submissions, len(students)))
-            
-            for student in submitting_students:
-                submitted_at = due_date - timedelta(hours=random.randint(1, 48))
-                status = 'late' if submitted_at > due_date else 'submitted'
-                
-                # Some submissions are graded
-                grade = None
-                feedback = ""
-                if random.random() < 0.7:  # 70% chance of being graded
-                    grade = random.uniform(0.6, 1.0) * points_possible
-                    status = 'graded'
-                    feedback = random.choice([
-                        "Good work! Well organized and clear.",
-                        "Nice effort. Consider expanding on your main points.",
-                        "Excellent analysis. Great use of examples.",
-                        "Solid work. Check grammar and citations."
-                    ])
-                
-                AssignmentSubmission.objects.create(
-                    assignment=assignment,
-                    student=student,
-                    content={"text": f"Student submission for {title}"},
-                    submitted_at=submitted_at,
-                    grade=grade,
-                    feedback=feedback,
-                    status=status
-                )
-    
-    print(f"Created {count} mock assignments for classroom '{classroom.name}' with submissions.")
+
+        for student in random.sample(students, k=random.randint(1, len(students))):
+            AssignmentSubmission.objects.create(
+                assignment=assignment,
+                student=student,
+                content={"text": f"Submission for {assignment.title}"},
+                submitted_at=timezone.now(),
+                grade=random.uniform(60, 100),
+                feedback="Well done!",
+                status="graded"
+            )
+
+    print(f"✅ Created {count} mock assignments for classroom '{classroom.name}'.")

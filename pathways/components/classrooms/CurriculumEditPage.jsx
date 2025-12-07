@@ -1,44 +1,68 @@
-import { useEffect, useState } from "react";
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
+import CurriculumBuilder from "@/components/classrooms/CurriculumBuilder";
 import fetchWithAuth from "@/lib/fetch_with_auth";
-import CurriculumBuilder from "./CurriculumBuilder";
 
 export default function CurriculumEditPage({ classroomId }) {
-  const [units, setUnits] = useState(null);
+  const router = useRouter();
+  const [initialUnits, setInitialUnits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // 1) Fetch the existing curriculum on mount
   useEffect(() => {
-    async function loadCurriculum() {
+    async function load() {
       try {
         const res = await fetchWithAuth(`/api/curriculum/${classroomId}/`);
-        if (!res.ok) throw new Error("Failed to fetch curriculum");
-        const data = await res.json();
-        console.log("Curriculum data:", data);
-        setUnits(data.units);
-      } catch (err) {
-        console.error(err);
-        setError("Unable to load curriculum.");
+        if (!res.ok) throw new Error("Could not load curriculum");
+        const { units } = await res.json();
+        setInitialUnits(units);
+      } catch (e) {
+        setError(e.message);
+        toast.error("Failed to load curriculum");
       } finally {
         setLoading(false);
       }
     }
-    loadCurriculum();
+    load();
   }, [classroomId]);
 
-  if (loading) return <div>Loading curriculum...</div>;
-  if (error) return <div className="text-red-500">{error}</div>;
+  // 2) When the user saves, PUT to our new “update” endpoint
+  const handleSave = async (units) => {
+    try {
+      setError("");
+      const res = await fetchWithAuth("/api/curriculum/update/", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ classroom_id: classroomId, units }),
+      });
+
+      if (!res.ok) {
+        const { detail } = await res.json();
+        throw new Error(detail || "Update failed");
+      }
+
+      toast.success("Curriculum saved successfully!");
+      // e.g. navigate back after a small delay
+    } catch (e) {
+      setError(e.message);
+      toast.error(`Save failed: ${e.message}`);
+    }
+  };
+
+  if (loading) return <p className="p-6 text-center">Loading…</p>;
+  if (error) return <p className="p-6 text-center text-red-600">{error}</p>;
 
   return (
     <CurriculumBuilder
       classroomId={classroomId}
-      onCurriculumCreated={(newUnits) => {
-        console.log("Curriculum saved!", newUnits);
-      }}
-      onCancel={() => {
-        console.log("Edit cancelled");
-      }}
-      hasExistingUnits={units.length > 0}
-      initialUnits={units}
+      initialUnits={initialUnits}
+      hasExistingUnits={true}
+      onCurriculumCreated={handleSave}
+      onCancel={() => router.back()}
     />
   );
 }

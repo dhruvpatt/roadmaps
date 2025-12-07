@@ -38,6 +38,7 @@ function useAccordion(defaultOpen = []) {
 }
 
 export default function ClassroomStream({ classroom, isTeacher, user }) {
+  console.log(classroom)
   const [posts, setPosts] = useState([]);
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -254,6 +255,20 @@ export default function ClassroomStream({ classroom, isTeacher, user }) {
         {/* Accordions */}
         <div className="space-y-6">
 
+          {classroom.units?.length === 0 && (
+            <div className="space-y-3 mt-6">
+              {posts.map(post => (
+                <StreamCard
+                  key={post.postType + "-" + post.id}
+                  propPost={post}
+                  user={user}
+                  formatDate={formatDate}
+                  onClick={() => setSelectedMaterial(post)}
+                  isTeacher={isTeacher}
+                />
+              ))}
+            </div>
+          )}
           {classroom.units?.map((unit, unitIdx) => (
             <div key={unit.id} className="">
               {/* Unit Header */}
@@ -308,7 +323,7 @@ export default function ClassroomStream({ classroom, isTeacher, user }) {
                       </button>
 
                       {/* Posts in the Week */}
-                      <Resizable fade duration={0.2} show={weekAcc.isOpen(unit.id)}>
+                      <Resizable fade duration={0.2} show={weekAcc.isOpen(week.id)}>
 
                         <div className="ml-4 py-2 space-y-3">
                           {[...(week.materials || []), ...(week.assignments || []), ...(week.tests || [])].length === 0 && (

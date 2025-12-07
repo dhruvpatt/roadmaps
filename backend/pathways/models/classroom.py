@@ -36,16 +36,13 @@ class Material(models.Model):
     content = models.JSONField(blank=True, null=True)
     likes = models.IntegerField(default=0)
     viewed_by = models.ManyToManyField(
-        'User',
+        'pathways.User',
         through='MaterialView',
         related_name='viewed_materials',
         blank=True
     )
     classroom = models.ForeignKey('Classroom', on_delete=models.CASCADE, related_name="materials", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-
-
-
 
 class Classroom(models.Model):
     organization = models.ForeignKey(
@@ -54,7 +51,6 @@ class Classroom(models.Model):
         related_name="classrooms"
     )
     name = models.CharField(max_length=255)
-    analytics = models.OneToOneField("pathways.Analytics", on_delete=models.CASCADE, null=True, blank=True)
     join_id = models.CharField(max_length=20, unique=True)
     students = models.ManyToManyField('pathways.User', related_name='joined_classrooms', blank=True)
     teachers = models.ManyToManyField('pathways.User', related_name='teaching_classrooms', blank=True)
@@ -95,7 +91,7 @@ class AssignmentSubmission(models.Model):
     )
     
     assignment = models.ForeignKey('pathways.Assignment', on_delete=models.CASCADE, related_name='submissions')
-    student = models.ForeignKey('pathways.User', on_delete=models.CASCADE)
+    student = models.ForeignKey("pathways.User", on_delete=models.CASCADE)
     content = models.JSONField(blank=True, null=True)
     submitted_at = models.DateTimeField(auto_now_add=True)
     grade = models.FloatField(null=True, blank=True)

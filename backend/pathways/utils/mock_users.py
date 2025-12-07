@@ -1,8 +1,7 @@
 import random
 import string
 from django.contrib.auth import get_user_model
-from pathways.models import Classroom
-
+from pathways.models import Classroom, Analytics, DifficultyBreakdown
 User = get_user_model()
 
 ADJECTIVES = [
@@ -63,6 +62,24 @@ def get_or_create_mock_students(required_count=10):
 
 def attach_mock_students_to_classroom(classroom, number_of_students=10):
     mock_students = get_or_create_mock_students(required_count=number_of_students)
+    
     for student in mock_students:
         classroom.students.add(student)
+
+        # Create difficulty breakdowns
+        easy = DifficultyBreakdown.objects.create(count=0, accuracy=0.0)
+        medium = DifficultyBreakdown.objects.create(count=0, accuracy=0.0)
+        hard = DifficultyBreakdown.objects.create(count=0, accuracy=0.0)
+
+        # Create Analytics if one doesn't exist
+        Analytics.objects.get_or_create(
+            student=student,
+            classroom=classroom,
+            defaults={
+                "easy": easy,
+                "medium": medium,
+                "hard": hard,
+            }
+        )
+
     return mock_students

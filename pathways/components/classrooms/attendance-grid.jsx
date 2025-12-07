@@ -34,7 +34,7 @@ export default function AttendanceGrid({ classroomId }) {
     const year = parseInt(yearStr, 10);
     const weekNum = parseInt(wStr, 10);
     const jan4 = new Date(Date.UTC(year, 0, 4));
-    const day = jan4.getUTCDay() || 7; // Mon=1…Sun=7
+    const day = jan4.getUTCDay() || 7;
     const monday1 = new Date(jan4);
     monday1.setUTCDate(jan4.getUTCDate() - (day - 1));
     const result = new Date(monday1);
@@ -98,7 +98,7 @@ export default function AttendanceGrid({ classroomId }) {
   // update attendance cell
   const updateAttendance = async (studentId, sessionId, status) => {
     const key = `${studentId}-${sessionId}`;
-    // optimistic
+    // optimistic update
     setStudents((prev) =>
       prev.map((st) =>
         st.id === studentId
@@ -126,7 +126,7 @@ export default function AttendanceGrid({ classroomId }) {
         throw new Error(err.detail || "Update failed");
       }
     } catch (e) {
-      // revert
+      // revert on error
       setStudents((prev) =>
         prev.map((st) =>
           st.id === studentId
@@ -154,34 +154,6 @@ export default function AttendanceGrid({ classroomId }) {
     fetchData();
   }, [classroomId, selectedWeek]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="w-6 h-6 animate-spin mr-2" />
-        Loading attendance…
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <Alert className="m-4">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          Error: {error}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={fetchData}
-            className="ml-2"
-          >
-            Retry
-          </Button>
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
   // CSV download helper
   const downloadCSV = (rows, filename) => {
     const csv = rows
@@ -195,10 +167,6 @@ export default function AttendanceGrid({ classroomId }) {
     a.click();
     URL.revokeObjectURL(url);
   };
-
-  const weekStart = getWeekStart(selectedWeek);
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekStart.getDate() + 6);
 
   const exportWeek = () => {
     const header = ["Student", ...sessions.map((s) => s.date)];
@@ -222,14 +190,42 @@ export default function AttendanceGrid({ classroomId }) {
     downloadCSV([header, ...rows], `attendance_all_${Date.now()}.csv`);
   };
 
+  if (loading) {
+    return (
+      <div className="bg-white rounded-2xl shadow-md p-6 flex items-center justify-center transition">
+        <Loader2 className="w-6 h-6 animate-spin mr-2 text-gray-400" />
+        <span className="text-gray-600">Loading attendance…</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert className="bg-red-50 border border-red-100 rounded-2xl shadow-md p-6 transition m-4 flex items-start gap-2">
+        <AlertCircle className="h-5 w-5 text-red-600 mt-1" />
+        <AlertDescription className="flex-1 text-sm text-red-700">
+          Error: {error}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchData}
+            className="ml-4"
+          >
+            Retry
+          </Button>
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   return (
-    <div className="p-6 bg-white">
+    <div className="bg-white border-gray-100 transition flex flex-col">
       {/* Navigation */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <Button
             onClick={() => navigateWeek(-1)}
-            className="flex items-center gap-2 bg-amber-500 text-white hover:bg-gray-800"
+            className="flex items-center gap-2 bg-amber-700 text-white hover:bg-amber-600"
           >
             <ChevronLeft className="w-4 h-4" /> Previous
           </Button>
@@ -237,42 +233,51 @@ export default function AttendanceGrid({ classroomId }) {
             type="week"
             value={formatWeek(selectedWeek)}
             onChange={(e) => setSelectedWeek(parseWeek(e.target.value))}
-            className="border px-2 py-1 text-black"
+            className="border border-gray-200 rounded-lg px-2 py-1 text-sm"
           />
           <Button
             onClick={() => navigateWeek(1)}
-            className="flex items-center gap-2 bg-amber-500 text-white hover:bg-gray-800"
+            className="flex items-center gap-2  bg-amber-700 text-white hover:bg-amber-600"
           >
             Next <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={exportWeek}>
+          <Button
+            variant="outline"
+            onClick={exportWeek}
+            className=" bg-amber-700 text-white hover:bg-amber-600"
+          >
             Export Week
           </Button>
-          <Button variant="outline" onClick={exportAll}>
+          <Button
+            variant="outline"
+            onClick={exportAll}
+            className=" bg-amber-700 text-white hover:bg-amber-600"
+          >
             Export All
           </Button>
         </div>
       </div>
 
       {/* Attendance Table */}
-      <div className="overflow-x-auto bg-white border rounded-lg shadow">
+      <div className="overflow-x-auto border border-gray-100 rounded-2xl shadow-md">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-gray-50">
-              <th className="sticky left-0 z-10 border px-4 py-2 bg-amber-500">
+            <tr>
+              <th className="sticky left-0 z-10 border border-gray-100 px-4 py-2 bg-amber-100 text-amber-700 text-sm">
                 Student
               </th>
               {sessions.map((s) => (
                 <th
                   key={s.id}
-                  className="border px-3 py-2 text-center whitespace-nowrap bg-amber-500"
+                  className="border border-gray-100 px-3 py-2 text-center whitespace-nowrap bg-amber-100 text-amber-700 text-sm"
                 >
-                  <div className="text-sm">
-                    {new Date(s.date).toLocaleDateString()}
-                  </div>
-                  <div className="text-xs text-black truncate" title={s.topic}>
+                  <div>{new Date(s.date).toLocaleDateString()}</div>
+                  <div
+                    className="text-xs font-medium truncate text-gray-800"
+                    title={s.topic}
+                  >
                     {s.topic}
                   </div>
                 </th>
@@ -281,8 +286,8 @@ export default function AttendanceGrid({ classroomId }) {
           </thead>
           <tbody>
             {students.map((st) => (
-              <tr key={st.id} className="hover:bg-gray-50 ">
-                <td className="sticky left-0 bg-white z-10 border border-gray-600 px-4 py-2 font-medium text-black">
+              <tr key={st.id} className="hover:bg-gray-50">
+                <td className="sticky left-0 bg-white z-10 border border-gray-100 px-4 py-2 font-medium text-gray-800 text-sm">
                   {st.name}
                 </td>
                 {sessions.map((sess) => {
@@ -293,7 +298,7 @@ export default function AttendanceGrid({ classroomId }) {
                   return (
                     <td
                       key={sess.id}
-                      className={`border px-2 py-2 relative text-black${
+                      className={`border border-gray-100 px-2 py-2 relative text-gray-800 ${
                         cellError ? "bg-red-50" : ""
                       }`}
                     >
@@ -311,7 +316,7 @@ export default function AttendanceGrid({ classroomId }) {
                         >
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="bg-white text-black">
+                        <SelectContent className="bg-white text-gray-800">
                           <SelectItem value="present">Present</SelectItem>
                           <SelectItem value="late">Late</SelectItem>
                           <SelectItem value="absent">Absent</SelectItem>
@@ -320,7 +325,7 @@ export default function AttendanceGrid({ classroomId }) {
 
                       {isUpdating && (
                         <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75">
-                          <Loader2 className="w-3 h-3 animate-spin" />
+                          <Loader2 className="w-3 h-3 animate-spin text-gray-400" />
                         </div>
                       )}
 

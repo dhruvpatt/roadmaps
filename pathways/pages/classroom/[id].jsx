@@ -93,6 +93,7 @@ const ClassroomPage = ({ user }) => {
 
   // Show curriculum builder if no units exist and user is teacher
   if (showCurriculumBuilder && role === "teacher") {
+    console.log("TEST SHOW CURR");
     return (
       <div className="min-h-screen bg-white">
         <ClassroomHeader
@@ -115,7 +116,7 @@ const ClassroomPage = ({ user }) => {
   }
 
   // Show empty state for students when no units exist
-  if (!hasUnits && role === "student") {
+  else if (!hasUnits && role === "student") {
     return (
       <div className="min-h-screen bg-white">
         <ClassroomHeader

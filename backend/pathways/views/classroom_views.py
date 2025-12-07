@@ -10,8 +10,8 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 
 
-from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework import status, viewsets, permissions
+from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.generics import ListAPIView
 from rest_framework.pagination import PageNumberPagination
@@ -21,6 +21,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 
+from pathways.models.analytics import Analytics
 from pathways.models.classroom import Classroom, Material, Comment, MaterialType, AssignmentSubmission
 from pathways.models.deliverable import Assignment, Test, Question
 from pathways.models.user import User
@@ -31,6 +32,8 @@ from pathways.serializers import (
     CommentSerializer,
     CreateCommentSerializer,
     AssignmentSubmissionSerializer,
+    ClassroomStudentSerializer,
+    TeacherFeedbackSerializer,
     UpdateCommentSerializer,
 )
 from pathways.utils.helpers import *
@@ -81,6 +84,40 @@ class StandardResultsSetPagination(PageNumberPagination):
 
 # region Classroom Views
 
+class StudentListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, classroom_id):
+        try:
+            # Fetch classroom
+            classroom = get_object_or_404(Classroom, id=classroom_id)
+
+            # Permission check: user must be a member
+            user = request.user
+            if not is_member(user, classroom):
+                return Response(
+                    {"detail": "Not allowed."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            # Get all students in the classroom
+            students = classroom.students.all().order_by("username")
+
+            # Serialize students
+            serializer = ClassroomStudentSerializer(
+                students, many=True, context={"request": request}
+            )
+
+            return Response({"students": serializer.data})
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response(
+                {"detail": "Failed to fetch students", "error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
 class ClassroomListView(ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ClassroomSerializer
@@ -129,7 +166,7 @@ class ClassroomCreateView(APIView):
         print(f"User: {user}, Role: {getattr(user, 'role', 'NO_ROLE')}")
         print(f"Request data: {request.data}")
         
-        if user.role != 'teacher':
+        if user.role != 'teacher' and user.role != 'org_admin':
             return Response({'detail': 'Only teachers can create classrooms.'}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = CreateClassroomSerializer(
@@ -154,16 +191,16 @@ class ClassroomCreateView(APIView):
 
                 # # Add mock assignments
                 # print("Creating mock assignments...")
-                # create_mock_assignments_for_classroom(
-                #     classroom, teachers=teachers, count=8)
+                create_mock_assignments_for_classroom(
+                    classroom, teachers=teachers, count=8)
                 # print("Mock assignments creation completed.")
 
                 materials = create_mock_materials_for_classroom(
                     classroom, teachers=teachers, count_per_type=15)
 
                 # Populate all mock data: units, weeks, materials, tests, homeworks, etc.
-                # create_mock_deliverables_for_classroom(
-                #     materials, classroom.id, students=students)
+                create_mock_deliverables_for_classroom(
+                    materials, classroom.id, students=students)
 
                 return Response(
                     ClassroomSerializer(classroom, context={
@@ -1011,11 +1048,15 @@ def join_classroom_student(request):
         if user.role != 'student':
             return Response({'detail': 'Only students can join as students.'}, status=400)
 
+        # Add student to classroom
         classroom.students.add(user)
+
+        Analytics.objects.get_or_create(student=user)
 
         return Response(
             ClassroomSerializer(classroom, context={"request": request}).data
         )
+
     except Exception as e:
         import traceback
         print("Error joining classroom as student:", str(e))
@@ -1024,6 +1065,7 @@ def join_classroom_student(request):
             {"detail": "Could not join classroom", "error": str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
 
 
 @api_view(['POST'])
@@ -1080,3 +1122,60 @@ def join_classroom_teacher(request):
         return JsonResponse({"error": "Invalid classroom or user"}, status=404)
     except json.JSONDecodeError:
         return JsonResponse({"error": "Invalid JSON"}, status=400)
+    
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def teacher_feedback(request, classroom_id: int, student_id: int):
+    """
+    GET  — fetch teacher feedback notes for a student in a classroom
+    POST — add a new note (teacher-only)
+    """
+    classroom = get_object_or_404(Classroom, id=classroom_id)
+    student = get_object_or_404(User, id=student_id)
+    print("HERE 1 ")
+
+    # Permissions check
+    if request.method == 'POST' and not classroom.teachers.filter(id=request.user.id).exists():
+        return Response({"detail": "Only teachers can add notes."}, status=403)
+    print("HERE 2")
+
+    analytics = get_object_or_404(Analytics, student_id=student_id, classroom_id=classroom_id)
+
+    if request.method == 'GET':
+        return Response(analytics.teacher_feedback or [])
+    print("HERE 3")
+
+    # POST logic
+    text = request.data.get("text")
+    if not text:
+        return Response({"detail": "Missing 'text' field."}, status=400)
+
+    feedback = analytics.teacher_feedback or []
+    feedback.append(text)
+    analytics.teacher_feedback = feedback
+    analytics.save(update_fields=["teacher_feedback"])
+    print("HERE 4")
+
+    return Response(analytics.teacher_feedback, status=201)
+
+@api_view(["POST"])
+@permission_classes([permissions.IsAuthenticated])
+def delete_teacher_note(request, classroom_id, student_id):
+    """
+    POST /api/classrooms/<classroom_id>/students/<student_id>/delete_note/
+    Body: { "note": "Exact note text" }
+    """
+    note_num = request.data.get("noteIndex")
+
+    try:
+        analytics = Analytics.objects.get(classroom_id=classroom_id, student_id=student_id)
+        print(analytics.teacher_feedback)
+        print(note_num)
+        if len(analytics.teacher_feedback) > int(note_num):
+            analytics.teacher_feedback.pop(note_num)
+            analytics.save()
+            return Response({"message": "Note deleted."})
+        return Response({"error": "Note not found."}, status=404)
+    except Analytics.DoesNotExist:
+        return Response({"error": "Analytics not found."}, status=404)

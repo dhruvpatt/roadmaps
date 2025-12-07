@@ -19,6 +19,55 @@ from datetime import datetime
 
 
 
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_curriculum(request):
+    """
+    Replace all units/weeks for a classroom with the submitted data.
+    """
+    try:
+        classroom_id = request.data.get('classroom_id')
+        units_data = request.data.get('units', [])
+        classroom = get_object_or_404(Classroom, id=classroom_id)
+        if request.user not in classroom.teachers.all():
+            return Response({'detail': 'Permission denied'},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        # Validate names
+        for u in units_data:
+            if not u.get('name', '').strip():
+                return Response({'detail': 'All units must have a name'},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            # Delete old
+            Week.objects.filter(unit__classroom=classroom).delete()
+            Unit.objects.filter(classroom=classroom).delete()
+
+            # Re-create
+            created = []
+            for u in units_data:
+                unit = Unit.objects.create(
+                    classroom=classroom,
+                    name=u['name'].strip(),
+                    description=u.get('description', '').strip()
+                )
+                for w in u.get('weeks', []):
+                    if w.get('learning_goal', '').strip():
+                        Week.objects.create(
+                            unit=unit,
+                            learning_goal=w['learning_goal'].strip()
+                        )
+                created.append(unit)
+
+        serializer = UnitSerializer(created, many=True)
+        return Response({'units': serializer.data}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({'detail': str(e)},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def process_pdf_curriculum(request):
