@@ -94,6 +94,7 @@ class CreateClassroomSerializer(serializers.ModelSerializer):
 
         # Create the classroom instance
         classroom = Classroom.objects.create(
+            organization=user.organization,
             name=validated_data['name'],
             join_id=join_id,
             details=validated_data['details'] if 'details' in validated_data else ""

@@ -167,7 +167,7 @@ FRONTEND_URL = "http://localhost:3000"
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = "no-reply@yourdomain.com"
 
-ALLOWED_ORG_ADMIN_EMAILS = ["admin@test.com", "admin@admin.com"]
+ALLOWED_ORG_ADMIN_EMAILS = ["admin@test.com", "admin@admin.com", "foobar@test.com"]
 
 
 # --- CORS Settings ---

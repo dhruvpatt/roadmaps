@@ -128,8 +128,7 @@ class ClassroomCreateView(APIView):
         user = request.user
         print(f"User: {user}, Role: {getattr(user, 'role', 'NO_ROLE')}")
         print(f"Request data: {request.data}")
-        
-        if user.role != 'teacher':
+        if user.role != 'teacher' and user.role != "org_admin":
             return Response({'detail': 'Only teachers can create classrooms.'}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = CreateClassroomSerializer(
